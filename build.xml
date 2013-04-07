@@ -1,0 +1,232 @@
+<project default="package" name="splunk_website_monitoring">
+
+    <!--
+    Load the properties files, local is loaded first since properties are immutable (cannot be changed
+    by later property files) and we want the local properties to override the default properties
+    -->
+    <property file="local.properties" />
+    <property file="default.properties" />
+    
+    <!-- Set up some basic parameters -->
+    <property name="value.src.directory" value="src" />
+    <property name="value.temp.directory" value="${java.io.tmpdir}/${user.name}/${ant.project.name}" />
+    <property name="value.build.appname" value="website_monitoring" />
+    
+    <!-- Set up the ant classpath -->
+    <path id="ant.classpath">
+        <fileset dir="ant">
+          <include name="*.jar" />
+        </fileset>
+    </path>
+    
+    <!-- ================================= 
+          target: clean
+         ================================= -->
+    <target name="clean" description="Clean up temporary files and directories created by this build script" >
+        
+        <!-- Delete the temporary directory -->
+        <delete quiet="true" includeEmptyDirs="true">
+            <fileset dir="${value.temp.directory}" />
+        </delete>
+        
+        <!-- Delete the local directory where packages are placed -->
+        <delete quiet="true" includeEmptyDirs="true">
+            <fileset dir="tmp" />
+        </delete>
+        
+    </target>
+    
+    <!-- ================================= 
+          target: increment_build_number
+         ================================= -->
+	<target name="increment_build_number">
+	    <propertyfile  file="default.properties">
+	            <entry key="value.build.number" type="int" operation="+" value="1" pattern="0"/>
+	    </propertyfile>
+	</target>
+    
+    <!-- ================================= 
+          target: clean_packages
+         ================================= -->
+    <target name="clean_packages" description="Clean up the packages created by this build script" >
+        <delete quiet="true" includeEmptyDirs="true">
+            <fileset dir="tmp/packages" />
+        </delete>
+    </target>
+    
+    <!-- ================================= 
+          target: setup_tmp_directory_for_export
+         ================================= -->
+    <target name="setup_tmp_directory_for_export">
+        
+        <!-- Create a temporary directory to send the files to -->
+        <property name="export_dir" value="${value.temp.directory}/package" />
+        
+        <!-- Create the temporary directory -->
+        <mkdir dir="${export_dir}"/>
+        
+    </target>
+    
+    <!-- ================================= 
+          target: populate_export_dir
+         ================================= -->
+    <target name="populate_export_dir">
+        
+        <!-- Copy the files over that need substitution. This should only be
+             applied to text files since Ant may corrupt binary files otherwise. -->
+        <copy todir="${export_dir}/${value.build.appname}">
+            <fileset dir="${value.src.directory}">
+                <include name="**/*.conf" />
+                <include name="**/*.txt" />
+                <include name="**/*.xml" />
+            </fileset>
+            
+            <!-- Perform the substitution of the build information -->
+            <filterset begintoken="${" endtoken="}"> 
+                <filter token="value.build.number" value="${value.build.number}" />
+            </filterset>
+        </copy>
+        
+        <!-- Copy the binary files over. -->
+        <copy todir="${export_dir}/${value.build.appname}">
+            <fileset dir="${value.src.directory}">
+                <exclude name="**/*.conf" />
+                <exclude name="**/*.txt" />
+                <exclude name="**/*.xml" />
+            </fileset>
+        </copy>
+
+    </target>
+        
+    <!-- ================================= 
+          target: package
+         ================================= -->
+    <target name="package" depends="setup_tmp_directory_for_export,populate_export_dir" description="Create the Splunk package of the app">
+        
+        <!-- Make the directory where we will store the files -->
+        <mkdir dir="${value.build.packageoutput.directory}" />
+        
+        <!-- Define where the tar file will go -->
+        <property name="value.temp.tar_package.file" value="${value.temp.directory}/${value.build.appname}.tar" />
+        
+        <!-- Tar the files -->
+        <tar destfile="${value.temp.tar_package.file}"
+             basedir="${export_dir}"
+             excludes=" **/*.tmp, **/*.pyc"
+        />
+        
+        <!-- Gzip the files -->
+        <gzip src="${value.temp.tar_package.file}" destfile="${value.build.packageoutput.directory}/${value.build.appname}.tar.gz"/>
+        
+        <!-- Delete the temporary location so that old files do not get streamed in -->
+        <delete dir="${value.temp.directory}" />
+        
+        <echo>App ${value.build.appname} build ${value.build.number} created: ${value.build.packageoutput.directory}/${value.build.appname}.tar.gz</echo>
+
+    </target>
+    
+    <!-- ================================= 
+          target: setup_tmp_directory_for_deployment
+         ================================= -->
+    <target name="setup_tmp_directory_for_deployment">
+        
+        <!-- Create a reference to the directory to send the files to -->
+        <property name="export_dir" value="${value.deploy.splunk_home}/etc/apps/" />
+        
+        <!-- Make the app directory if it does not yet exist -->
+        <mkdir dir="${export_dir}" />
+        
+    </target>
+    
+    <!-- ================================= 
+          target: deploy
+         ================================= -->
+    <target name="deploy" depends="setup_tmp_directory_for_deployment,populate_export_dir" description="Deploys the app to an instance of Splunk" >
+        <echo>App ${value.build.appname} build ${value.build.number} deployed to ${export_dir}</echo>
+    </target>
+    
+    <!-- ================================= 
+          target: stop_splunk
+         ================================= -->
+    <target name="stop_splunk" description="Stop Splunk">
+        <exec executable="${value.deploy.splunk_home}/bin/splunk">
+            <arg line="stop" />
+            <arg line="--accept-license" />
+        </exec>
+    </target>
+    
+    <!-- ================================= 
+          target: start_splunk
+         ================================= -->
+    <target name="start_splunk" description="Start Splunk">
+        <exec executable="${value.deploy.splunk_home}/bin/splunk">
+            <arg line="start" />
+            <arg line="--accept-license" />
+        </exec>
+    </target>
+    
+    <!-- ================================= 
+          target: restart_splunk
+         ================================= -->
+    <target name="restart_splunk" description="Start Splunk">
+        <exec executable="${value.deploy.splunk_home}/bin/splunk">
+            <arg line="restart" />
+            <arg line="--accept-license" />
+        </exec>
+    </target>
+    
+    <!-- ================================= 
+          target: restart_splunk_web
+         ================================= -->
+    <target name="restart_splunk_web" description="Restart Splunk">
+        <exec executable="${value.deploy.splunk_home}/bin/splunk">
+            <arg line="restart" />
+            <arg line="splunkweb" />
+            <arg line="--accept-license" />
+        </exec>
+    </target>
+	
+    <!-- ================================= 
+          target: deploy_and_refresh_splunk
+         ================================= -->
+    <target name="deploy_and_refresh_splunk" description="Deploys the application and forces Splunk to refresh" depends="deploy,refresh_splunk" />
+	
+	
+    <!-- ================================= 
+          target: deploy_and_restart_splunk
+         ================================= -->
+    <target name="deploy_and_restart_splunk" description="Deploys the application and restarts Splunk" depends="deploy,restart_splunk" />
+	
+	
+    <!-- ================================= 
+          target: refresh_splunk
+         ================================= -->
+    <target name="refresh_splunk" description="Refresh Splunk">
+    	
+      	<!-- Define the username and password if not already defined -->
+      	<property name="splunk_username" value="admin"/>
+      	<property name="splunk_password" value="changeme"/>
+      	
+      	<!-- Define a macro that can be used for refreshing Splunk endpoints -->
+      	<macrodef name="reload_conf">
+    		<attribute name="endpoint"/>
+    		<sequential>
+    			<exec failonerror="true" executable="${value.deploy.splunk_home}/bin/splunk"> <!-- Fail on error is set to true -->
+    				<arg value="_internal"/>
+    				<arg value="call"/>
+    				<arg value="/admin/@{endpoint}/_reload"/>
+    				<arg value="-auth"/>
+    				<arg value="${splunk_username}:${splunk_password}"/>
+    				<arg value="--accept-license"/>
+    			</exec>
+    		</sequential>
+      	</macrodef>
+    	
+    	<reload_conf endpoint="savedsearch" />
+    	<reload_conf endpoint="nav" />
+    	<reload_conf endpoint="views" />
+    	
+    </target>
+
+    
+</project>
