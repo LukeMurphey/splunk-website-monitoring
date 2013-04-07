@@ -35,3 +35,4 @@ nosetests.xml
 .pydevproject
 
 local.properties
+.DS_Store
