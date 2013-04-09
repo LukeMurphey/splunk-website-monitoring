@@ -155,6 +155,20 @@
         </exec>
     </target>
     
+	<!-- ===================================================================
+		  target: splunkweb_conf
+		 =================================================================== -->
+	<target name="splunkweb_conf" description="Configure SplunkWeb for easier web development">
+	    <mkdir dir="${value.deploy.splunk_home}/etc/system/local/"/>
+	    
+	  	<echo file="${value.deploy.splunk_home}/etc/system/local/web.conf">[settings]
+	  	enable_gzip=True
+	  	minify_js=False
+	  	minify_css=False
+	  	js_no_cache=True
+	  	</echo> 	
+	</target>
+	
     <!-- ================================= 
           target: start_splunk
          ================================= -->
