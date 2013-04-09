@@ -1,0 +1,34 @@
+<?xml version='1.0' encoding='utf-8'?>
+
+<form>
+	<label>Status Overview</label>
+
+	<row>
+		<html>
+			<h1>Status Monitoring</h1>
+			<p>
+			To monitor the status of websites, you will need to setup a Splunk data input that will connect to the website to collect the data.
+			</p>
+			<p>
+			See the <a href="/manager/website_monitoring/data/inputs/web_ping">Splunk Manager</a> to make a new input (or to modify existing ones)
+			</p>
+		</html>
+	</row>
+	
+	<fieldset>
+		<input type="time" />
+	</fieldset>
+	 
+	<row>
+		
+	</row>
+	<row>
+		<table>
+			<searchName>website_availability_overview</searchName>
+			<title>Website Status</title>
+			<option name="count">10</option>
+			<option name="displayRowNumbers">true</option>
+		</table>
+	</row>
+	
+</form>
