@@ -1,0 +1,120 @@
+.appHeaderWrapper{
+	/* background: #092e20; */
+	background: linear-gradient(top, #135A6B 8%, #0D4052 54%);
+	background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0.08, #135A6B), color-stop(0.54, #0D4052));
+	background-color: #135A6B;
+	background-image: linear-gradient(top, #135A6B 8%, #0D4052 54%);
+	background-image: -o-linear-gradient(top, #135A6B 8%, #0D4052 54%);
+	background-image: -moz-linear-gradient(top, #135A6B 8%, #0D4052 54%);
+	background-image: -webkit-linear-gradient(top, #135A6B 8%, #0D4052 54%)
+}
+
+.appLogoContainer > h1 {
+	color: white;
+}
+
+.appHeaderWrapper a {
+	color: #FFF;	
+}
+
+.splHeader-dashboard h2 {
+	color: #3F3F3F;
+	font-size: 16px;
+	font-weight: 100;
+	font-family: "Helvetica nenu", Helvetica, Arial, sans-serif;
+	line-height: normal;
+	margin: 15px 50px 19px 16px;
+}
+
+.StaticContentSample h1{
+	color: #3F3F3F;
+	font-size: 20px;
+	font-weight: 100;
+	font-family: "Helvetica nenu", Helvetica, Arial, sans-serif;
+	line-height: normal;
+}
+
+body.splTemplate-dashboard, 
+.TitleBar .splHeader, 
+.viewHeader, 
+.mainSearchControls, 
+.JobStatus,
+.splView-flashtimeline .ResultsHeader .splHeader-primary,
+.DisableRequiredFieldsButton,
+.sidebarExpanded,
+.splSearchControls-inline,
+.JobStatus {
+	background-color: #f3f5f7;
+}
+
+.splApp-website_monitoring .JobStatus{
+	background: -webkit-linear-gradient(top, #f3f5f7 0%, #c3c5c7 100%);
+	background: linear-gradient(top, #f3f5f7 0%, #c3c5c7 100%);
+	background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0, #f3f5f7), color-stop(1.00, #c3c5c7));
+	background-color: #f3f5f7;
+	background-image: linear-gradient(top, #f3f5f7 0%, #c3c5c7 100%);
+	background-image: -o-linear-gradient(top, #f3f5f7 0%, #c3c5c7 100%);
+	background-image: -moz-linear-gradient(top, #f3f5f7 0%, #c3c5c7 100%);
+	background-image: -webkit-linear-gradient(top, #f3f5f7 0%, #c3c5c7 100%);
+}
+
+.dashboardContent .Paginator{
+	padding-left: 10px;
+}
+
+.dashboardContent > .StaticContentSample{
+	padding-left: 10px;
+}
+
+.splApp-website_monitoring .empty_results{
+	background-color: #e5e5e7;	
+}
+
+/*
+ * Colorize and update the styling of the results on the status overview page
+ */
+.splView-status_overview .SimpleResultsTable tr td.d[data-value^="10"][field="response_code"],
+.splView-status_overview .SimpleResultsTable tr td.d[data-value^="20"][field="response_code"],
+.splView-status_overview .SimpleResultsTable tr td.d[data-value^="30"][field="response_code"]
+{
+	background-image: -webkit-linear-gradient(top, #30C423 0%, #069C00 100%);
+	/*
+	background-image: -webkit-linear-gradient(top, #659c40 0%, rgb(69, 134, 25) 100%);
+	*/
+	color: white;
+}
+
+.splView-status_overview .SimpleResultsTable tr td.d[data-value^="40"][field="response_code"],
+.splView-status_overview .SimpleResultsTable tr td.d[data-value^="50"][field="response_code"],
+.splView-status_overview .SimpleResultsTable tr td.d[data-value="0"][field="response_code"],
+.splView-status_overview .SimpleResultsTable tr td.d[data-value="Connection failed"][field="response_code"],
+.splView-status_overview .SimpleResultsTable tr td.d[data-value="Connection timed out"][field="response_code"]
+{
+	background-image: -webkit-linear-gradient(top, rgb(196, 35, 35) 0%, rgb(156, 0, 0) 100%);
+	color: white;
+}
+
+.splView-status_overview .SimpleResultsTable tr td.d[field="title"]{
+	font-weight: bold;
+	font-size: 13px;
+}
+
+/*
+ * Colorize the controls
+ */
+
+.splView-status_overview .splButton-primary{
+	background-color: #135A6B;
+	border: 1px solid rgb(17, 84, 100);
+}
+
+/*
+.splApp-website_monitoring table.mainSearchControlsTable .TimeRangePicker .timeRangeActivatorWrapper {
+	background-color: #135A6B;
+	border: 1px solid rgb(17, 84, 100);
+}
+
+.splApp-website_monitoring .searchButton{
+	background-color: #135A6B;
+}
+*/
