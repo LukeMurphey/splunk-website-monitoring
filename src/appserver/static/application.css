@@ -77,11 +77,21 @@ body.splTemplate-dashboard,
 .splView-status_overview .SimpleResultsTable tr td.d[data-value^="20"][field="response_code"],
 .splView-status_overview .SimpleResultsTable tr td.d[data-value^="30"][field="response_code"]
 {
-	background-image: -webkit-linear-gradient(top, #30C423 0%, #069C00 100%);
 	/*
 	background-image: -webkit-linear-gradient(top, #659c40 0%, rgb(69, 134, 25) 100%);
 	*/
+	background: -webkit-linear-gradient(top, #30C423 0%, #069C00 100%);
+	background: linear-gradient(top, #30C423 0%, #069C00 100%);
+	background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0, #30C423), color-stop(1.00, #069C00));
+	background-color: #30C423;
+	background-image: linear-gradient(top, #30C423 0%, #069C00 100%);
+	background-image: -o-linear-gradient(top, #30C423 0%, #069C00 100%);
+	background-image: -moz-linear-gradient(top, #30C423 0%, #069C00 100%);
+	background-image: -webkit-linear-gradient(top, #30C423 0%, #069C00 100%);
+	
+	
 	color: white;
+	font-size: larger;
 }
 
 .splView-status_overview .SimpleResultsTable tr td.d[data-value^="40"][field="response_code"],
@@ -90,13 +100,21 @@ body.splTemplate-dashboard,
 .splView-status_overview .SimpleResultsTable tr td.d[data-value="Connection failed"][field="response_code"],
 .splView-status_overview .SimpleResultsTable tr td.d[data-value="Connection timed out"][field="response_code"]
 {
-	background-image: -webkit-linear-gradient(top, rgb(196, 35, 35) 0%, rgb(156, 0, 0) 100%);
 	color: white;
+	font-size: larger;	
+	background: -webkit-linear-gradient(top, #C42323 0%, #9C0000 100%);
+	background: linear-gradient(top, #C42323 0%, #9C0000 100%);
+	background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0, #C42323), color-stop(1.00, #9C0000));
+	background-color: #C42323;
+	background-image: linear-gradient(top, #C42323 0%, #9C0000 100%);
+	background-image: -o-linear-gradient(top, #C42323 0%, #9C0000 100%);
+	background-image: -moz-linear-gradient(top, #C42323 0%, #9C0000 100%);
+	background-image: -webkit-linear-gradient(top, #C42323 0%, #9C0000 100%);
 }
 
 .splView-status_overview .SimpleResultsTable tr td.d[field="title"]{
 	font-weight: bold;
-	font-size: 13px;
+	font-size: larger;
 }
 
 /*
