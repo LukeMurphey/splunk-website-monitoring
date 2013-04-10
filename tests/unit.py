@@ -101,7 +101,7 @@ class TestWebPing(unittest.TestCase):
         # Test interval beyond later edge
         self.assertTrue( WebPing.needs_another_run( os.path.join( self.get_test_dir(), "configs" ), "web_ping://TextCritical.com", 10, 1365486776 ) )
         
-    def test_send_result(self):
+    def test_output_result(self):
         web_ping = WebPing(timeout=3)
         
         url_field = URLField( "test_ping", "title", "this is a test" )
@@ -109,11 +109,11 @@ class TestWebPing(unittest.TestCase):
         
         out = StringIO()
         
-        web_ping.send_result(result, "stanza", "title", unbroken=True, close=True, out=out)
+        web_ping.output_result(result, "stanza", "title", unbroken=True, close=True, out=out)
         
         self.assertTrue(out.getvalue().find("response_code=200") >= 0)
         
-    def test_send_result_unavailable(self):
+    def test_output_result_unavailable(self):
         web_ping = WebPing(timeout=3)
         
         url_field = URLField( "test_ping", "title", "this is a test" )
@@ -121,6 +121,6 @@ class TestWebPing(unittest.TestCase):
         
         out = StringIO()
         
-        web_ping.send_result(result, "stanza", "title", unbroken=True, close=True, out=out)
+        web_ping.output_result(result, "stanza", "title", unbroken=True, close=True, out=out)
         
         self.assertTrue(out.getvalue().find("timed_out=True") >= 0)

@@ -34,6 +34,9 @@ def setup_logger():
 logger = setup_logger()
 
 class URLField(Field):
+    """
+    Represents a URL. The URL is converted to a Python object that was created via urlparse.
+    """
     
     def to_python(self, value):
         Field.to_python(self, value)
@@ -52,6 +55,11 @@ class URLField(Field):
         return value.geturl()
 
 class DurationField(Field):
+    """
+    The duration field represents a duration as represented by a string such as 1d for a 24 hour period.
+    
+    The string is converted to an integer indicating the number of seconds.
+    """
     
     DURATION_RE = re.compile("(?P<duration>[0-9]+)\s*(?P<units>[a-z]*)", re.IGNORECASE)
     
@@ -108,6 +116,10 @@ class DurationField(Field):
         return str(value)
     
 class Timer(object):
+    """
+    This class is used to time durations.
+    """
+    
     def __init__(self, verbose=False):
         self.verbose = verbose
 
@@ -121,10 +133,16 @@ class Timer(object):
         self.msecs = self.secs * 1000  # millisecs
 
 class WebPing(ModularInput):
+    """
+    The web ping modular input connects to a website to determine if the site is operational and tracks the time it takes to respond.
+    """
     
     PARSE_URL_RE = re.compile( r"http[s]?[:]//(.*)", re.IGNORECASE)
     
     class Result(object):
+        """
+        The results object designates the results of connecting to a website.
+        """
         
         def __init__(self, connection_time, request_time, response_code, timed_out, url):
             
@@ -136,6 +154,10 @@ class WebPing(ModularInput):
             
         @property
         def total_time(self):
+            """
+            Returns the total time it took to get a response from a website including both the connection time and the HTTP response time.
+            """
+            
             return self.connection_time + self.request_time
     
     def __init__(self, timeout=30):
@@ -161,6 +183,13 @@ class WebPing(ModularInput):
         
     @classmethod
     def ping(cls, url, timeout=30):
+        """
+        Perform a ping to a website. Returns a WebPing.Result instance.
+        
+        Argument:
+        url -- The url to connect to. This object ought to be an instance derived from using urlparse.
+        timeout -- The amount of time to quit waiting on a connection.
+        """
         
         logger.debug('Performing ping, url="%s"', url.geturl())
         
@@ -211,7 +240,20 @@ class WebPing(ModularInput):
         # Finally, return the result
         return cls.Result( connection_time, request_time, response_code, timed_out, url.geturl())
         
-    def send_result(self, result, stanza, title, index=None, source=None, sourcetype=None, unbroken=True, close=True, out=sys.stdout ):
+    def output_result(self, result, stanza, title, index=None, source=None, sourcetype=None, unbroken=True, close=True, out=sys.stdout ):
+        """
+        Create a string representing the event.
+        
+        Argument:
+        result -- A result instance from a call to WebPing.ping
+        stanza -- The stanza used for the input
+        sourcetype -- The sourcetype
+        source -- The source field value
+        index -- The index to send the event to
+        unbroken -- 
+        close -- 
+        out -- The stream to send the event to (defaults to standard output)
+        """
         
         data = {
                 'response_code': result.response_code if result.response_code > 0 else '',
@@ -223,9 +265,21 @@ class WebPing(ModularInput):
                 'url': result.url
                 }
         
-        return self.send_event(data, stanza, index=index, source=source, sourcetype=sourcetype, unbroken=unbroken, close=close, out=out)
+        return self.output_event(data, stanza, index=index, source=source, sourcetype=sourcetype, unbroken=unbroken, close=close, out=out)
         
     def create_event_string(self, data_dict, stanza, sourcetype, source, index, unbroken=False, close=False ):
+        """
+        Create a string representing the event.
+        
+        Argument:
+        data_dict -- A dictionary containing the fields
+        stanza -- The stanza used for the input
+        sourcetype -- The sourcetype
+        source -- The source field value
+        index -- The index to send the event to
+        unbroken -- 
+        close -- 
+        """
         
         # Make the content of the event
         data_str   = ''
@@ -257,7 +311,20 @@ class WebPing(ModularInput):
         # added with a "</done>" tag.
         return self._print_event(self.document, event)
         
-    def send_event(self, data_dict, stanza, index=None, sourcetype=None, source=None, unbroken=False, close=False, out=sys.stdout ):
+    def output_event(self, data_dict, stanza, index=None, sourcetype=None, source=None, unbroken=False, close=False, out=sys.stdout ):
+        """
+        Output the given even so that Splunk can see it.
+        
+        Arguments:
+        data_dict -- A dictionary containing the fields
+        stanza -- The stanza used for the input
+        sourcetype -- The sourcetype
+        source -- The source to use
+        index -- The index to send the event to
+        unbroken -- 
+        close -- 
+        out -- The stream to send the event to (defaults to standard output)
+        """
         
         output = self.create_event_string(data_dict, stanza, sourcetype, source, index, unbroken, close)
         
@@ -266,10 +333,26 @@ class WebPing(ModularInput):
         
     @staticmethod
     def get_file_path( checkpoint_dir, stanza ):
+        """
+        Get the path to the checkpoint file.
+        
+        Arguments:
+        checkpoint_dir -- The directory where checkpoints ought to be saved
+        stanza -- The stanza of the input being used
+        """
+        
         return os.path.join( checkpoint_dir, hashlib.md5(stanza).hexdigest() + ".json" )
         
     @classmethod
     def last_ran( cls, checkpoint_dir, stanza ):
+        """
+        Determines the date that the analysis was last performed for the given input (denoted by the stanza name).
+        
+        Arguments:
+        checkpoint_dir -- The directory where checkpoints ought to be saved
+        stanza -- The stanza of the input being used
+        """
+        
         fp = None
         
         try:
@@ -284,6 +367,15 @@ class WebPing(ModularInput):
         
     @classmethod
     def needs_another_run(cls, checkpoint_dir, stanza, interval, cur_time=None):
+        """
+        Determines if the given input (denoted by the stanza name) ought to be executed.
+        
+        Arguments:
+        checkpoint_dir -- The directory where checkpoints ought to be saved
+        stanza -- The stanza of the input being used
+        interval -- The frequency that the analysis ought to be performed
+        cur_time -- The current time (will be automatically determined if not provided)
+        """
         
         try:
             last_ran = cls.last_ran(checkpoint_dir, stanza)
@@ -303,6 +395,15 @@ class WebPing(ModularInput):
     
     @classmethod
     def save_checkpoint(cls, checkpoint_dir, stanza, last_run):
+        """
+        Save the checkpoint state.
+        
+        Arguments:
+        checkpoint_dir -- The directory where checkpoints ought to be saved
+        stanza -- The stanza of the input being used
+        last_run -- The time when the analysis was last performed
+        """
+        
         fp = None
         
         try:
@@ -311,12 +412,24 @@ class WebPing(ModularInput):
             d = { 'last_run' : last_run }
             
             json.dump(d, fp)
-        except:
+            
+        except Exception:
+            logger.exception("Failed to save checkpoint directory") 
+            
+        finally:
             if fp is not None:
                 fp.close()
     
     @staticmethod
     def is_expired( last_run, interval, cur_time=None ):
+        """
+        Indicates if the last run time is expired based .
+        
+        Arguments:
+        last_run -- The time that the analysis was last done
+        interval -- The interval that the analysis ought to be done (as an integer)
+        cur_time -- The current time (will be automatically determined if not provided)
+        """
         
         if cur_time is None:
             cur_time = time.time()
@@ -328,13 +441,14 @@ class WebPing(ModularInput):
         
     def run(self, stanza, cleaned_params, input_config):
         
+        # Make the parameters
         interval   = cleaned_params["interval"]
         title      = cleaned_params["title"]
         url        = cleaned_params["url"]
         timeout    = self.timeout
-        sourcetype = "web_availability_check"
+        sourcetype = "web_ping"
         index      = "main"
-        source     = "web_availability_check"
+        source     = stanza
         
         if self.needs_another_run( input_config.checkpoint_dir, stanza, interval ):
             
@@ -342,12 +456,17 @@ class WebPing(ModularInput):
             result = WebPing.ping(url, timeout)
             
             # Send the event
-            self.send_result( result, stanza, title, index=index, source=source, sourcetype=sourcetype, unbroken=True, close=True )
+            self.output_result( result, stanza, title, index=index, source=source, sourcetype=sourcetype, unbroken=True, close=True )
             
+            # Save the checkpoint so that we remember when we last 
             self.save_checkpoint(input_config.checkpoint_dir, stanza, int(time.time()) )
         
             
 if __name__ == '__main__':
-    web_ping = WebPing()
-    web_ping.execute()
-    sys.exit(0)
+    try:
+        web_ping = WebPing()
+        web_ping.execute()
+        sys.exit(0)
+    except Exception as e:
+        logger.exception("Unhandled exception was caught, this may be due to a defect in the script") # This logs general exceptions that would have been unhandled otherwise (such as coding errors)
+        raise e
