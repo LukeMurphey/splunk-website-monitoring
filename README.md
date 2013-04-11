@@ -1,4 +1,4 @@
 splunk-website-monitoring
 =========================
 
-A website for monitoring web applications
+A Splunk application for monitoring web applications for downtime and slow response times.
