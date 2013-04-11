@@ -447,7 +447,7 @@ class WebPing(ModularInput):
         url        = cleaned_params["url"]
         timeout    = self.timeout
         sourcetype = "web_ping"
-        index      = "main"
+        index      = cleaned_params["index"]
         source     = stanza
         
         if self.needs_another_run( input_config.checkpoint_dir, stanza, interval ):
