@@ -7,10 +7,7 @@
 		<html>
 			<h1>Status Monitoring</h1>
 			<p>
-			To monitor the status of websites, you will need to setup a Splunk data input that will connect to the website to collect the data.
-			</p>
-			<p>
-			Use the <a href="/manager/website_monitoring/data/inputs/web_ping">Splunk Manager</a> to make a new input (or to modify existing ones)
+			To monitor the status of websites, you will need to setup a Splunk data input that will connect to the website to collect the data. Use the <a href="/manager/website_monitoring/data/inputs/web_ping">Splunk Manager</a> to make a new input (or to modify existing ones).
 			</p>
 		</html>
 	</row>
@@ -19,9 +16,22 @@
 		<input type="time" />
 	</fieldset>
 	 
-	<row>
-		
+	<!-- 
+	<row>		
+		<single>
+			<searchName>inoperable_sites_rangemap</searchName>
+			<option name="beforeLabel">Sites currently down: </option>
+		</single>
+		<single>
+			<searchName>slow_sites_rangemap</searchName>
+			<option name="beforeLabel">Sites with high current response time: </option>
+		</single>
+		<single>
+			<searchName>slow_sites_avg_rangemap</searchName>
+			<option name="beforeLabel">Sites with high average response time: </option>
+		</single>
 	</row>
+	 -->
 	<row>
 		<table>
 			<searchName>website_availability_overview</searchName>

@@ -94,6 +94,30 @@ body.splTemplate-dashboard,
 	font-size: larger;
 }
 
+
+/*
+ * Hide the 'time_exceeded' column since it is only used for determining if the response time should be marked as high
+ */
+.splView-status_overview .SimpleResultsTable tr td:nth-of-type(6),
+.splView-status_overview .SimpleResultsTable tr th:nth-of-type(6){
+     display:none;   
+}
+
+/*
+ * Hide the 'avg_time_exceeded' column since it is only used for determining if the average response time should be marked as high
+ */
+.splView-status_overview .SimpleResultsTable tr td:nth-of-type(8),
+.splView-status_overview .SimpleResultsTable tr th:nth-of-type(8){
+     display:none;   
+}
+
+.splView-status_overview .SimpleResultsTable tr td.d[data-value="1"][field="time_exceeded"] + td,
+.splView-status_overview .SimpleResultsTable tr td.d[data-value="1"][field="avg_time_exceeded"] + td
+{
+    color: #C42323;
+    font-weight: bold;
+}
+
 .splView-status_overview .SimpleResultsTable tr td.d[data-value^="40"][field="response_code"],
 .splView-status_overview .SimpleResultsTable tr td.d[data-value^="50"][field="response_code"],
 .splView-status_overview .SimpleResultsTable tr td.d[data-value="0"][field="response_code"],
