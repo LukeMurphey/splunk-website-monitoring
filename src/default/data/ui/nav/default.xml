@@ -1,3 +1,4 @@
 <nav>
   <view name="status_overview" default="true" />
+  <view name="status_history" />
 </nav>

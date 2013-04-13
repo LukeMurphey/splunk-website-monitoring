@@ -1,0 +1,87 @@
+<?xml version='1.0' encoding='utf-8'?>
+
+<form>
+	<label>Status History</label>
+	
+	<fieldset>
+		<input type="time" />
+		<input type="text" token="title">
+			<label>Site Title:</label>
+		</input>
+	</fieldset>
+	 
+	<row>		
+		<single>
+			<searchTemplate>sourcetype="web_ping" title=$title$ | stats avg(total_time) as response_time | rangemap field=response_time low=0-`response_time_threshold` default=severe | eval response_time=round(response_time, 2)." ms"</searchTemplate>
+			<option name="beforeLabel">Average response time: </option>
+			<option name="field">response_time</option>
+			<option name="classField">range</option>
+		</single>
+		<single>
+			<searchTemplate>sourcetype="web_ping" title=$title$ | stats max(total_time) as response_time | rangemap field=response_time low=0-`response_time_threshold` default=severe | eval response_time=round(response_time, 2)." ms"</searchTemplate>
+			<option name="beforeLabel">Maximum response time: </option>
+			<option name="field">response_time</option>
+			<option name="classField">range</option>
+		</single>
+		<single>
+			<searchTemplate>sourcetype="web_ping" title=$title$ `filter_inoperable` | stats count as count | rangemap field=count low=0-0 default=severe</searchTemplate>
+			<option name="beforeLabel">Failures detected: </option>
+			<option name="field">count</option>
+			<option name="classField">range</option>
+			<option name="linkView">flashtimeline</option>
+			<option name="linkSearch">sourcetype="web_ping" `filter_inoperable`</option>
+		</single>
+	</row>
+	
+	<!-- Site uptime would be nice here -->
+	 
+	<row>
+		<chart>
+			<title>Response Time History</title>
+		  	<searchString>
+		    	sourcetype="web_ping" title=$title$ | timechart avg(total_time) as response_time | eval response_time_over_threshold=if(response_time>`response_time_threshold`,response_time,0) | eval response_time=if(response_time>`response_time_threshold`,0,response_time)
+		  	</searchString>
+		  	<option name="height">200px</option>
+		  	<option name="charting.chart">column</option>
+		  	<option name="charting.chart.stackMode">stacked</option>
+			<option name="charting.legend.labels">[response_time_over_threshold,response_time]</option>
+			<option name="charting.seriesColors">[0xff1f24,0x069C00]</option>
+			<option name="charting.legend.placement">none</option>	
+			<drilldown>
+				<link><![CDATA[/app/website_monitoring/flashtimeline/?q=search%20sourcetype%3Dweb_ping%20title%3D"$form.title$"%20%7C%20%60format_events%60&earliest=$earliest$&latest=$latest$]]></link>
+			</drilldown>
+		</chart>
+	</row>
+	
+	<row>
+		<table>
+			<searchString>sourcetype="web_ping" title=$title$ `filter_inoperable` | eval time=_time | eval response_time=total_time | convert ctime(time) | fillnull response_code value="Connection failed" | eval response_code=if(timed_out == "True", "Connection timed out", response_code) | fields - _raw _time | fields time title url response_code response_time</searchString>
+			<title>Failures</title>
+			<option name="count">10</option>
+			<option name="displayRowNumbers">true</option>
+			<drilldown>
+				<link><![CDATA[/app/website_monitoring/flashtimeline/?q=search%20sourcetype%3Dweb_ping%20title%3D"$form.title$"%20%60filter_inoperable%60%20%7C%20%60format_events_raw%60&earliest=$earliest$&latest=$latest$]]></link>
+			</drilldown>
+		</table>
+	</row>
+	<!-- 
+	<row>
+		<chart>
+			<title>Response Time Details</title>
+		  	<searchString>
+		    	sourcetype=web_ping title=$title$ | timechart avg(connection_time) as connection_time avg(request_time) as request_time
+		  	</searchString>
+		  	<option name="height">200px</option>
+		  	<option name="charting.chart">area</option>
+		  	<option name="charting.chart.stackMode">stacked</option>
+		  	<option name="charting.chart.nullValueMode">zero</option>
+			<option name="charting.legend.labels">[request_time,connection_time]</option>
+			<option name="charting.seriesColors">[0x0D4052,0x1B7E96]</option>
+			
+			<drilldown>
+				<link><![CDATA[/app/website_monitoring/flashtimeline/?q=search%20sourcetype%3Dweb_ping%20title%3D"$form.title$"%20%7C%20%60format_events%60&earliest=$earliest$&latest=$latest$]]></link>
+			</drilldown>
+		</chart>
+	</row>
+	 -->
+</form>

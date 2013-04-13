@@ -34,6 +34,13 @@
 	line-height: normal;
 }
 
+.SingleValue .SingleValueHolder{
+	font-weight: 100;
+	font-family: "Helvetica nenu", Helvetica, Arial, sans-serif;
+	line-height: normal;
+	font-size: 16px;
+}
+
 body.splTemplate-dashboard, 
 .TitleBar .splHeader, 
 .viewHeader, 
@@ -73,9 +80,9 @@ body.splTemplate-dashboard,
 /*
  * Colorize and update the styling of the results on the status overview page
  */
-.splView-status_overview .SimpleResultsTable tr td.d[data-value^="10"][field="response_code"],
-.splView-status_overview .SimpleResultsTable tr td.d[data-value^="20"][field="response_code"],
-.splView-status_overview .SimpleResultsTable tr td.d[data-value^="30"][field="response_code"]
+.SimpleResultsTable tr td.d[data-value^="1"][field="response_code"],
+.SimpleResultsTable tr td.d[data-value^="2"][field="response_code"],
+.SimpleResultsTable tr td.d[data-value^="3"][field="response_code"]
 {
 	/*
 	background-image: -webkit-linear-gradient(top, #659c40 0%, rgb(69, 134, 25) 100%);
@@ -94,35 +101,11 @@ body.splTemplate-dashboard,
 	font-size: larger;
 }
 
-
-/*
- * Hide the 'time_exceeded' column since it is only used for determining if the response time should be marked as high
- */
-.splView-status_overview .SimpleResultsTable tr td:nth-of-type(6),
-.splView-status_overview .SimpleResultsTable tr th:nth-of-type(6){
-     display:none;   
-}
-
-/*
- * Hide the 'avg_time_exceeded' column since it is only used for determining if the average response time should be marked as high
- */
-.splView-status_overview .SimpleResultsTable tr td:nth-of-type(8),
-.splView-status_overview .SimpleResultsTable tr th:nth-of-type(8){
-     display:none;   
-}
-
-.splView-status_overview .SimpleResultsTable tr td.d[data-value="1"][field="time_exceeded"] + td,
-.splView-status_overview .SimpleResultsTable tr td.d[data-value="1"][field="avg_time_exceeded"] + td
-{
-    color: #C42323;
-    font-weight: bold;
-}
-
-.splView-status_overview .SimpleResultsTable tr td.d[data-value^="40"][field="response_code"],
-.splView-status_overview .SimpleResultsTable tr td.d[data-value^="50"][field="response_code"],
-.splView-status_overview .SimpleResultsTable tr td.d[data-value="0"][field="response_code"],
-.splView-status_overview .SimpleResultsTable tr td.d[data-value="Connection failed"][field="response_code"],
-.splView-status_overview .SimpleResultsTable tr td.d[data-value="Connection timed out"][field="response_code"]
+.SimpleResultsTable tr td.d[data-value^="4"][field="response_code"],
+.SimpleResultsTable tr td.d[data-value^="5"][field="response_code"],
+.SimpleResultsTable tr td.d[data-value="0"][field="response_code"],
+.SimpleResultsTable tr td.d[data-value="Connection failed"][field="response_code"],
+.SimpleResultsTable tr td.d[data-value="Connection timed out"][field="response_code"]
 {
 	color: white;
 	font-size: larger;	
@@ -136,16 +119,44 @@ body.splTemplate-dashboard,
 	background-image: -webkit-linear-gradient(top, #C42323 0%, #9C0000 100%);
 }
 
-.splView-status_overview .SimpleResultsTable tr td.d[field="title"]{
+.splView-status_overview .SimpleResultsTable tr td.d[field="title"],
+.splView-status_history .SimpleResultsTable tr td.d[field="title"]{
 	font-weight: bold;
 	font-size: larger;
+}
+
+/*
+ * Hide the 'time_exceeded' column since it is only used for determining if the response time should be marked as high
+ */
+.splView-status_overview .SimpleResultsTable tr td:nth-of-type(6),
+.splView-status_overview .SimpleResultsTable tr th:nth-of-type(6),
+.splView-status_history .SimpleResultsTable tr td:nth-of-type(6),
+.splView-status_history .SimpleResultsTable tr th:nth-of-type(6){
+     display:none;   
+}
+
+/*
+ * Hide the 'avg_time_exceeded' column since it is only used for determining if the average response time should be marked as high
+ */
+.splView-status_overview .SimpleResultsTable tr td:nth-of-type(8),
+.splView-status_overview .SimpleResultsTable tr th:nth-of-type(8){
+     display:none;   
+}
+
+.splView-status_overview .SimpleResultsTable tr td.d[data-value="1"][field="time_exceeded"] + td,
+.splView-status_overview .SimpleResultsTable tr td.d[data-value="1"][field="avg_time_exceeded"] + td,
+.splView-status_history .SimpleResultsTable tr td.d[data-value="1"][field="time_exceeded"] + td
+{
+    color: #C42323;
+    font-weight: bold;
 }
 
 /*
  * Colorize the controls
  */
 
-.splView-status_overview .splButton-primary{
+.splView-status_overview .splButton-primary,
+.splView-status_history .splButton-primary{
 	background-color: #135A6B;
 	border: 1px solid rgb(17, 84, 100);
 }

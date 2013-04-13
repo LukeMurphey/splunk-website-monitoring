@@ -16,7 +16,7 @@
 		<input type="time" />
 	</fieldset>
 	 
-	<!-- 
+	
 	<row>		
 		<single>
 			<searchName>inoperable_sites_rangemap</searchName>
@@ -31,7 +31,7 @@
 			<option name="beforeLabel">Sites with high average response time: </option>
 		</single>
 	</row>
-	 -->
+	
 	<row>
 		<table>
 			<searchName>website_availability_overview</searchName>
@@ -50,7 +50,9 @@
 		          <option name="1000:">#C42323</option>
 		        </option>
 		    </format>
-			
+			<drilldown>
+				<link><![CDATA[/app/website_monitoring/status_history?form.title=$row.title$&earliest=$earliest$&latest=$latest$]]></link>
+			</drilldown>
 		</table>
 	</row>
 	
