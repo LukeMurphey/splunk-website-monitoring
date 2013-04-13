@@ -2,8 +2,7 @@
 Overview
 ================================================
 
-This app provides .
-
+This app provides a mechanism for detecting when web applications are no longer response or perform slowly.
 
 
 
@@ -11,6 +10,7 @@ This app provides .
 Configuring Splunk
 ================================================
 
+This app exposes a new input type that can be configured in the Splunk Manager. To configure it, create a new "Website Availability Check" input in the Manager under Data inputs.
 
 
 
@@ -20,7 +20,12 @@ Getting Support
 
 Go to the following website if you need support:
 
+     http://splunk-base.splunk.com/apps/83317/answers/
+
+You can access the source-code and get technical details about the app at:
+
      https://github.com/LukeMurphey/splunk-website-monitoring
+
 
 
 ================================================
@@ -32,5 +37,6 @@ Change History
 +---------+------------------------------------------------------------------------------------------------------------------+
 | 0.5     | Initial release                                                                                                  |
 |---------|------------------------------------------------------------------------------------------------------------------|
-| 1.0     | Added extractions for the path that was requested in 404 errors                                                  |
+| 0.9     | Added a dashboard to show the history of a monitored site                                                        |
+|         | Added highlighting of high response times in red on the main overview dashboard                                  |
 +---------+------------------------------------------------------------------------------------------------------------------+
