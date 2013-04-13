@@ -16,7 +16,7 @@
 		<input type="time" />
 	</fieldset>
 	 
-	
+	<!--
 	<row>		
 		<single>
 			<searchName>inoperable_sites_rangemap</searchName>
@@ -31,7 +31,7 @@
 			<option name="beforeLabel">Sites with high average response time: </option>
 		</single>
 	</row>
-	
+	 -->
 	<row>
 		<table>
 			<searchName>website_availability_overview</searchName>
