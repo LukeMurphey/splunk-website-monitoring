@@ -7,24 +7,25 @@
 		<input type="time" />
 		<input type="text" token="title">
 			<label>Site Title:</label>
+			<default>*</default>
 		</input>
 	</fieldset>
 	 
 	<row>		
 		<single>
-			<searchTemplate>sourcetype="web_ping" title=$title$ | stats avg(total_time) as response_time | rangemap field=response_time low=0-`response_time_threshold` default=severe | eval response_time=round(response_time, 2)." ms"</searchTemplate>
+			<searchTemplate>sourcetype="web_ping" title="$title$" | stats avg(total_time) as response_time | rangemap field=response_time low=0-`response_time_threshold` default=severe | eval response_time=round(response_time, 2)." ms"</searchTemplate>
 			<option name="beforeLabel">Average response time: </option>
 			<option name="field">response_time</option>
 			<option name="classField">range</option>
 		</single>
 		<single>
-			<searchTemplate>sourcetype="web_ping" title=$title$ | stats max(total_time) as response_time | rangemap field=response_time low=0-`response_time_threshold` default=severe | eval response_time=round(response_time, 2)." ms"</searchTemplate>
+			<searchTemplate>sourcetype="web_ping" title="$title$" | stats max(total_time) as response_time | rangemap field=response_time low=0-`response_time_threshold` default=severe | eval response_time=round(response_time, 2)." ms"</searchTemplate>
 			<option name="beforeLabel">Maximum response time: </option>
 			<option name="field">response_time</option>
 			<option name="classField">range</option>
 		</single>
 		<single>
-			<searchTemplate>sourcetype="web_ping" title=$title$ `filter_inoperable` | stats count as count | rangemap field=count low=0-0 default=severe</searchTemplate>
+			<searchTemplate>sourcetype="web_ping" title="$title$" `filter_inoperable` | stats count as count | rangemap field=count low=0-0 default=severe</searchTemplate>
 			<option name="beforeLabel">Failures detected: </option>
 			<option name="field">count</option>
 			<option name="classField">range</option>
@@ -37,9 +38,9 @@
 	 
 	<row>
 		<chart>
-			<title>Response Time History</title>
+			<title>Response Time History (Average)</title>
 		  	<searchString>
-		    	sourcetype="web_ping" title=$title$ | timechart avg(total_time) as response_time | eval response_time_over_threshold=if(response_time>`response_time_threshold`,response_time,0) | eval response_time=if(response_time>`response_time_threshold`,0,response_time)
+		    	sourcetype="web_ping" title="$title$" | timechart avg(total_time) as response_time | eval response_time_over_threshold=if(response_time>`response_time_threshold`,response_time,0) | eval response_time=if(response_time>`response_time_threshold`,0,response_time)
 		  	</searchString>
 		  	<option name="height">200px</option>
 		  	<option name="charting.chart">column</option>
@@ -55,7 +56,7 @@
 	
 	<row>
 		<table>
-			<searchString>sourcetype="web_ping" title=$title$ `filter_inoperable` | eval time=_time | eval response_time=total_time | convert ctime(time) | fillnull response_code value="Connection failed" | eval response_code=if(timed_out == "True", "Connection timed out", response_code) | fields - _raw _time | fields time title url response_code response_time</searchString>
+			<searchString>sourcetype="web_ping" title="$title$" `filter_inoperable` | eval time=_time | eval response_time=total_time | convert ctime(time) | fillnull response_code value="Connection failed" | eval response_code=if(timed_out == "True", "Connection timed out", response_code) | fields - _raw _time | fields time title url response_code response_time</searchString>
 			<title>Failures</title>
 			<option name="count">10</option>
 			<option name="displayRowNumbers">true</option>
@@ -69,7 +70,7 @@
 		<chart>
 			<title>Response Time Details</title>
 		  	<searchString>
-		    	sourcetype=web_ping title=$title$ | timechart avg(connection_time) as connection_time avg(request_time) as request_time
+		    	sourcetype=web_ping title="$title$" | timechart avg(connection_time) as connection_time avg(request_time) as request_time
 		  	</searchString>
 		  	<option name="height">200px</option>
 		  	<option name="charting.chart">area</option>
