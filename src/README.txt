@@ -2,7 +2,7 @@
 Overview
 ================================================
 
-This app provides a mechanism for detecting when web applications are no longer response or perform slowly.
+This app provides a mechanism for detecting when web applications are no longer responsive or are performing slowly.
 
 
 
