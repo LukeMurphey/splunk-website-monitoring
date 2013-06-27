@@ -40,4 +40,6 @@ Change History
 | 0.6     | Added a dashboard to show the history of a monitored site                                                        |
 |         | Added highlighting of high response times in red on the main overview dashboard                                  |
 |         | Fixed issues where the modular input failed to validate parameters correctly and log error messages              |
+|---------|------------------------------------------------------------------------------------------------------------------|
+| 0.7     | Added availability calculation to the status history dashboard                                                   |
 +---------+------------------------------------------------------------------------------------------------------------------+
