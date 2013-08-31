@@ -1,6 +1,9 @@
 
 from splunk.appserver.mrsparkle.lib.util import make_splunkhome_path
+from splunk.models.base import SplunkAppObjModel
 from modular_input import Field, FieldValidationException, ModularInput
+from splunk.models.field import Field as ModelField
+from splunk.models.field import IntField as ModelIntField 
 
 import re
 import logging
@@ -13,6 +16,9 @@ from urlparse import urlparse
 import sys
 import time
 import os
+
+import httplib2
+import socks
 
 def setup_logger():
     """
@@ -132,6 +138,15 @@ class Timer(object):
         self.secs = self.end - self.start
         self.msecs = self.secs * 1000  # millisecs
 
+class WebsiteMonitoringConfig(SplunkAppObjModel):
+    
+    resource       = '/admin/website_monitoring'
+    proxy_server   = ModelField()
+    proxy_port     = ModelIntField()
+    proxy_type     = ModelField()
+    proxy_user     = ModelField()
+    proxy_password = ModelField()
+
 class WebPing(ModularInput):
     """
     The web ping modular input connects to a website to determine if the site is operational and tracks the time it takes to respond.
@@ -144,21 +159,12 @@ class WebPing(ModularInput):
         The results object designates the results of connecting to a website.
         """
         
-        def __init__(self, connection_time, request_time, response_code, timed_out, url):
+        def __init__(self, request_time, response_code, timed_out, url):
             
             self.request_time = request_time
-            self.connection_time = connection_time
             self.response_code = response_code
             self.timed_out = timed_out
             self.url = url
-            
-        @property
-        def total_time(self):
-            """
-            Returns the total time it took to get a response from a website including both the connection time and the HTTP response time.
-            """
-            
-            return self.connection_time + self.request_time
     
     def __init__(self, timeout=30):
 
@@ -180,45 +186,70 @@ class WebPing(ModularInput):
             self.timeout = timeout
         else:
             self.timeout = 30
+    
+    @classmethod
+    def resolve_proxy_type(cls, proxy_type):
+        
+        # Make sure the proxy string is not none
+        if proxy_type is None:
+            return None
+        
+        # Prepare the string so that the proxy type can be matched more reliably
+        t = proxy_type.strip().lower()
+        
+        if t == "socks4":
+            return socks.PROXY_TYPE_SOCKS4
+        elif t == "socks5":
+            return socks.PROXY_TYPE_SOCKS5
+        elif t == "http":
+            return socks.PROXY_TYPE_HTTP
+        elif t == "":
+            return None
+        else:
+            logger.warn("Proxy type is not recognized: %s", proxy_type)
+            return None
         
     @classmethod
-    def ping(cls, url, timeout=30):
+    def ping(cls, url, timeout=30, proxy_type=None, proxy_server=None, proxy_port=None, proxy_user=None, proxy_password=None):
         """
         Perform a ping to a website. Returns a WebPing.Result instance.
         
         Argument:
         url -- The url to connect to. This object ought to be an instance derived from using urlparse.
         timeout -- The amount of time to quit waiting on a connection.
+        proxy_type -- The type of the proxy server (must be one of: socks4, socks5, http)
+        proxy_server -- The proxy server to use.
+        proxy_port -- The port on the proxy server to use.
+        proxy_user -- The proxy server to use.
+        proxy_password -- The port on the proxy server to use.
         """
         
         logger.debug('Performing ping, url="%s"', url.geturl())
         
-        # Make the connection
-        if( url.scheme == 'https' ):
-            connection = httplib.HTTPSConnection(url.netloc, timeout=timeout)
+        # Determine which type of proxy is to be used (if any)
+        resolved_proxy_type = cls.resolve_proxy_type(proxy_type)
+        
+        # Setup the proxy info if so configured
+        if resolved_proxy_type is not None and proxy_server is not None and len(proxy_server.strip()) > 0:
+            proxy_info = httplib2.ProxyInfo(resolved_proxy_type, proxy_server, proxy_port, proxy_user=proxy_user, proxy_pass=proxy_password)
         else:
-            connection = httplib.HTTPConnection(url.netloc, timeout=timeout)
-            
-        connection_time = 0
+            # No proxy is being used
+            proxy_info = None
+        
         request_time    = 0
         response_code   = 0
         timed_out       = False
         
         try:
             
-            # Connect to the host
-            with Timer() as timer:
-                connection.connect()
+            # Make the HTTP object
+            http = httplib2.Http(proxy_info=proxy_info, timeout=timeout)
             
-            connection_time = timer.msecs
-                
             # Perform the request
             with Timer() as timer:
-                connection.request("GET", url.path)
-                response = connection.getresponse()
-                
+                response, content = http.request(url.geturl(), 'GET')
                 response_code = response.status
-            
+                
             request_time = timer.msecs
             
         # Handle time outs    
@@ -231,14 +262,16 @@ class WebPing(ModularInput):
             
             if e.errno in [60, 61]:
                 timed_out = True
-            
-        finally:
-            
-            # Make sure to always close the connection
-            connection.close()
+                
+        except socks.GeneralProxyError:
+            # This may be thrown if the user configured the proxy settings incorrectly
+            logger.exception("An error occurred when attempting to communicate with the proxy")
+        
+        except Exception as e:
+            logger.exception("A general exception was thrown when executing a web request")
             
         # Finally, return the result
-        return cls.Result( connection_time, request_time, response_code, timed_out, url.geturl())
+        return cls.Result( request_time, response_code, timed_out, url.geturl())
         
     def output_result(self, result, stanza, title, index=None, source=None, sourcetype=None, unbroken=True, close=True, out=sys.stdout ):
         """
@@ -257,9 +290,8 @@ class WebPing(ModularInput):
         
         data = {
                 'response_code': result.response_code if result.response_code > 0 else '',
-                'connection_time': round(result.connection_time ,2) if result.connection_time > 0 else '',
+                'total_time': round(result.request_time, 2) if result.request_time > 0 else '',
                 'request_time': round(result.request_time, 2) if result.request_time > 0 else '',
-                'total_time': round(result.total_time, 2) if result.total_time > 0 else '',
                 'timed_out': result.timed_out,
                 'title': title,
                 'url': result.url
@@ -439,6 +471,15 @@ class WebPing(ModularInput):
         else:
             return False
         
+    def get_proxy_config(self, session_key):
+        """
+        Get the proxy configuration
+        """
+        
+        website_monitoring_config = WebsiteMonitoringConfig.get( WebsiteMonitoringConfig.build_id( "default", "website_monitoring", "nobody"), sessionKey=session_key )
+        
+        return  website_monitoring_config.proxy_type, website_monitoring_config.proxy_server, website_monitoring_config.proxy_port, website_monitoring_config.proxy_user, website_monitoring_config.proxy_password
+        
     def run(self, stanza, cleaned_params, input_config):
         
         # Make the parameters
@@ -452,8 +493,12 @@ class WebPing(ModularInput):
         
         if self.needs_another_run( input_config.checkpoint_dir, stanza, interval ):
             
+            # Get the proxy configuration
+            proxy_type, proxy_server, proxy_port, proxy_user, proxy_password = self.get_proxy_config(input_config.session_key)
+            logger.debug("Using proxy server %s:%s", proxy_server, proxy_port)
+            
             # Perform the ping
-            result = WebPing.ping(url, timeout)
+            result = WebPing.ping(url, timeout, proxy_type, proxy_server, proxy_port, proxy_user, proxy_password)
             
             # Send the event
             self.output_result( result, stanza, title, index=index, source=source, sourcetype=sourcetype, unbroken=True, close=True )

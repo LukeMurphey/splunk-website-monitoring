@@ -42,4 +42,6 @@ Change History
 |         | Fixed issues where the modular input failed to validate parameters correctly and log error messages              |
 |---------|------------------------------------------------------------------------------------------------------------------|
 | 0.7     | Added availability calculation to the status history dashboard                                                   |
+|---------|------------------------------------------------------------------------------------------------------------------|
+| 0.8     | Added support for using a proxy server                                                                           |
 +---------+------------------------------------------------------------------------------------------------------------------+
