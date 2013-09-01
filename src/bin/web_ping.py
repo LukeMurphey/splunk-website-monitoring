@@ -236,9 +236,9 @@ class WebPing(ModularInput):
             # No proxy is being used
             proxy_info = None
         
-        request_time    = 0
-        response_code   = 0
-        timed_out       = False
+        request_time  = 0
+        response_code = 0
+        timed_out     = False
         
         try:
             
