@@ -20,6 +20,8 @@ class StandardFieldValidator():
         name -- The name of the object, used for error messages
         value -- The value to convert
         """
+        if value is None:
+            raise admin.ArgValidationException("The value for the '%s' parameter cannot be none" % (name))
         
         if len( str(value).strip() ) == 0:
             raise admin.ArgValidationException("The value for the '%s' parameter cannot be empty" % (name))
@@ -151,7 +153,10 @@ class HostFieldValidator(StandardFieldValidator):
     
     def to_python(self, name, value):
         
-        if not self.is_valid_hostname(value):
+        if value is None:
+            return value
+        
+        elif not self.is_valid_hostname(value):
             raise admin.ArgValidationException("The value of '%s' for the '%s' parameter is not a valid host name or IP" % ( str(value), name))
         
         return value
