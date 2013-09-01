@@ -3,9 +3,17 @@
   <block title="Website Monitoring for Splunk"
          endpoint="admin/website_monitoring" entity="default">
 
+
       <text>Setup the Website Monitoring Add-on.
           
           <![CDATA[
+          <style>
+          
+          input[id*=proxy_type]{
+             display: none;
+          }
+          
+          </style>
           
           <script language="javascript">
               
@@ -15,11 +23,35 @@
                 
                 $('#\\/admin\\/website_monitoring\\/default\\/proxy_server_id').attr("placeholder", "e.g. proxy.acme.net");
                 $('#\\/admin\\/website_monitoring\\/default\\/proxy_port_id').attr("placeholder", "e.g. 8080");
+                
+                s = '<select name="/admin/website_monitoring/default/proxy_type" id="proxy_type_select">' + 
+                    '<option value="http">HTTP</option>' +
+                    '<option value="socks4">SOCKS4</option>' +
+                    '<option  value="socks5">SOCKS5</option>' +
+                    '</select>';
+                 
+                 $('#\\/admin\\/website_monitoring\\/default\\/proxy_type_id').after(s);
+                 $('#\\/admin\\/website_monitoring\\/default\\/proxy_type').after(s);
+
+                 var current_value = "http";
+
+                 if( $('#\\/admin\\/website_monitoring\\/default\\/proxy_type_id').length > 0 ){
+                   current_value = $('#\\/admin\\/website_monitoring\\/default\\/proxy_type_id').val();
+                 }
+                 else{
+                   current_value = $('#\\/admin\\/website_monitoring\\/default\\/proxy_type').val();
+                 }
+
+                 $("#proxy_type_select").val( current_value ).attr('selected',true);
+                 
+                 $('#\\/admin\\/website_monitoring\\/default\\/proxy_type_id').remove();
+                 $('#\\/admin\\/website_monitoring\\/default\\/proxy_type').remove();
+                
               });
               
           </script>
           ]]>
-          </text>
+      </text>
 
       <input field="proxy_server">
         <label>Enter the proxy server name; leave empty if you don't use a proxy server</label>
