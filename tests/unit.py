@@ -65,9 +65,7 @@ class TestWebPing(unittest.TestCase):
         result = WebPing.ping( url_field.to_python("https://www.google.com/") )
         
         self.assertEquals(result.response_code, 200)
-        self.assertGreater(result.connection_time, 0)
         self.assertGreater(result.request_time, 0)
-        self.assertGreater(result.total_time, 0)
         
     def test_ping_timeout(self):
         url_field = URLField( "test_ping_timeout", "title", "this is a test" )
