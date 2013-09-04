@@ -8,7 +8,6 @@ from splunk.models.field import IntField as ModelIntField
 import re
 import logging
 from logging import handlers
-import httplib
 import hashlib
 import socket
 import json
@@ -18,7 +17,7 @@ import time
 import os
 
 import httplib2
-import socks
+from httplib2 import socks
 
 def setup_logger():
     """
@@ -27,7 +26,7 @@ def setup_logger():
     
     logger = logging.getLogger('web_availability_modular_input')
     logger.propagate = False # Prevent the log messages from being duplicated in the python.log file
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.INFO)
     
     file_handler = handlers.RotatingFileHandler(make_splunkhome_path(['var', 'log', 'splunk', 'web_availability_modular_input.log']), maxBytes=25000000, backupCount=5)
     formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
@@ -186,6 +185,22 @@ class WebPing(ModularInput):
             self.timeout = timeout
         else:
             self.timeout = 30
+    
+    def clear_proxy_env_args(self):
+        """
+        Clear out an existing environment variable arguments so that they do not foul up the internal REST calls.
+        """
+        
+        for method in ['http', 'https']:
+            env_var = method + '_proxy'
+            
+            if env_var in os.environ:
+                logger.warn("Clearing HTTP proxy environment variable since this can cause problems when communicating with Splunk %s", env_var)
+                del os.environ[env_var]
+                
+            if env_var.upper() in os.environ:
+                logger.warn("Clearing HTTP proxy environment variable since this can cause problems when communicating with Splunk %s", env_var.upper())
+                del os.environ[env_var.upper()]
     
     @classmethod
     def resolve_proxy_type(cls, proxy_type):
@@ -476,6 +491,8 @@ class WebPing(ModularInput):
         Get the proxy configuration
         """
         
+        self.clear_proxy_env_args()
+        
         website_monitoring_config = WebsiteMonitoringConfig.get( WebsiteMonitoringConfig.build_id( "default", "website_monitoring", "nobody"), sessionKey=session_key )
         
         return  website_monitoring_config.proxy_type, website_monitoring_config.proxy_server, website_monitoring_config.proxy_port, website_monitoring_config.proxy_user, website_monitoring_config.proxy_password
@@ -495,7 +512,6 @@ class WebPing(ModularInput):
             
             # Get the proxy configuration
             proxy_type, proxy_server, proxy_port, proxy_user, proxy_password = self.get_proxy_config(input_config.session_key)
-            logger.debug("Using proxy server %s:%s", proxy_server, proxy_port)
             
             # Perform the ping
             result = WebPing.ping(url, timeout, proxy_type, proxy_server, proxy_port, proxy_user, proxy_password)

@@ -7,7 +7,7 @@ import os
 import re
 import copy
 
-class StandardFieldValidator():
+class StandardFieldValidator(object):
     """
     This is the base class that should be used to for field validators.
     """
@@ -20,6 +20,7 @@ class StandardFieldValidator():
         name -- The name of the object, used for error messages
         value -- The value to convert
         """
+        
         if value is None:
             raise admin.ArgValidationException("The value for the '%s' parameter cannot be none" % (name))
         
@@ -37,7 +38,10 @@ class StandardFieldValidator():
         value -- The value to convert
         """
         
-        return str(value)
+        if value is None:
+            return ""
+        else:
+            return str(value)
 
 class BooleanFieldValidator(StandardFieldValidator):
     """
@@ -64,7 +68,7 @@ class BooleanFieldValidator(StandardFieldValidator):
         elif value == False:
             return "0"
         
-        return str(value)
+        return super(BooleanFieldValidator, self).to_string(name, value)
     
 class IntegerFieldValidator(StandardFieldValidator):
     """
@@ -101,9 +105,7 @@ class IntegerFieldValidator(StandardFieldValidator):
             return None
 
         else:
-            return str(value)
-        
-        return str(value)
+            return super(IntegerFieldValidator, self).to_string(name, value)
     
 class FieldSetValidator():
     """
@@ -364,7 +366,11 @@ class WebsiteMonitoringRestHandler(admin.MConfigHandler):
             for stanza, settings in confDict.items():
                 
                 for key, val in settings.items():
-                    confInfo[stanza].append(key, val)
+                    
+                    if val is None:
+                        confInfo[stanza].append(key, "")
+                    else:
+                        confInfo[stanza].append(key, val)
                     
                     
     @log_function_invocation 
