@@ -185,23 +185,7 @@ class WebPing(ModularInput):
             self.timeout = timeout
         else:
             self.timeout = 30
-    
-    def clear_proxy_env_args(self):
-        """
-        Clear out an existing environment variable arguments so that they do not foul up the internal REST calls.
-        """
         
-        for method in ['http', 'https']:
-            env_var = method + '_proxy'
-            
-            if env_var in os.environ:
-                logger.warn("Clearing HTTP proxy environment variable since this can cause problems when communicating with Splunk %s", env_var)
-                del os.environ[env_var]
-                
-            if env_var.upper() in os.environ:
-                logger.warn("Clearing HTTP proxy environment variable since this can cause problems when communicating with Splunk %s", env_var.upper())
-                del os.environ[env_var.upper()]
-    
     @classmethod
     def resolve_proxy_type(cls, proxy_type):
         
@@ -490,8 +474,6 @@ class WebPing(ModularInput):
         """
         Get the proxy configuration
         """
-        
-        self.clear_proxy_env_args()
         
         website_monitoring_config = WebsiteMonitoringConfig.get( WebsiteMonitoringConfig.build_id( "default", "website_monitoring", "nobody"), sessionKey=session_key )
         
