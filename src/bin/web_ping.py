@@ -242,13 +242,13 @@ class WebPing(ModularInput):
         try:
             
             # Make the HTTP object
-            http = httplib2.Http(proxy_info=proxy_info, timeout=timeout)
+            http = httplib2.Http(proxy_info=proxy_info, timeout=timeout, disable_ssl_certificate_validation=True)
             
             # Perform the request
             with Timer() as timer:
                 response, content = http.request(url.geturl(), 'GET')
-                response_code = response.status
-                
+            
+            response_code = response.status    
             request_time = timer.msecs
             
         # Handle time outs    

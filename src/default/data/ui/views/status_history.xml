@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='utf-8'?>
 
-<form>
+<form script="status_history.js" >
 	<label>Status History</label>
 	
 	<fieldset>
@@ -25,8 +25,6 @@
 			<option name="classField">range</option>
 		</single>
 	</row>
-	
-	<!-- Site uptime would be nice here -->
 	 
 	<row>
 		<chart>
@@ -66,7 +64,7 @@
 	
 	<row>
 		<table>
-			<searchString>sourcetype="web_ping" title="$title$" `filter_inoperable` | eval time=_time | eval response_time=total_time | convert ctime(time) | fillnull response_code value="Connection failed" | eval response_code=if(timed_out == "True", "Connection timed out", response_code) | fields - _raw _time | fields time title url response_code response_time</searchString>
+			<searchString>sourcetype="web_ping" title="$title$" `filter_inoperable` | eval time=_time | eval response_time=total_time | convert ctime(time) | fillnull response_code value="Connection failed" | eval response_code=if(timed_out == "True", "Connection timed out", response_code) | fields - _raw _time | fields time title url response_code</searchString>
 			<title>Failures</title>
 			<option name="count">10</option>
 			<option name="displayRowNumbers">true</option>

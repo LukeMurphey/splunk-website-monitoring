@@ -82,7 +82,8 @@ body.splTemplate-dashboard,
  */
 .SimpleResultsTable tr td.d[data-value^="1"][field="response_code"],
 .SimpleResultsTable tr td.d[data-value^="2"][field="response_code"],
-.SimpleResultsTable tr td.d[data-value^="3"][field="response_code"]
+.SimpleResultsTable tr td.d[data-value^="3"][field="response_code"],
+.response_code .success
 {
 	/*
 	background-image: -webkit-linear-gradient(top, #659c40 0%, rgb(69, 134, 25) 100%);
@@ -105,7 +106,8 @@ body.splTemplate-dashboard,
 .SimpleResultsTable tr td.d[data-value^="5"][field="response_code"],
 .SimpleResultsTable tr td.d[data-value="0"][field="response_code"],
 .SimpleResultsTable tr td.d[data-value="Connection failed"][field="response_code"],
-.SimpleResultsTable tr td.d[data-value="Connection timed out"][field="response_code"]
+.SimpleResultsTable tr td.d[data-value="Connection timed out"][field="response_code"],
+.response_code .failure
 {
 	color: white;
 	font-size: larger;	
@@ -120,7 +122,8 @@ body.splTemplate-dashboard,
 }
 
 .splView-status_overview .SimpleResultsTable tr td.d[field="title"],
-.splView-status_history .SimpleResultsTable tr td.d[field="title"]{
+.splView-status_history .SimpleResultsTable tr td.d[field="title"],
+.title{
 	font-weight: bold;
 	font-size: larger;
 }
