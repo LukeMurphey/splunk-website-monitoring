@@ -44,4 +44,5 @@ Change History
 | 0.7     | Added availability calculation to the status history dashboard                                                   |
 |---------|------------------------------------------------------------------------------------------------------------------|
 | 0.8     | Added support for using a proxy server                                                                           |
+|         | Updated the app to work better on Splunk 6.0                                                                     |
 +---------+------------------------------------------------------------------------------------------------------------------+
