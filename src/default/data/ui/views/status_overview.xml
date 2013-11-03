@@ -12,9 +12,9 @@
 		</html>
 	</row>
 	
-	<fieldset>
-		<input type="time" />
-	</fieldset>
+	<input type="time">
+		<default>Last 24 hours</default>
+	</input>
 	 
 	<!--
 	<row>		

@@ -4,7 +4,9 @@
 	<label>Status History</label>
 	
 	<fieldset>
-		<input type="time" />
+		<input type="time">
+			<default>Last 24 hours</default>
+		</input>
 		<input type="text" token="title">
 			<label>Site Title:</label>
 			<default>*</default>
