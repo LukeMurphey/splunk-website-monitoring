@@ -1,4 +1,10 @@
-require(['jquery','underscore','splunkjs/mvc', '/en-US/static/app/website_monitoring/WebsiteStatusCellRenderer.js', 'splunkjs/mvc/simplexml/ready!'],
+require.config({
+    paths: {
+    	website_status_cell_renderer: '../app/website_monitoring/WebsiteStatusCellRenderer'
+    }
+});
+
+require(['jquery','underscore','splunkjs/mvc', 'website_status_cell_renderer', 'splunkjs/mvc/simplexml/ready!'],
 	function($, _, mvc, WebsiteStatusCellRenderer){
 	
 	    var statusTable = mvc.Components.get('element2');
