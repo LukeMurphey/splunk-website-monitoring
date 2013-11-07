@@ -158,12 +158,15 @@ class WebPing(ModularInput):
         The results object designates the results of connecting to a website.
         """
         
-        def __init__(self, request_time, response_code, timed_out, url):
+        def __init__(self, request_time, response_code, timed_out, url, response_size=None, response_md5=None, response_sha224=None):
             
             self.request_time = request_time
             self.response_code = response_code
             self.timed_out = timed_out
             self.url = url
+            self.response_size = response_size
+            self.response_md5 = response_md5
+            self.response_sha224 = response_sha224
     
     def __init__(self, timeout=30):
 
@@ -235,9 +238,12 @@ class WebPing(ModularInput):
             # No proxy is being used
             proxy_info = None
         
-        request_time  = 0
-        response_code = 0
-        timed_out     = False
+        request_time    = 0
+        response_code   = 0
+        response_md5    = None
+        response_sha224 = None
+        timed_out       = False
+        response_size   = None
         
         try:
             
@@ -247,7 +253,14 @@ class WebPing(ModularInput):
             # Perform the request
             with Timer() as timer:
                 response, content = http.request(url.geturl(), 'GET')
-            
+                
+                # Get the hash of the content
+                response_md5 = hashlib.md5(content).hexdigest()
+                response_sha224 = hashlib.sha224(content).hexdigest()
+                
+                # Get the size of the content
+                response_size = len(content)
+                
             response_code = response.status    
             request_time = timer.msecs
             
@@ -270,7 +283,7 @@ class WebPing(ModularInput):
             logger.exception("A general exception was thrown when executing a web request")
             
         # Finally, return the result
-        return cls.Result( request_time, response_code, timed_out, url.geturl())
+        return cls.Result(request_time, response_code, timed_out, url.geturl(), response_size, response_md5, response_sha224)
         
     def output_result(self, result, stanza, title, index=None, source=None, sourcetype=None, unbroken=True, close=True, out=sys.stdout ):
         """
@@ -296,6 +309,18 @@ class WebPing(ModularInput):
                 'url': result.url
                 }
         
+        # Add the MD5 of the response of available
+        if result.response_md5 is not None:
+            data['content_md5'] = result.response_md5
+        
+        # Add the SHA-224 of the response of available
+        if result.response_sha224 is not None:
+            data['content_sha224'] = result.response_sha224
+            
+        # Add the MD5 of the response of available
+        if result.response_size is not None:
+            data['content_size'] = result.response_size
+                
         return self.output_event(data, stanza, index=index, source=source, sourcetype=sourcetype, unbroken=unbroken, close=close, out=out)
         
     def create_event_string(self, data_dict, stanza, sourcetype, source, index, unbroken=False, close=False ):

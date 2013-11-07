@@ -48,4 +48,5 @@ Change History
 |---------|------------------------------------------------------------------------------------------------------------------|
 | 0.9     | Added support for custom root endpoints                                                                          |
 |         | Fixed issue where the searches defaulted to searching all-time                                                   |
+|         | Added site changes dashboard                                                                                     |
 +---------+------------------------------------------------------------------------------------------------------------------+

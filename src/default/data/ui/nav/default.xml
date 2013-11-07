@@ -1,4 +1,5 @@
 <nav color="#135A6B">
   <view name="status_overview" default="true" />
   <view name="status_history" />
+  <view name="site_changes" />
 </nav>
