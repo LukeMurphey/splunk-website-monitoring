@@ -469,6 +469,24 @@ class ModularInput():
         # Return the content as a string WITHOUT the XML header.
         return doc.documentElement.toxml()
     
+    def escape_spaces(self, s):
+        """
+        If the string contains spaces, then add double quotes around the string. This is useful when outputting fields and values to Splunk since a space will cause Splunk to not recognize the entire value.
+        
+        Arguments:
+        s -- A string to escape.
+        """
+        
+        # Make sure the input is a string
+        if s is not None:
+            s = str(s)
+        
+        if s is not None and " " in s:
+            return '"' + s + '"'
+        
+        else:
+            return s
+    
     def create_event_string(self, data_dict, stanza, sourcetype, source, index, unbroken=False, close=False ):
         """
         Create a string representing the event.
@@ -484,10 +502,16 @@ class ModularInput():
         """
         
         # Make the content of the event
-        data_str   = ''
+        data_str = ''
         
         for k, v in data_dict.items():
-            data_str += ' %s=%s' % (k, v)
+            v_escaped = self.escape_spaces(v)
+            k_escaped = self.escape_spaces(k)
+            
+            if len(data_str) > 0:
+                data_str += ' '
+            
+            data_str += '%s=%s' % (k_escaped, v_escaped)
         
         # Make the event
         event_dict = {'stanza': stanza,
