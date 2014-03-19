@@ -29,6 +29,22 @@ You can access the source-code and get technical details about the app at:
 
 
 ================================================
+FAQ
+================================================
+
+Q: How do I enable the use of a proxy server?
+
+A: To use a proxy server, re-run the app setup page and enter the information for a proxy server.
+
+----------------------------------------------------------------------------------------------
+
+Q: Can I use different proxy servers for different sites?
+
+A: Yes, see http://lukemurphey.net/projects/splunk-website-monitoring/wiki/Using_multiple_proxies
+
+
+
+================================================
 Change History
 ================================================
 
@@ -49,4 +65,8 @@ Change History
 | 0.9     | Added support for custom root endpoints                                                                          |
 |         | Fixed issue where the searches defaulted to searching all-time                                                   |
 |         | Added site changes dashboard                                                                                     |
+|---------|------------------------------------------------------------------------------------------------------------------|
+| 1.0     | Added support for using multiple proxy servers                                                                   |
+|         | Added logging of the proxy server used when the ping was performed                                               |
+|         | Fixed issue where the titles of ping requests contained spaces were not shown in the interface correctly         |
 +---------+------------------------------------------------------------------------------------------------------------------+
