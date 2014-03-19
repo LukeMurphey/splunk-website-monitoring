@@ -9,7 +9,6 @@ import re
 import time
 
 from splunk.appserver.mrsparkle.lib.util import make_splunkhome_path
-sys.path.append(make_splunkhome_path(["etc", "apps", "SA-Utils", "lib"]))
 
 def setup_logger():
     """
