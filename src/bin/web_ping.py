@@ -15,6 +15,7 @@ from urlparse import urlparse
 import sys
 import time
 import os
+import splunk
 
 import httplib2
 from httplib2 import socks
@@ -179,7 +180,8 @@ class WebPing(ModularInput):
         args = [
                 Field("title", "Title", "A short description (typically just the domain name)", empty_allowed=False),
                 URLField("url", "URL", "The URL to connect to (must be be either HTTP or HTTPS protocol)", empty_allowed=False),
-                DurationField("interval", "Interval", "The interval defining how often to perform the check; can include time units (e.g. 15m for 15 minutes, 8h for 8 hours)", empty_allowed=False)
+                DurationField("interval", "Interval", "The interval defining how often to perform the check; can include time units (e.g. 15m for 15 minutes, 8h for 8 hours)", empty_allowed=False),
+                Field("configuration", "Configuration", "configuration", none_allowed=True, empty_allowed=True),
                 ]
         
         ModularInput.__init__( self, scheme_args, args )
@@ -252,7 +254,7 @@ class WebPing(ModularInput):
             
             # Perform the request
             with Timer() as timer:
-                response, content = http.request(url.geturl(), 'GET')
+                response, content = http.request( url.geturl(), 'GET')
                 
                 # Get the hash of the content
                 response_md5 = hashlib.md5(content).hexdigest()
@@ -285,7 +287,7 @@ class WebPing(ModularInput):
         # Finally, return the result
         return cls.Result(request_time, response_code, timed_out, url.geturl(), response_size, response_md5, response_sha224)
         
-    def output_result(self, result, stanza, title, index=None, source=None, sourcetype=None, unbroken=True, close=True, out=sys.stdout ):
+    def output_result(self, result, stanza, title, index=None, source=None, sourcetype=None, unbroken=True, close=True, proxy_server=None, proxy_port=None, proxy_user=None, proxy_type=None, out=sys.stdout ):
         """
         Create a string representing the event.
         
@@ -308,6 +310,17 @@ class WebPing(ModularInput):
                 'title': title,
                 'url': result.url
                 }
+        
+        # Log proxy server information
+        if proxy_server is not None:
+            data['proxy_server'] = proxy_server
+            data['proxy_type'] = proxy_type
+            
+            if proxy_user is not None and len(proxy_user) > 0:
+                data['proxy_user'] = proxy_user
+            
+            if proxy_port is not None:
+                data['proxy_port'] = proxy_port
         
         # Add the MD5 of the response of available
         if result.response_md5 is not None:
@@ -495,36 +508,57 @@ class WebPing(ModularInput):
         else:
             return False
         
-    def get_proxy_config(self, session_key):
+    def get_proxy_config(self, session_key, stanza="default"):
         """
         Get the proxy configuration
+        
+        Arguments:
+        session_key -- The session key to use when connecting to the REST API
+        stanza -- The stanza to get the proxy information from (defaults to "default")
         """
         
-        website_monitoring_config = WebsiteMonitoringConfig.get( WebsiteMonitoringConfig.build_id( "default", "website_monitoring", "nobody"), sessionKey=session_key )
+        # If the stanza is empty, then just use the default
+        if stanza is None or stanza.strip() == "":
+            stanza = "default"
         
-        return  website_monitoring_config.proxy_type, website_monitoring_config.proxy_server, website_monitoring_config.proxy_port, website_monitoring_config.proxy_user, website_monitoring_config.proxy_password
+        # Get the proxy configuration
+        try:
+            website_monitoring_config = WebsiteMonitoringConfig.get( WebsiteMonitoringConfig.build_id( stanza, "website_monitoring", "nobody"), sessionKey=session_key )
+            
+            logger.debug("Proxy information loaded, stanza=%s", stanza)
+            
+        except splunk.ResourceNotFound:
+            logger.error("Unable to find the proxy configuration for the specified configuration stanza=%s", stanza)
+            raise
+        
+        return website_monitoring_config.proxy_type, website_monitoring_config.proxy_server, website_monitoring_config.proxy_port, website_monitoring_config.proxy_user, website_monitoring_config.proxy_password
         
     def run(self, stanza, cleaned_params, input_config):
         
         # Make the parameters
-        interval   = cleaned_params["interval"]
-        title      = cleaned_params["title"]
-        url        = cleaned_params["url"]
-        timeout    = self.timeout
-        sourcetype = "web_ping"
-        index      = cleaned_params["index"]
-        source     = stanza
+        interval      = cleaned_params["interval"]
+        title         = cleaned_params["title"]
+        url           = cleaned_params["url"]
+        timeout       = self.timeout
+        sourcetype    = "web_ping"
+        index         = cleaned_params["index"]
+        conf_stanza   = cleaned_params.get("configuration", None)
+        source        = stanza
         
         if self.needs_another_run( input_config.checkpoint_dir, stanza, interval ):
             
             # Get the proxy configuration
-            proxy_type, proxy_server, proxy_port, proxy_user, proxy_password = self.get_proxy_config(input_config.session_key)
+            try:
+                proxy_type, proxy_server, proxy_port, proxy_user, proxy_password = self.get_proxy_config(input_config.session_key, conf_stanza)
+            except splunk.ResourceNotFound:
+                logger.error("The proxy configuration could not be loaded. The execution will be skipped for this input with stanza=%s", stanza)
+                return
             
             # Perform the ping
             result = WebPing.ping(url, timeout, proxy_type, proxy_server, proxy_port, proxy_user, proxy_password)
             
             # Send the event
-            self.output_result( result, stanza, title, index=index, source=source, sourcetype=sourcetype, unbroken=True, close=True )
+            self.output_result( result, stanza, title, index=index, source=source, sourcetype=sourcetype, unbroken=True, close=True, proxy_server=proxy_server, proxy_port=proxy_port, proxy_user=proxy_user, proxy_type=proxy_type )
             
             # Save the checkpoint so that we remember when we last 
             self.save_checkpoint(input_config.checkpoint_dir, stanza, int(time.time()) )

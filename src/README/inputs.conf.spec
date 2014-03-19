@@ -9,3 +9,6 @@ interval = <value>
 
 title = <value>
 * A title of the URL
+
+configuration = <value>
+* Indicates which stanza in website_monitoring.conf to get the configuration information from (optional)

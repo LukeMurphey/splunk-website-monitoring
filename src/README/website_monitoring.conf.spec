@@ -11,7 +11,8 @@
 # located at http://docs.splunk.com/Documentation/latest/Admin/Aboutconfigurationfiles
 
 #****************************************************************************** 
-# These options must be set under an [default] entry.
+# These options must be set under an [default] entry to apply to all inputs
+# Otherwise, the stanza name must be associated with the individual input.
 #****************************************************************************** 
 proxy_server = <string>
     * Defines the proxy server that will be used.
