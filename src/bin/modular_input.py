@@ -27,11 +27,14 @@ def setup_logger():
     
     return logger
 
-logger = setup_logger()
+# Make a logger unless it already exists
+try:
+    logger
+except NameError:
+    logger = setup_logger()
 
 class FieldValidationException(Exception):
     pass
-
 
 class Field(object):
     """
@@ -466,6 +469,70 @@ class ModularInput():
         # Return the content as a string WITHOUT the XML header.
         return doc.documentElement.toxml()
     
+    def create_event_string(self, data_dict, stanza, sourcetype, source, index, unbroken=False, close=False ):
+        """
+        Create a string representing the event.
+        
+        Argument:
+        data_dict -- A dictionary containing the fields
+        stanza -- The stanza used for the input
+        sourcetype -- The sourcetype
+        source -- The source field value
+        index -- The index to send the event to
+        unbroken -- 
+        close -- 
+        """
+        
+        # Make the content of the event
+        data_str   = ''
+        
+        for k, v in data_dict.items():
+            data_str += ' %s=%s' % (k, v)
+        
+        # Make the event
+        event_dict = {'stanza': stanza,
+                      'data' : data_str}
+        
+        
+        if index is not None:
+            event_dict['index'] = index
+            
+        if sourcetype is not None:
+            event_dict['sourcetype'] = sourcetype
+            
+        if source is not None:
+            event_dict['source'] = source
+        
+        event = self._create_event(self.document, 
+                                   params=event_dict,
+                                   stanza=stanza,
+                                   unbroken=False,
+                                   close=False)
+        
+        # If using unbroken events, the last event must have been 
+        # added with a "</done>" tag.
+        return self._print_event(self.document, event)
+        
+    def output_event(self, data_dict, stanza, index=None, sourcetype=None, source=None, unbroken=False, close=False, out=sys.stdout ):
+        """
+        Output the given even so that Splunk can see it.
+        
+        Arguments:
+        data_dict -- A dictionary containing the fields
+        stanza -- The stanza used for the input
+        sourcetype -- The sourcetype
+        source -- The source to use
+        index -- The index to send the event to
+        unbroken -- 
+        close -- 
+        out -- The stream to send the event to (defaults to standard output)
+        """
+        
+        output = self.create_event_string(data_dict, stanza, sourcetype, source, index, unbroken, close)
+        
+        out.write(output)
+        out.flush()
+    
     def __init__(self, scheme_args, args=None, sleep_interval=5):
         """
         Set up the modular input.
@@ -477,8 +544,17 @@ class ModularInput():
         sleep_interval -- How often to sleep between runs
         """
         
+        # Setup defaults
+        default_scheme_args = {
+                               "use_external_validation" : "true",
+                               "streaming_mode" : "xml",
+                               "use_single_instance" : "true"
+        }
+        
+        scheme_args = dict(default_scheme_args.items() + scheme_args.items())
+        
         # Set the scheme arguments.
-        for arg in ['title', 'description', 'use_external_validation', 'streaming_mode', 'use_single_instance']:
+        for arg in scheme_args:
             setattr(self, arg, self._is_valid_param(arg, scheme_args.get(arg)))
                 
         if args is None:
