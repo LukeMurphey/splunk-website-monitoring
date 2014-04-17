@@ -69,4 +69,6 @@ Change History
 | 1.0     | Added support for using multiple proxy servers                                                                   |
 |         | Added logging of the proxy server used when the ping was performed                                               |
 |         | Fixed issue where the titles of ping requests contained spaces were not shown in the interface correctly         |
+|---------|------------------------------------------------------------------------------------------------------------------|
+| 1.0.1   | Fixed issue where the proxy configuration option was set as required                                             |
 +---------+------------------------------------------------------------------------------------------------------------------+
