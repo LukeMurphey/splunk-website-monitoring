@@ -52,7 +52,7 @@ class Field(object):
         
         return Field.DATA_TYPE_STRING 
     
-    def __init__(self, name, title, description, none_allowed=False, empty_allowed=True):
+    def __init__(self, name, title, description, none_allowed=False, empty_allowed=True, required_on_create=None, required_on_edit=None):
         """
         Create the field.
         
@@ -62,7 +62,18 @@ class Field(object):
         description -- Set the human readable description of the field (e.g. "The IP or domain name of the database server")
         none_allowed -- Is a value of none allowed?
         empty_allowed -- Is an empty string allowed?
+        required_on_create -- Is this field required when creating?
+        required_on_edit -- Is this field required when editing?
         """
+        
+        # Try to set required_on_create and required_on_edit to sane defaults if not defined
+        if required_on_create is None and none_allowed:
+            required_on_create = False
+        elif required_on_create is None and not none_allowed:
+            required_on_create = True
+                
+        if required_on_edit is None and required_on_create is not None:
+            required_on_edit = required_on_create
         
         if name is None:
             raise ValueError("The name parameter cannot be none")
@@ -88,6 +99,8 @@ class Field(object):
         
         self.none_allowed = none_allowed
         self.empty_allowed = empty_allowed
+        self.required_on_create = required_on_create
+        self.required_on_edit = required_on_edit
     
     def to_python(self, value):
         """
@@ -725,6 +738,20 @@ class ModularInput():
             
             element_data_type_text = doc.createTextNode(arg.get_data_type())
             element_data_type.appendChild(element_data_type_text)
+            
+            # Create the required_on_create element
+            element_required_on_create = doc.createElement("required_on_create")
+            element_arg.appendChild(element_required_on_create)
+            
+            element_required_on_create_text = doc.createTextNode("true" if arg.required_on_create else "false")
+            element_required_on_create.appendChild(element_required_on_create_text)
+
+            # Create the required_on_save element
+            element_required_on_edit = doc.createElement("required_on_edit")
+            element_arg.appendChild(element_required_on_edit)
+            
+            element_required_on_edit_text = doc.createTextNode("true" if arg.required_on_edit else "false")
+            element_required_on_edit.appendChild(element_required_on_edit_text)
         
     def do_validation(self, in_stream=sys.stdin):
         """

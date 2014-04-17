@@ -181,7 +181,7 @@ class WebPing(ModularInput):
                 Field("title", "Title", "A short description (typically just the domain name)", empty_allowed=False),
                 URLField("url", "URL", "The URL to connect to (must be be either HTTP or HTTPS protocol)", empty_allowed=False),
                 DurationField("interval", "Interval", "The interval defining how often to perform the check; can include time units (e.g. 15m for 15 minutes, 8h for 8 hours)", empty_allowed=False),
-                Field("configuration", "Configuration", "configuration", none_allowed=True, empty_allowed=True),
+                Field("configuration", "Configuration", "Defines a specific proxy configuration to use (in website_monitoring.spec) if not using the default; only used if you want to have multiple proxy servers", none_allowed=True, empty_allowed=True),
                 ]
         
         ModularInput.__init__( self, scheme_args, args )
