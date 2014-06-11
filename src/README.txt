@@ -71,4 +71,6 @@ Change History
 |         | Fixed issue where the titles of ping requests contained spaces were not shown in the interface correctly         |
 |---------|------------------------------------------------------------------------------------------------------------------|
 | 1.0.1   | Fixed issue where the proxy configuration option was set as required                                             |
+|---------|------------------------------------------------------------------------------------------------------------------|
+| 1.0.2   | Status overview page now automatically starts the search                                                         |
 +---------+------------------------------------------------------------------------------------------------------------------+
