@@ -476,8 +476,8 @@ class WebPing(ModularInput):
         title         = cleaned_params["title"]
         url           = cleaned_params["url"]
         timeout       = self.timeout
-        sourcetype    = "web_ping"
-        index         = cleaned_params["index"]
+        sourcetype    = cleaned_params.get("sourcetype", "web_ping")
+        index         = cleaned_params.get("index", "default")
         conf_stanza   = cleaned_params.get("configuration", None)
         source        = stanza
         
