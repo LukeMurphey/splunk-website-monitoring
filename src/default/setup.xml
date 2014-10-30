@@ -4,7 +4,7 @@
          endpoint="admin/website_monitoring" entity="default">
 
 
-      <text>Setup the Website Monitoring Add-on.
+      <text>Setup the Website Monitoring App.
           
           <![CDATA[
           <style>
