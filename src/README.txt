@@ -73,4 +73,7 @@ Change History
 | 1.0.1   | Fixed issue where the proxy configuration option was set as required                                             |
 |---------|------------------------------------------------------------------------------------------------------------------|
 | 1.0.2   | Status overview page now automatically starts the search                                                         |
+|---------|------------------------------------------------------------------------------------------------------------------|
+| 1.0.3   | Fixed issue where setting and then clearing the sourcetype or index caused an error                              |
+|         | Updated icon to work with Splunk 6.2                                                                             |
 +---------+------------------------------------------------------------------------------------------------------------------+
