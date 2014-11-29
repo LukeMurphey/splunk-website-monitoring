@@ -287,7 +287,7 @@ class WebPing(ModularInput):
         # Finally, return the result
         return cls.Result(request_time, response_code, timed_out, url.geturl(), response_size, response_md5, response_sha224)
         
-    def output_result(self, result, stanza, title, index=None, source=None, sourcetype=None, unbroken=True, close=True, proxy_server=None, proxy_port=None, proxy_user=None, proxy_type=None, out=sys.stdout ):
+    def output_result(self, result, stanza, title, index=None, source=None, sourcetype=None, host=None, unbroken=True, close=True, proxy_server=None, proxy_port=None, proxy_user=None, proxy_type=None, out=sys.stdout ):
         """
         Create a string representing the event.
         
@@ -334,69 +334,7 @@ class WebPing(ModularInput):
         if result.response_size is not None:
             data['content_size'] = result.response_size
                 
-        return self.output_event(data, stanza, index=index, source=source, sourcetype=sourcetype, unbroken=unbroken, close=close, out=out)
-        
-    @staticmethod
-    def get_file_path( checkpoint_dir, stanza ):
-        """
-        Get the path to the checkpoint file.
-        
-        Arguments:
-        checkpoint_dir -- The directory where checkpoints ought to be saved
-        stanza -- The stanza of the input being used
-        """
-        
-        return os.path.join( checkpoint_dir, hashlib.md5(stanza).hexdigest() + ".json" )
-        
-    @classmethod
-    def last_ran( cls, checkpoint_dir, stanza ):
-        """
-        Determines the date that the analysis was last performed for the given input (denoted by the stanza name).
-        
-        Arguments:
-        checkpoint_dir -- The directory where checkpoints ought to be saved
-        stanza -- The stanza of the input being used
-        """
-        
-        fp = None
-        
-        try:
-            fp = open( cls.get_file_path(checkpoint_dir, stanza) )
-            checkpoint_dict = json.load(fp)
-                
-            return checkpoint_dict['last_run']
-    
-        finally:
-            if fp is not None:
-                fp.close()
-        
-    @classmethod
-    def needs_another_run(cls, checkpoint_dir, stanza, interval, cur_time=None):
-        """
-        Determines if the given input (denoted by the stanza name) ought to be executed.
-        
-        Arguments:
-        checkpoint_dir -- The directory where checkpoints ought to be saved
-        stanza -- The stanza of the input being used
-        interval -- The frequency that the analysis ought to be performed
-        cur_time -- The current time (will be automatically determined if not provided)
-        """
-        
-        try:
-            last_ran = cls.last_ran(checkpoint_dir, stanza)
-            
-            return cls.is_expired(last_ran, interval, cur_time)
-            
-        except IOError as e:
-            # The file likely doesn't exist
-            return True
-        
-        except ValueError as e:
-            # The file could not be loaded
-            return True
-        
-        # Default return value
-        return True
+        return self.output_event(data, stanza, index=index, host=host, source=source, sourcetype=sourcetype, unbroken=unbroken, close=close, out=out)
     
     @classmethod
     def save_checkpoint(cls, checkpoint_dir, stanza, last_run):
@@ -408,41 +346,8 @@ class WebPing(ModularInput):
         stanza -- The stanza of the input being used
         last_run -- The time when the analysis was last performed
         """
-        
-        fp = None
-        
-        try:
-            fp = open( cls.get_file_path(checkpoint_dir, stanza), 'w' )
-            
-            d = { 'last_run' : last_run }
-            
-            json.dump(d, fp)
-            
-        except Exception:
-            logger.exception("Failed to save checkpoint directory") 
-            
-        finally:
-            if fp is not None:
-                fp.close()
-    
-    @staticmethod
-    def is_expired( last_run, interval, cur_time=None ):
-        """
-        Indicates if the last run time is expired based .
-        
-        Arguments:
-        last_run -- The time that the analysis was last done
-        interval -- The interval that the analysis ought to be done (as an integer)
-        cur_time -- The current time (will be automatically determined if not provided)
-        """
-        
-        if cur_time is None:
-            cur_time = time.time()
-        
-        if (last_run + interval) < cur_time:
-            return True
-        else:
-            return False
+                
+        cls.save_checkpoint_data(checkpoint_dir, stanza, { 'last_run' : last_run })
         
     def get_proxy_config(self, session_key, stanza="default"):
         """
@@ -477,6 +382,7 @@ class WebPing(ModularInput):
         url           = cleaned_params["url"]
         timeout       = self.timeout
         sourcetype    = cleaned_params.get("sourcetype", "web_ping")
+        host          = cleaned_params.get("host", None)
         index         = cleaned_params.get("index", "default")
         conf_stanza   = cleaned_params.get("configuration", None)
         source        = stanza
@@ -494,7 +400,7 @@ class WebPing(ModularInput):
             result = WebPing.ping(url, timeout, proxy_type, proxy_server, proxy_port, proxy_user, proxy_password)
             
             # Send the event
-            self.output_result( result, stanza, title, index=index, source=source, sourcetype=sourcetype, unbroken=True, close=True, proxy_server=proxy_server, proxy_port=proxy_port, proxy_user=proxy_user, proxy_type=proxy_type )
+            self.output_result( result, stanza, title, host=host, index=index, source=source, sourcetype=sourcetype, unbroken=True, close=True, proxy_server=proxy_server, proxy_port=proxy_port, proxy_user=proxy_user, proxy_type=proxy_type )
             
             # Save the checkpoint so that we remember when we last 
             self.save_checkpoint(input_config.checkpoint_dir, stanza, int(time.time()) )
