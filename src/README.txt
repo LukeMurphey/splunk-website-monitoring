@@ -76,4 +76,8 @@ Change History
 |---------|------------------------------------------------------------------------------------------------------------------|
 | 1.0.3   | Fixed issue where setting and then clearing the sourcetype or index caused an error                              |
 |         | Updated icon to work with Splunk 6.2                                                                             |
+|---------|------------------------------------------------------------------------------------------------------------------|
+| 1.0.4   | Fixed issue where setting the host field on the config page did not cause it to be included in the events        |
+|         | Fixed issue where the input would not stay on the interval because it included processing time in the interval   |
+|         | Fixed issue where the modular input logs were not sourcetyped correctly                                          |
 +---------+------------------------------------------------------------------------------------------------------------------+
