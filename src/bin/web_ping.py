@@ -317,8 +317,11 @@ class WebPing(ModularInput):
             # Send the event
             self.output_result( result, stanza, title, host=host, index=index, source=source, sourcetype=sourcetype, unbroken=True, close=True, proxy_server=proxy_server, proxy_port=proxy_port, proxy_user=proxy_user, proxy_type=proxy_type )
             
+            # Get the time that the input last ran
+            last_ran = self.last_ran(input_config.checkpoint_dir, stanza)
+            
             # Save the checkpoint so that we remember when we last 
-            self.save_checkpoint(input_config.checkpoint_dir, stanza, int(time.time()) )
+            self.save_checkpoint(input_config.checkpoint_dir, stanza, self.get_non_deviated_last_run(last_ran, interval) )
         
             
 if __name__ == '__main__':
