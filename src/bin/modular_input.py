@@ -1019,23 +1019,19 @@ class ModularInput():
         return True
     
     @classmethod
-    def get_file_path(cls, checkpoint_dir, stanza, use_md5=True):
+    def get_file_path(cls, checkpoint_dir, stanza):
         """
         Get the path to the checkpoint file.
         
         Arguments:
         checkpoint_dir -- The directory where checkpoints ought to be saved
         stanza -- The stanza of the input being used
-        use_md5 -- Use MD5 for the file path
         """
         
-        if use_md5:
-            return os.path.join( checkpoint_dir, hashlib.md5(stanza).hexdigest() + ".json" )
-        else:
-            return os.path.join( checkpoint_dir, hashlib.sha224(stanza).hexdigest() + ".json" )
+        return os.path.join( checkpoint_dir, hashlib.sha224(stanza).hexdigest() + ".json" )
     
     @classmethod
-    def get_checkpoint_data(cls, checkpoint_dir, stanza="(undefined)", throw_errors=False, use_md5_for_checkpoint_path=True):
+    def get_checkpoint_data(cls, checkpoint_dir, stanza="(undefined)", throw_errors=False):
         """
         Gets the checkpoint for this input (if it exists)
         
@@ -1043,13 +1039,12 @@ class ModularInput():
         checkpoint_dir -- The directory where checkpoints ought to be saved
         stanza -- The stanza of the input being used
         throw_errors -- If false, then None will be returned if the data could not be loaded
-        use_md5_for_checkpoint_path -- Use MD5 for the checkpoint file path
         """
         
         fp = None
         
         try:
-            fp = open( cls.get_file_path(checkpoint_dir, stanza, use_md5_for_checkpoint_path) )
+            fp = open( cls.get_file_path(checkpoint_dir, stanza) )
             checkpoint_dict = json.load(fp)
             
             return checkpoint_dict
@@ -1102,7 +1097,7 @@ class ModularInput():
         return last_ran_derived
              
     @classmethod   
-    def save_checkpoint_data(cls, checkpoint_dir, stanza, data, use_md5_for_checkpoint_path=True):
+    def save_checkpoint_data(cls, checkpoint_dir, stanza, data):
         """
         Save the checkpoint state.
         
@@ -1110,13 +1105,12 @@ class ModularInput():
         checkpoint_dir -- The directory where checkpoints ought to be saved
         stanza -- The stanza of the input being used
         data -- A dictionary with the data to save
-        use_md5_for_checkpoint_path -- Use MD5 for the checkpoint file path
         """
         
         fp = None
         
         try:
-            fp = open( cls.get_file_path(checkpoint_dir, stanza, use_md5_for_checkpoint_path), 'w' )
+            fp = open( cls.get_file_path(checkpoint_dir, stanza), 'w' )
             
             json.dump(data, fp)
             

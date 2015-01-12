@@ -13,6 +13,7 @@ import socket
 import sys
 import time
 import splunk
+import os
 
 import httplib2
 from httplib2 import socks
@@ -250,6 +251,19 @@ class WebPing(ModularInput):
             data['content_size'] = result.response_size
                 
         return self.output_event(data, stanza, index=index, host=host, source=source, sourcetype=sourcetype, unbroken=unbroken, close=close, out=out)
+    
+    @classmethod
+    def get_file_path( cls, checkpoint_dir, stanza ):
+        """
+        Get the path to the checkpoint file.
+        
+        Arguments:
+        checkpoint_dir -- The directory where checkpoints ought to be saved
+        stanza -- The stanza of the input being used
+        """
+        
+        return os.path.join( checkpoint_dir, hashlib.md5(stanza).hexdigest() + ".json" )
+       
     
     @classmethod
     def save_checkpoint(cls, checkpoint_dir, stanza, last_run):
