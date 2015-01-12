@@ -80,4 +80,7 @@ Change History
 | 1.0.4   | Fixed issue where setting the host field on the config page did not cause it to be included in the events        |
 |         | Fixed issue where the input would not stay on the interval because it included processing time in the interval   |
 |         | Fixed issue where the modular input logs were not sourcetyped correctly                                          |
+|---------|------------------------------------------------------------------------------------------------------------------|
+| 1.0.5   | Fixed issue where inputs might not have worked correctly                                                         |
+|         | Enhanced logging for when interval gap is too large and when checkpoint file could not be found                  |
 +---------+------------------------------------------------------------------------------------------------------------------+
