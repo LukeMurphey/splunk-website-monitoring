@@ -304,7 +304,7 @@ class URLField(Field):
     def to_python(self, value):
         Field.to_python(self, value)
         
-        return URLField.parse_url(value, self.name)
+        return URLField.parse_url(value.strip(), self.name)
     
     def to_string(self, value):
         return value.geturl()
@@ -966,7 +966,9 @@ class ModularInput():
         if cur_time is None:
             cur_time = time.time()
         
-        if (last_run + interval) < cur_time:
+        if last_run is None:
+            return True
+        elif (last_run + interval) < cur_time:
             return True
         else:
             return False
@@ -1017,41 +1019,53 @@ class ModularInput():
         return True
     
     @classmethod
-    def get_file_path(cls, checkpoint_dir, stanza):
+    def get_file_path(cls, checkpoint_dir, stanza, use_md5=True):
         """
         Get the path to the checkpoint file.
         
         Arguments:
         checkpoint_dir -- The directory where checkpoints ought to be saved
         stanza -- The stanza of the input being used
+        use_md5 -- Use MD5 for the file path
         """
         
-        return os.path.join( checkpoint_dir, hashlib.sha224(stanza).hexdigest() + ".json" )
+        if use_md5:
+            return os.path.join( checkpoint_dir, hashlib.md5(stanza).hexdigest() + ".json" )
+        else:
+            return os.path.join( checkpoint_dir, hashlib.sha224(stanza).hexdigest() + ".json" )
     
     @classmethod
-    def get_checkpoint_data(cls, checkpoint_dir, stanza):
+    def get_checkpoint_data(cls, checkpoint_dir, stanza, throw_errors=False, use_md5_for_checkpoint_path=True):
         """
         Gets the checkpoint for this input (if it exists)
         
         Arguments:
         checkpoint_dir -- The directory where checkpoints ought to be saved
         stanza -- The stanza of the input being used
+        throw_errors -- If false, then None will be returned if the data could not be loaded
+        use_md5_for_checkpoint_path -- Use MD5 for the checkpoint file path
         """
         
         fp = None
         
         try:
-            fp = open( cls.get_file_path(checkpoint_dir, stanza) )
+            fp = open( cls.get_file_path(checkpoint_dir, stanza, use_md5_for_checkpoint_path) )
             checkpoint_dict = json.load(fp)
             
             return checkpoint_dict
-    
+        
+        except IOError:
+            if throw_errors:
+                raise
+            else:
+                return None
+        
         finally:
             if fp is not None:
                 fp.close()
              
     @classmethod
-    def get_non_deviated_last_run(cls, last_ran, interval):
+    def get_non_deviated_last_run(cls, last_ran, interval, stanza):
         """
         This method will return a last_run time that doesn't carry over the processing time.
         If you used the current time and the script took 5 seconds to run, then next run will actually be 5 seconds after it should have been.
@@ -1061,7 +1075,12 @@ class ModularInput():
         Arguments:
         interval -- The execution interval
         last_ran -- When the input last ran (Unix epoch).
+        stanza -- The stanza that this is for
         """
+        
+        # If this is the first run, then set it to the current time
+        if last_ran is None:
+            return time.time()
         
         # We don't want the input to interval to slide by including the processing time in the interval. In other words, if the interval is 60 and it takes 5 seconds to process,
         # then we don't just want to set the last_run to now because then the interval would actually be 65 seconds. So, let's assume that the processing time was 0 and we are
@@ -1077,13 +1096,13 @@ class ModularInput():
             # To catch up, we'll set it to the current time
             last_ran_derived = time.time()
             
-            logger.info("Previous run was too far in the past (gap=%r) and thus some executions of the input have been missed", last_ran_derived-last_ran)
+            logger.info("Previous run was too far in the past (gap=%r) and thus some executions of the input have been missed (stanza=%s)", last_ran_derived-last_ran, stanza)
             
         #logger.info("Calculated non-deviated last_ran=%r from previous_last_ran=%r", last_ran_derived, last_ran)
         return last_ran_derived
              
     @classmethod   
-    def save_checkpoint_data(cls, checkpoint_dir, stanza, data):
+    def save_checkpoint_data(cls, checkpoint_dir, stanza, data, use_md5_for_checkpoint_path=True):
         """
         Save the checkpoint state.
         
@@ -1091,12 +1110,13 @@ class ModularInput():
         checkpoint_dir -- The directory where checkpoints ought to be saved
         stanza -- The stanza of the input being used
         data -- A dictionary with the data to save
+        use_md5_for_checkpoint_path -- Use MD5 for the checkpoint file path
         """
         
         fp = None
         
         try:
-            fp = open( cls.get_file_path(checkpoint_dir, stanza), 'w' )
+            fp = open( cls.get_file_path(checkpoint_dir, stanza, use_md5_for_checkpoint_path), 'w' )
             
             json.dump(data, fp)
             
