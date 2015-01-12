@@ -1035,7 +1035,7 @@ class ModularInput():
             return os.path.join( checkpoint_dir, hashlib.sha224(stanza).hexdigest() + ".json" )
     
     @classmethod
-    def get_checkpoint_data(cls, checkpoint_dir, stanza, throw_errors=False, use_md5_for_checkpoint_path=True):
+    def get_checkpoint_data(cls, checkpoint_dir, stanza="(undefined)", throw_errors=False, use_md5_for_checkpoint_path=True):
         """
         Gets the checkpoint for this input (if it exists)
         
