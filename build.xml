@@ -197,6 +197,8 @@
             <arg line="restart" />
             <arg line="splunkweb" />
             <arg line="--accept-license" />
+            <arg line="-auth" />
+            <arg line="admin:changeme" />
         </exec>
     </target>
 	
