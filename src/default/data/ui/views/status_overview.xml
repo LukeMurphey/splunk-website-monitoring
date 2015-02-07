@@ -13,13 +13,13 @@
 	</row>
 	
 	<fieldset autoRun="true">
-		<input type="time">
+		<input type="time" searchWhenChanged="true">
 			<default>Last 24 hours</default>
 		</input>
     	<input type="checkbox" token="only_enabled" searchWhenChanged="true">
     		<label></label>
       		<choice value="`filter_disabled`">Include only enabled inputs</choice>
-      		<default>`filter_disabled`</default>
+      		<default></default>
       		<valuePrefix> </valuePrefix>
     	</input>
 	</fieldset>
