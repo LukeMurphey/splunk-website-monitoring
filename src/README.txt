@@ -83,4 +83,6 @@ Change History
 |---------|------------------------------------------------------------------------------------------------------------------|
 | 1.0.5   | Fixed issue where inputs might not have worked correctly                                                         |
 |         | Enhanced logging for when interval gap is too large and when checkpoint file could not be found                  |
+|---------|------------------------------------------------------------------------------------------------------------------|
+| 1.1     | Added ability to filter out disabled or removed inputs from the status overview page                             |
 +---------+------------------------------------------------------------------------------------------------------------------+
