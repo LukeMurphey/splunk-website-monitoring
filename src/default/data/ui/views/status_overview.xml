@@ -16,12 +16,22 @@
 		<input type="time" searchWhenChanged="true">
 			<default>Last 24 hours</default>
 		</input>
+		
+		<input type="dropdown" token="only_enabled">
+		    <choice value=" ">Include all inputs</choice>
+		    <choice value="`filter_disabled`">Include only enabled inputs</choice>
+		    <label></label>
+		    <default> </default>
+		</input>
+		<!-- The checkbox only works on 6.1+  -->
+		<!--
     	<input type="checkbox" token="only_enabled" searchWhenChanged="true">
     		<label></label>
       		<choice value="`filter_disabled`">Include only enabled inputs</choice>
       		<default></default>
       		<valuePrefix> </valuePrefix>
     	</input>
+    	-->
 	</fieldset>
 	 
 	<!--
