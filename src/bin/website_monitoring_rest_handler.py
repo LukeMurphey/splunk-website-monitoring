@@ -164,15 +164,14 @@ class HostFieldValidator(StandardFieldValidator):
         return value
         
     def is_valid_hostname(self, hostname):
-        if len(hostname) > 255:
+        
+        ip_address_re = re.compile("^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$");
+        hostname_re = re.compile("^(([a-zA-Z0-9_]|[a-zA-Z0-9_][a-zA-Z0-9\-_]*[a-zA-Z0-9_])\.)*([A-Za-z0-9_]|[A-Za-z0-9_][A-Za-z0-9\-_]*[A-Za-z0-9_])$");
+        
+        if ip_address_re.match(hostname) or hostname_re.match(hostname):
+            return True
+        else:
             return False
-        
-        if hostname[-1] == ".":
-            hostname = hostname[:-1] # strip exactly one dot from the right, if present
-            
-        allowed = re.compile("(?!-)[A-Z\d-]{1,63}(?<!-)$", re.IGNORECASE)
-        
-        return all(allowed.match(x) for x in hostname.split("."))
     
 class ProxyTypeFieldValidator(StandardFieldValidator):
     """
@@ -541,4 +540,5 @@ class WebsiteMonitoringRestHandler(admin.MConfigHandler):
             return default_value
       
 # initialize the handler
-admin.init(WebsiteMonitoringRestHandler, admin.CONTEXT_NONE)
+if __name__ == "__main__":
+    admin.init(WebsiteMonitoringRestHandler, admin.CONTEXT_NONE)

@@ -10,6 +10,18 @@ sys.path.append( os.path.join("..", "src", "bin") )
 
 from web_ping import URLField, DurationField, WebPing
 from modular_input import Field, FieldValidationException
+from website_monitoring_rest_handler import HostFieldValidator
+
+class TestHostFieldValidator(unittest.TestCase):
+    
+    def test_underscore_allowed(self):
+        # http://lukemurphey.net/issues/1002
+        # http://answers.splunk.com/answers/233571/website-monitoring-is-not-working-with-proxy-setup.html
+        
+        validator = HostFieldValidator()
+        
+        self.assertTrue(validator.is_valid_hostname("my_proxy.localhost.com"))
+    
 
 class TestURLField(unittest.TestCase):
     
@@ -122,3 +134,6 @@ class TestWebPing(unittest.TestCase):
         web_ping.output_result(result, "stanza", "title", unbroken=True, close=True, out=out)
         
         self.assertTrue(out.getvalue().find("timed_out=True") >= 0)
+        
+if __name__ == '__main__':
+    unittest.main()
