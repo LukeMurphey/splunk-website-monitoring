@@ -85,4 +85,7 @@ Change History
 |         | Enhanced logging for when interval gap is too large and when checkpoint file could not be found                  |
 |---------|------------------------------------------------------------------------------------------------------------------|
 | 1.1     | Added ability to filter out disabled or removed inputs from the status overview page                             |
+|---------|------------------------------------------------------------------------------------------------------------------|
+| 1.1.1   | Fixed issue where proxy servers with underscores were not allowed                                                |
+|         | Website monitoring REST handler logs are now source-typed correctly                                              |
 +---------+------------------------------------------------------------------------------------------------------------------+
