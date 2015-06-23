@@ -58,7 +58,7 @@
 			
 		</macrodef>
 		
-   		<!-- Run git to get the revison number and date -->
+   		<!-- Run git to get the revision number and date -->
 		<get_build_info outputproperty="value.build.number" />
 		<get_build_info format="cD" outputproperty="value.build.date" />
 		
@@ -163,7 +163,7 @@
     <!-- ================================= 
           target: deploy
          ================================= -->
-    <target name="deploy" depends="setup_tmp_directory_for_deployment,populate_export_dir" description="Deploys the app to an instance of Splunk" >
+    <target name="deploy" depends="bump_splunk_if_necessary,setup_tmp_directory_for_deployment,populate_export_dir" description="Deploys the app to an instance of Splunk" >
         <echo>App ${value.build.appname} build ${value.build.number} deployed to ${export_dir}</echo>
     </target>
     
@@ -190,6 +190,62 @@
 	  	js_no_cache=True
 	  	</echo> 	
 	</target>
+	
+    <!-- ================================= 
+          target: is_appserver_up_to_date
+         ================================= -->
+    <target name="is_appserver_up_to_date" description="Determine if the code in the appserver directory of the Splunk install is outdated">
+    	
+    	<uptodate property="appserver_up_to_date">
+    		
+    		<!-- target should point to the source files -->
+    		<mapper type="glob" from="*" to="${value.deploy.splunk_home}/etc/apps/${value.build.appname}/appserver/*" />
+    		
+    		<!-- srcfiles should point to the deployed files -->
+    	    <srcfiles dir="${basedir}/${value.src.directory}/appserver/" includes="**/*" />
+    	</uptodate>
+	
+    </target>
+	
+    <!-- ================================= 
+          target: bump_splunk_if_necessary
+         ================================= -->
+    <target name="bump_splunk_if_necessary" unless="appserver_up_to_date" depends="is_appserver_up_to_date">
+    	<antcall target="bump_splunk" />
+    </target>
+	
+    <!-- ================================= 
+          target: bump_splunk
+         ================================= -->
+    <target name="bump_splunk" description="Bump Splunk">
+    	
+		<!-- Get the current value of bump -->
+    	<loadfile
+    	      property="value.deploy.bump"
+    	      srcFile="${value.deploy.splunk_home}/var/run/splunk/push-version.txt">
+    	      <filterchain>
+    	        <striplinebreaks/>
+    	      </filterchain>
+    	</loadfile>
+    	
+    	<!-- Increment the value -->
+    	<script language="javascript">
+    		var currentValue = parseInt(project.getProperty("value.deploy.bump"), 10);
+    		
+    		var newBump = currentValue + 1;
+    		project.setProperty("value.deploy.bump_updated", newBump);
+    	
+    	</script>
+    	
+    	<!-- Set the current value of bump -->
+    	<echo file="${value.deploy.splunk_home}/var/run/splunk/push-version.txt">${value.deploy.bump_updated}</echo>
+    	
+    	<echo>The push version was updated from ${value.deploy.bump} to ${value.deploy.bump_updated}</echo>
+    	
+    	<echo>Restarting Splunk's web interface...</echo>
+    	<antcall target="restart_splunk_web" />
+    	
+    </target>
 	
     <!-- ================================= 
           target: start_splunk
@@ -229,12 +285,10 @@
          ================================= -->
     <target name="deploy_and_refresh_splunk" description="Deploys the application and forces Splunk to refresh" depends="deploy,refresh_splunk" />
 	
-	
     <!-- ================================= 
           target: deploy_and_restart_splunk
          ================================= -->
     <target name="deploy_and_restart_splunk" description="Deploys the application and restarts Splunk" depends="deploy,restart_splunk" />
-	
 	
     <!-- ================================= 
           target: refresh_splunk
@@ -266,5 +320,4 @@
     	
     </target>
 
-    
 </project>
