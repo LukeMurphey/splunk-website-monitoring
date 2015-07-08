@@ -88,4 +88,7 @@ Change History
 |---------|------------------------------------------------------------------------------------------------------------------|
 | 1.1.1   | Fixed issue where proxy servers with underscores were not allowed                                                |
 |         | Website monitoring REST handler logs are now source-typed correctly                                              |
+|---------|------------------------------------------------------------------------------------------------------------------|
+| 1.1.2   | The dialog that tells users how to setup an input is now hidden if an input exists                               |
+|         | Failure to load checkpoint data due to corruption is now handled more gracefully                                 |
 +---------+------------------------------------------------------------------------------------------------------------------+
