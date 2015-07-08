@@ -100,7 +100,7 @@ class WebPing(ModularInput):
                 Field("configuration", "Configuration", "Defines a specific proxy configuration to use (in website_monitoring.spec) if not using the default; only used if you want to have multiple proxy servers", none_allowed=True, empty_allowed=True),
                 ]
         
-        ModularInput.__init__( self, scheme_args, args )
+        ModularInput.__init__( self, scheme_args, args, logger_name='web_availability_modular_input' )
         
         if timeout > 0:
             self.timeout = timeout
@@ -263,10 +263,8 @@ class WebPing(ModularInput):
         """
         
         return os.path.join( checkpoint_dir, hashlib.md5(stanza).hexdigest() + ".json" )
-       
     
-    @classmethod
-    def save_checkpoint(cls, checkpoint_dir, stanza, last_run):
+    def save_checkpoint(self, checkpoint_dir, stanza, last_run):
         """
         Save the checkpoint state.
         
@@ -276,7 +274,7 @@ class WebPing(ModularInput):
         last_run -- The time when the analysis was last performed
         """
                 
-        cls.save_checkpoint_data(checkpoint_dir, stanza, { 'last_run' : last_run })
+        self.save_checkpoint_data(checkpoint_dir, stanza, { 'last_run' : last_run })
         
     def get_proxy_config(self, session_key, stanza="default"):
         """

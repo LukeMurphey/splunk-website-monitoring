@@ -87,8 +87,9 @@ class TestWebPing(unittest.TestCase):
         self.assertEquals(result.timed_out, True)
         
     def test_save_checkpoint(self):
-        WebPing.save_checkpoint(self.tmp_dir, "web_ping://TextCritical.com", 100)
-        self.assertEquals( WebPing.last_ran(self.tmp_dir, "web_ping://TextCritical.com"), 100)
+        web_ping = WebPing()
+        web_ping.save_checkpoint(self.tmp_dir, "web_ping://TextCritical.com", 100)
+        self.assertEquals( web_ping.last_ran(self.tmp_dir, "web_ping://TextCritical.com"), 100)
         
     def test_is_expired(self):
         self.assertFalse( WebPing.is_expired(time.time(), 30) )
@@ -134,6 +135,19 @@ class TestWebPing(unittest.TestCase):
         web_ping.output_result(result, "stanza", "title", unbroken=True, close=True, out=out)
         
         self.assertTrue(out.getvalue().find("timed_out=True") >= 0)
+        
+    def test_bad_checkpoint(self):
+        
+        web_ping = WebPing()
+        
+        # Make sure the call does return the expected error (is attempting to load the data data)
+        with self.assertRaises(ValueError):
+            web_ping.get_checkpoint_data( os.path.join( self.get_test_dir(), "configs"), throw_errors=True )
+        
+        # Make sure the test returns None
+        data = web_ping.get_checkpoint_data( os.path.join( self.get_test_dir(), "configs", "web_ping://TextCritical.net") )
+        
+        self.assertEqual(data, None)
         
 if __name__ == '__main__':
     unittest.main()
