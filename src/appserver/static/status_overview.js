@@ -1,7 +1,7 @@
 require.config({
     paths: {
     	website_status_cell_renderer: '../app/website_monitoring/WebsiteStatusCellRenderer',
-    	info_message_view: '../app/insteon/js/views/InfoMessageView'
+    	info_message_view: '../app/website_monitoring/js/views/InfoMessageView'
     }
 });
 
