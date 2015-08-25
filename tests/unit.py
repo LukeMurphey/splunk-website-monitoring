@@ -183,7 +183,7 @@ class TestWebPing(unittest.TestCase):
         data = web_ping.get_checkpoint_data( os.path.join( self.get_test_dir(), "configs", "web_ping://TextCritical.net") )
         
         self.assertEqual(data, None)
-        
+    
     def test_hash(self):
         
         url_field = URLField( "test_ping", "title", "this is a test" )
@@ -194,7 +194,7 @@ class TestWebPing(unittest.TestCase):
         
         self.assertEquals(result.response_md5, '1f6c14189070f50c4c06ada640c14850') # This is 1f6c14189070f50c4c06ada640c14850 on disk
         self.assertEquals(result.response_sha224, 'deaf4c0062539c98b4e957712efcee6d42832fed2d803c2bbf984b23')
-        
+    
     def test_missing_servername(self):
         """
         Some web-servers require that the "Host" be included on SSL connections when the server is hosting multiple domains on the same IP.

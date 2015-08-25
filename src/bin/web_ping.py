@@ -9,14 +9,17 @@ import re
 import logging
 from logging import handlers
 import hashlib
-import socket
 import sys
 import time
 import splunk
 import os
 
-import httplib2
+#import httplib2
 from httplib2 import socks
+#import socks
+import socket
+
+import requests
 
 def setup_logger():
     """
@@ -130,7 +133,7 @@ class WebPing(ModularInput):
             return None
         
     @classmethod
-    def ping(cls, url, timeout=30, proxy_type=None, proxy_server=None, proxy_port=None, proxy_user=None, proxy_password=None):
+    def ping(cls, url, timeout=30, proxy_type=None, proxy_server=None, proxy_port=None, proxy_user=None, proxy_password=None, include_host_header=False):
         """
         Perform a ping to a website. Returns a WebPing.Result instance.
         
@@ -142,6 +145,7 @@ class WebPing(ModularInput):
         proxy_port -- The port on the proxy server to use.
         proxy_user -- The proxy server to use.
         proxy_password -- The port on the proxy server to use.
+        include_host_header -- Include the host header (necessary for servers that host multiple sites on the same server)
         """
         
         logger.debug('Performing ping, url="%s"', url.geturl())
@@ -151,10 +155,12 @@ class WebPing(ModularInput):
         
         # Setup the proxy info if so configured
         if resolved_proxy_type is not None and proxy_server is not None and len(proxy_server.strip()) > 0:
-            proxy_info = httplib2.ProxyInfo(resolved_proxy_type, proxy_server, proxy_port, proxy_user=proxy_user, proxy_pass=proxy_password)
+            socks.setdefaultproxy(resolved_proxy_type, proxy_server, proxy_port)
+            socket.socket = socks.socksocket
+            
         else:
             # No proxy is being used
-            proxy_info = None
+            pass
         
         request_time    = 0
         response_code   = 0
@@ -165,21 +171,20 @@ class WebPing(ModularInput):
         
         try:
             
-            # Make the HTTP object
-            http = httplib2.Http(proxy_info=proxy_info, timeout=timeout, disable_ssl_certificate_validation=True)
-            
             # Perform the request
             with Timer() as timer:
-                response, content = http.request( url.geturl(), 'GET')
+                
+                # Make the client
+                http = requests.get(url.geturl())
                 
                 # Get the hash of the content
-                response_md5 = hashlib.md5(content).hexdigest()
-                response_sha224 = hashlib.sha224(content).hexdigest()
+                response_md5 = hashlib.md5(http.text).hexdigest()
+                response_sha224 = hashlib.sha224(http.text).hexdigest()
                 
                 # Get the size of the content
-                response_size = len(content)
+                response_size = len(http.text)
                 
-            response_code = response.status    
+            response_code = http.status_code    
             request_time = timer.msecs
             
         # Handle time outs    
@@ -334,7 +339,6 @@ class WebPing(ModularInput):
             
             # Save the checkpoint so that we remember when we last 
             self.save_checkpoint(input_config.checkpoint_dir, stanza, self.get_non_deviated_last_run(last_ran, interval, stanza) )
-        
             
 if __name__ == '__main__':
     try:
