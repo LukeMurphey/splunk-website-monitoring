@@ -193,9 +193,9 @@ class WebPing(ModularInput):
             # Note that the connection timed out    
             timed_out = True
             
-        except socket.error as e:
+        except requests.exceptions.ConnectionError as e:
             
-            if e.errno in [60, 61]:
+            if e.args[0].reason.errno in [60, 61]:
                 timed_out = True
                 
         except socks.GeneralProxyError:
