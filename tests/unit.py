@@ -4,6 +4,7 @@ import os
 import time
 import shutil
 import tempfile
+import threading
 from StringIO import StringIO
 
 sys.path.append( os.path.join("..", "src", "bin") )
@@ -11,6 +12,8 @@ sys.path.append( os.path.join("..", "src", "bin") )
 from web_ping import URLField, DurationField, WebPing
 from modular_input import Field, FieldValidationException
 from website_monitoring_rest_handler import HostFieldValidator
+
+from test_web_server import get_server
 
 class TestHostFieldValidator(unittest.TestCase):
     
@@ -59,6 +62,38 @@ class TestDurationField(unittest.TestCase):
         self.assertRaises( FieldValidationException, lambda: duration_field.to_python("minute") )   
     
 class TestWebPing(unittest.TestCase):
+    
+    @classmethod
+    def setUpClass(cls):
+        
+        attempts = 0
+        cls.httpd = None
+        
+        sys.stdout.write("Waiting for web-server to start ...")
+        sys.stdout.flush()
+        
+        while cls.httpd is None and attempts < 20:
+            try:
+                cls.httpd = get_server(8888)
+                
+                print " Done"
+            except IOError:
+                cls.httpd = None
+                time.sleep(2)
+                attempts = attempts + 1
+                sys.stdout.write(".")
+                sys.stdout.flush()
+        
+        def start_server(httpd):
+            httpd.serve_forever()
+        
+        t = threading.Thread(target=start_server, args = (cls.httpd,))
+        t.daemon = True
+        t.start()
+        
+    @classmethod
+    def tearDownClass(cls):
+        cls.httpd.shutdown()
     
     def setUp(self):
         self.tmp_dir = tempfile.mkdtemp( prefix="TestWebPing" )
@@ -148,6 +183,32 @@ class TestWebPing(unittest.TestCase):
         data = web_ping.get_checkpoint_data( os.path.join( self.get_test_dir(), "configs", "web_ping://TextCritical.net") )
         
         self.assertEqual(data, None)
+        
+    def test_hash(self):
+        
+        url_field = URLField( "test_ping", "title", "this is a test" )
+        
+        result = WebPing.ping( url_field.to_python("http://127.0.0.1:8888/test_page") )
+        
+        self.assertEquals(result.response_code, 200)
+        
+        self.assertEquals(result.response_md5, '1f6c14189070f50c4c06ada640c14850') # This is 1f6c14189070f50c4c06ada640c14850 on disk
+        self.assertEquals(result.response_sha224, 'deaf4c0062539c98b4e957712efcee6d42832fed2d803c2bbf984b23')
+        
+    def test_missing_servername(self):
+        """
+        Some web-servers require that the "Host" be included on SSL connections when the server is hosting multiple domains on the same IP.
+        
+        Without the host header, the server is unable to determine which certificate to provide and thus closes the connection.
+        
+        http://lukemurphey.net/issues/1035
+        """
+        web_ping = WebPing(timeout=3)
+        
+        url_field = URLField( "test_ping", "title", "this is a test" )
+        result = WebPing.ping( url_field.to_python("https://www.penfolds.com"), timeout=3 )
+        
+        self.assertEquals(result.response_code, 200)
         
 if __name__ == '__main__':
     unittest.main()
