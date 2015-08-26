@@ -14,10 +14,9 @@ import time
 import splunk
 import os
 
-#import httplib2
-from httplib2 import socks
 #import socks
 import socket
+from website_monitoring_app import socks
 
 import requests
 
@@ -153,10 +152,32 @@ class WebPing(ModularInput):
         # Determine which type of proxy is to be used (if any)
         resolved_proxy_type = cls.resolve_proxy_type(proxy_type)
         
+        # Make sure that a timeout is not None since that is infinite
+        if timeout is None:
+            timeout = 30
+        
         # Setup the proxy info if so configured
+        proxies = {}
+        
         if resolved_proxy_type is not None and proxy_server is not None and len(proxy_server.strip()) > 0:
-            socks.setdefaultproxy(resolved_proxy_type, proxy_server, proxy_port)
-            socket.socket = socks.socksocket
+            
+            if proxy_type == "http":
+                
+                # Use the username and password if provided
+                if proxy_password is not None and proxy_user is not None:
+                    proxies = {
+                      "http": "http://" + proxy_user + ":" + proxy_password + "@" + proxy_server + ":" + str(proxy_port),
+                      "https": "http://" + proxy_user + ":" + proxy_password + "@" + proxy_server + ":" + str(proxy_port)
+                    }
+                else:
+                    proxies = {
+                      "http": "http://" + proxy_server + ":" + str(proxy_port),
+                      "https": "http://" + proxy_server + ":" + str(proxy_port)
+                    }
+                
+            else:
+                socks.setdefaultproxy(resolved_proxy_type, proxy_server, proxy_port)
+                socket.socket = socks.socksocket
             
         else:
             # No proxy is being used
@@ -175,7 +196,7 @@ class WebPing(ModularInput):
             with Timer() as timer:
                 
                 # Make the client
-                http = requests.get(url.geturl())
+                http = requests.get(url.geturl(), proxies=proxies, timeout=timeout)
                 
                 # Get the hash of the content
                 response_md5 = hashlib.md5(http.text).hexdigest()
@@ -188,15 +209,18 @@ class WebPing(ModularInput):
             request_time = timer.msecs
             
         # Handle time outs    
-        except socket.timeout:
+        except requests.exceptions.Timeout:
             
-            # Note that the connection timed out    
+            # Note that the connection timed out
             timed_out = True
             
         except requests.exceptions.ConnectionError as e:
             
-            if e.args[0].reason.errno in [60, 61]:
+            if e.args is not None and len(e.args) > 0 and hasattr(e.args[0], 'reason') and hasattr(e.args[0].reason, 'errno') and e.args[0].reason.errno in [60, 61]:
                 timed_out = True
+                
+            else:
+                logger.exception("A connection exception was thrown when executing a web request")
                 
         except socks.GeneralProxyError:
             # This may be thrown if the user configured the proxy settings incorrectly
