@@ -17,8 +17,9 @@ import os
 #import socks
 import socket
 from website_monitoring_app import socks
+from website_monitoring_app import requests
 
-import requests
+#import requests
 
 def setup_logger():
     """
