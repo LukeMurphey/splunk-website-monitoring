@@ -106,4 +106,5 @@ Change History
 |---------|------------------------------------------------------------------------------------------------------------------|
 | 1.3     | Added support for Server Name Indication (SNI); only works on Splunk installs with Python 2.7.9+                 |
 |         | Added support for client SSL certificate authentication                                                          |
+|         | Fixed issue where multiple log entries were being created for the same event                                     |
 +---------+------------------------------------------------------------------------------------------------------------------+
