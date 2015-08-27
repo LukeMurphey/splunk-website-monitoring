@@ -133,7 +133,7 @@ class WebPing(ModularInput):
             return None
         
     @classmethod
-    def ping(cls, url, timeout=30, proxy_type=None, proxy_server=None, proxy_port=None, proxy_user=None, proxy_password=None, include_host_header=False):
+    def ping(cls, url, timeout=30, proxy_type=None, proxy_server=None, proxy_port=None, proxy_user=None, proxy_password=None):
         """
         Perform a ping to a website. Returns a WebPing.Result instance.
         
@@ -145,7 +145,6 @@ class WebPing(ModularInput):
         proxy_port -- The port on the proxy server to use.
         proxy_user -- The proxy server to use.
         proxy_password -- The port on the proxy server to use.
-        include_host_header -- Include the host header (necessary for servers that host multiple sites on the same server)
         """
         
         logger.debug('Performing ping, url="%s"', url.geturl())
