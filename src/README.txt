@@ -105,4 +105,5 @@ Change History
 | 1.2.1   | Added capability "edit_modinput_web_ping" to admin and power users                                               |
 |---------|------------------------------------------------------------------------------------------------------------------|
 | 1.3     | Added support for Server Name Indication (SNI); only works on Splunk installs with Python 2.7.9+                 |
+|         | Added support for client SSL certificate authentication                                                          |
 +---------+------------------------------------------------------------------------------------------------------------------+

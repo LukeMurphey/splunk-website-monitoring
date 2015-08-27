@@ -101,6 +101,8 @@ class WebPing(ModularInput):
                 URLField("url", "URL", "The URL to connect to (must be be either HTTP or HTTPS protocol)", empty_allowed=False),
                 DurationField("interval", "Interval", "The interval defining how often to perform the check; can include time units (e.g. 15m for 15 minutes, 8h for 8 hours)", empty_allowed=False),
                 Field("configuration", "Configuration", "Defines a specific proxy configuration to use (in website_monitoring.spec) if not using the default; only used if you want to have multiple proxy servers", none_allowed=True, empty_allowed=True),
+                Field("client_certificate", "Client Certificate Path", "Defines the path to the client certificate (if the website requires client SSL authentication)", none_allowed=True, empty_allowed=True),
+                Field("client_certificate_key", "Client Certificate Key Path", "Defines the path to the client certificate key (necessary of the key is in a separate file from the certificate)", none_allowed=True, empty_allowed=True)
                 ]
         
         ModularInput.__init__( self, scheme_args, args, logger_name='web_availability_modular_input' )
@@ -133,7 +135,7 @@ class WebPing(ModularInput):
             return None
         
     @classmethod
-    def ping(cls, url, timeout=30, proxy_type=None, proxy_server=None, proxy_port=None, proxy_user=None, proxy_password=None):
+    def ping(cls, url, timeout=30, proxy_type=None, proxy_server=None, proxy_port=None, proxy_user=None, proxy_password=None, client_certificate=None, client_certificate_key=None):
         """
         Perform a ping to a website. Returns a WebPing.Result instance.
         
@@ -145,6 +147,8 @@ class WebPing(ModularInput):
         proxy_port -- The port on the proxy server to use.
         proxy_user -- The proxy server to use.
         proxy_password -- The port on the proxy server to use.
+        client_certificate -- The path to the client certificate to use.
+        client_certificate_key -- The path to the client key to use.
         """
         
         logger.debug('Performing ping, url="%s"', url.geturl())
@@ -183,6 +187,14 @@ class WebPing(ModularInput):
             # No proxy is being used
             pass
         
+        # Setup the client certificate parameter
+        if client_certificate is not None and client_certificate_key is not None:
+            cert = (client_certificate, client_certificate_key)
+        elif client_certificate is not None:
+            cert = client_certificate
+        else:
+            cert = None
+        
         request_time    = 0
         response_code   = 0
         response_md5    = None
@@ -196,7 +208,7 @@ class WebPing(ModularInput):
             with Timer() as timer:
                 
                 # Make the client
-                http = requests.get(url.geturl(), proxies=proxies, timeout=timeout)
+                http = requests.get(url.geturl(), proxies=proxies, timeout=timeout, cert=cert)
                 
                 # Get the hash of the content
                 response_md5 = hashlib.md5(http.text).hexdigest()
