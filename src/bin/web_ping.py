@@ -1,44 +1,18 @@
-
-from splunk.appserver.mrsparkle.lib.util import make_splunkhome_path
 from splunk.models.base import SplunkAppObjModel
 from modular_input import Field, ModularInput, URLField, DurationField
 from splunk.models.field import Field as ModelField
 from splunk.models.field import IntField as ModelIntField 
 
 import re
-import logging
-from logging import handlers
 import hashlib
 import sys
 import time
 import splunk
 import os
 
-#import socks
 import socket
 from website_monitoring_app import socks
 from website_monitoring_app import requests
-
-#import requests
-
-def setup_logger():
-    """
-    Setup a logger.
-    """
-    
-    logger = logging.getLogger('web_availability_modular_input')
-    logger.propagate = False # Prevent the log messages from being duplicated in the python.log file
-    logger.setLevel(logging.INFO)
-    
-    file_handler = handlers.RotatingFileHandler(make_splunkhome_path(['var', 'log', 'splunk', 'web_availability_modular_input.log']), maxBytes=25000000, backupCount=5)
-    formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
-    file_handler.setFormatter(formatter)
-    
-    logger.addHandler(file_handler)
-    
-    return logger
-
-logger = setup_logger()
     
 class Timer(object):
     """
@@ -113,7 +87,7 @@ class WebPing(ModularInput):
             self.timeout = 30
         
     @classmethod
-    def resolve_proxy_type(cls, proxy_type):
+    def resolve_proxy_type(cls, proxy_type, logger=None):
         
         # Make sure the proxy string is not none
         if proxy_type is None:
@@ -131,11 +105,12 @@ class WebPing(ModularInput):
         elif t == "":
             return None
         else:
-            logger.warn("Proxy type is not recognized: %s", proxy_type)
+            if logger:
+                logger.warn("Proxy type is not recognized: %s", proxy_type)
             return None
         
     @classmethod
-    def ping(cls, url, timeout=30, proxy_type=None, proxy_server=None, proxy_port=None, proxy_user=None, proxy_password=None, client_certificate=None, client_certificate_key=None):
+    def ping(cls, url, timeout=30, proxy_type=None, proxy_server=None, proxy_port=None, proxy_user=None, proxy_password=None, client_certificate=None, client_certificate_key=None, logger=None):
         """
         Perform a ping to a website. Returns a WebPing.Result instance.
         
@@ -149,12 +124,14 @@ class WebPing(ModularInput):
         proxy_password -- The port on the proxy server to use.
         client_certificate -- The path to the client certificate to use.
         client_certificate_key -- The path to the client key to use.
+        logger -- The logger object to use for logging
         """
         
-        logger.debug('Performing ping, url="%s"', url.geturl())
+        if logger:
+            logger.debug('Performing ping, url="%s"', url.geturl())
         
         # Determine which type of proxy is to be used (if any)
-        resolved_proxy_type = cls.resolve_proxy_type(proxy_type)
+        resolved_proxy_type = cls.resolve_proxy_type(proxy_type, logger=logger)
         
         # Make sure that a timeout is not None since that is infinite
         if timeout is None:
@@ -194,6 +171,9 @@ class WebPing(ModularInput):
             cert = client_certificate
         else:
             cert = None
+            
+        if logger:
+            logger.debug("Using client certificate %s", cert)
         
         request_time    = 0
         response_code   = 0
@@ -231,15 +211,17 @@ class WebPing(ModularInput):
             if e.args is not None and len(e.args) > 0 and hasattr(e.args[0], 'reason') and hasattr(e.args[0].reason, 'errno') and e.args[0].reason.errno in [60, 61]:
                 timed_out = True
                 
-            else:
+            elif logger:
                 logger.exception("A connection exception was thrown when executing a web request")
                 
         except socks.GeneralProxyError:
             # This may be thrown if the user configured the proxy settings incorrectly
-            logger.exception("An error occurred when attempting to communicate with the proxy")
+            if logger:
+                logger.exception("An error occurred when attempting to communicate with the proxy")
         
         except Exception as e:
-            logger.exception("A general exception was thrown when executing a web request")
+            if logger:
+                logger.exception("A general exception was thrown when executing a web request")
             
         # Finally, return the result
         return cls.Result(request_time, response_code, timed_out, url.geturl(), response_size, response_md5, response_sha224)
@@ -334,10 +316,10 @@ class WebPing(ModularInput):
         try:
             website_monitoring_config = WebsiteMonitoringConfig.get( WebsiteMonitoringConfig.build_id( stanza, "website_monitoring", "nobody"), sessionKey=session_key )
             
-            logger.debug("Proxy information loaded, stanza=%s", stanza)
+            self.logger.debug("Proxy information loaded, stanza=%s", stanza)
             
         except splunk.ResourceNotFound:
-            logger.error("Unable to find the proxy configuration for the specified configuration stanza=%s", stanza)
+            self.logger.error("Unable to find the proxy configuration for the specified configuration stanza=%s", stanza)
             raise
         
         return website_monitoring_config.proxy_type, website_monitoring_config.proxy_server, website_monitoring_config.proxy_port, website_monitoring_config.proxy_user, website_monitoring_config.proxy_password
@@ -345,15 +327,17 @@ class WebPing(ModularInput):
     def run(self, stanza, cleaned_params, input_config):
         
         # Make the parameters
-        interval      = cleaned_params["interval"]
-        title         = cleaned_params["title"]
-        url           = cleaned_params["url"]
-        timeout       = self.timeout
-        sourcetype    = cleaned_params.get("sourcetype", "web_ping")
-        host          = cleaned_params.get("host", None)
-        index         = cleaned_params.get("index", "default")
-        conf_stanza   = cleaned_params.get("configuration", None)
-        source        = stanza
+        interval               = cleaned_params["interval"]
+        title                  = cleaned_params["title"]
+        url                    = cleaned_params["url"]
+        client_certificate     = cleaned_params.get("client_certificate", None)
+        client_certificate_key = cleaned_params.get("client_certificate_key", None)
+        timeout                = self.timeout
+        sourcetype             = cleaned_params.get("sourcetype", "web_ping")
+        host                   = cleaned_params.get("host", None)
+        index                  = cleaned_params.get("index", "default")
+        conf_stanza            = cleaned_params.get("configuration", None)
+        source                 = stanza
         
         if self.needs_another_run( input_config.checkpoint_dir, stanza, interval ):
             
@@ -361,11 +345,11 @@ class WebPing(ModularInput):
             try:
                 proxy_type, proxy_server, proxy_port, proxy_user, proxy_password = self.get_proxy_config(input_config.session_key, conf_stanza)
             except splunk.ResourceNotFound:
-                logger.error("The proxy configuration could not be loaded. The execution will be skipped for this input with stanza=%s", stanza)
+                self.logger.error("The proxy configuration could not be loaded. The execution will be skipped for this input with stanza=%s", stanza)
                 return
             
             # Perform the ping
-            result = WebPing.ping(url, timeout, proxy_type, proxy_server, proxy_port, proxy_user, proxy_password)
+            result = WebPing.ping(url, timeout, proxy_type, proxy_server, proxy_port, proxy_user, proxy_password, client_certificate, client_certificate_key, logger=self.logger)
             
             # Send the event
             self.output_result( result, stanza, title, host=host, index=index, source=source, sourcetype=sourcetype, unbroken=True, close=True, proxy_server=proxy_server, proxy_port=proxy_port, proxy_user=proxy_user, proxy_type=proxy_type )
@@ -382,5 +366,5 @@ if __name__ == '__main__':
         web_ping.execute()
         sys.exit(0)
     except Exception as e:
-        logger.exception("Unhandled exception was caught, this may be due to a defect in the script") # This logs general exceptions that would have been unhandled otherwise (such as coding errors)
+        #self.logger.exception("Unhandled exception was caught, this may be due to a defect in the script") # This logs general exceptions that would have been unhandled otherwise (such as coding errors)
         raise e
