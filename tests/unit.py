@@ -1,6 +1,7 @@
 import unittest
 import sys
 import os
+import re
 import time
 import shutil
 import tempfile
@@ -15,6 +16,38 @@ from website_monitoring_rest_handler import HostFieldValidator
 
 from test_web_server import get_server
 
+class WebsiteMonitoringAppTest(unittest.TestCase):
+    
+    def toInt(self, str_int):
+        if str_int is None:
+            return None
+        else:
+            return int(str_int)
+    
+    def loadConfig(self, properties_file=None):
+        
+        if properties_file is None:
+            properties_file = os.path.join( "..", "local.properties")
+        
+        fp = open(properties_file)
+        regex = re.compile("(?P<key>[^=]+)[=](?P<value>.*)")
+        
+        settings = {}
+        
+        for l in fp.readlines():
+            r = regex.search(l)
+            
+            if r is not None:
+                d = r.groupdict()
+                settings[ d["key"] ] = d["value"]
+        
+        self.proxy_address = settings.get("value.test.proxy.address", None)
+        self.proxy_port = self.toInt(settings.get("value.test.proxy.port", None))
+        self.proxy_type = settings.get("value.test.proxy.type", None)
+
+    def setUp(self):
+        self.loadConfig()
+
 class TestHostFieldValidator(unittest.TestCase):
     
     def test_underscore_allowed(self):
@@ -24,7 +57,6 @@ class TestHostFieldValidator(unittest.TestCase):
         validator = HostFieldValidator()
         
         self.assertTrue(validator.is_valid_hostname("my_proxy.localhost.com"))
-    
 
 class TestURLField(unittest.TestCase):
     
@@ -61,7 +93,7 @@ class TestDurationField(unittest.TestCase):
         self.assertRaises( FieldValidationException, lambda: duration_field.to_python("1 treefrog") )
         self.assertRaises( FieldValidationException, lambda: duration_field.to_python("minute") )   
     
-class TestWebPing(unittest.TestCase):
+class TestWebPing(WebsiteMonitoringAppTest):
     
     @classmethod
     def setUpClass(cls):
@@ -96,6 +128,9 @@ class TestWebPing(unittest.TestCase):
         cls.httpd.shutdown()
     
     def setUp(self):
+        
+        super(TestWebPing, self).setUp()
+        
         self.tmp_dir = tempfile.mkdtemp( prefix="TestWebPing" )
         #os.makedirs(self.tmp_dir)
         
@@ -109,7 +144,7 @@ class TestWebPing(unittest.TestCase):
         
         url_field = URLField( "test_ping", "title", "this is a test" )
         
-        result = WebPing.ping( url_field.to_python("https://www.google.com/") )
+        result = WebPing.ping( url_field.to_python("https://www.google.com/"), timeout=3 )
         
         self.assertEquals(result.response_code, 200)
         self.assertGreater(result.request_time, 0)
@@ -151,7 +186,7 @@ class TestWebPing(unittest.TestCase):
         web_ping = WebPing(timeout=3)
         
         url_field = URLField( "test_ping", "title", "this is a test" )
-        result = WebPing.ping( url_field.to_python("https://www.google.com/") )
+        result = WebPing.ping( url_field.to_python("https://www.google.com/"), timeout=3 )
         
         out = StringIO()
         
@@ -183,18 +218,18 @@ class TestWebPing(unittest.TestCase):
         data = web_ping.get_checkpoint_data( os.path.join( self.get_test_dir(), "configs", "web_ping://TextCritical.net") )
         
         self.assertEqual(data, None)
-        
+    
     def test_hash(self):
         
         url_field = URLField( "test_ping", "title", "this is a test" )
         
-        result = WebPing.ping( url_field.to_python("http://127.0.0.1:8888/test_page") )
+        result = WebPing.ping( url_field.to_python("http://127.0.0.1:8888/test_page"), timeout=3 )
         
         self.assertEquals(result.response_code, 200)
         
         self.assertEquals(result.response_md5, '1f6c14189070f50c4c06ada640c14850') # This is 1f6c14189070f50c4c06ada640c14850 on disk
         self.assertEquals(result.response_sha224, 'deaf4c0062539c98b4e957712efcee6d42832fed2d803c2bbf984b23')
-        
+    
     def test_missing_servername(self):
         """
         Some web-servers require that the "Host" be included on SSL connections when the server is hosting multiple domains on the same IP.
@@ -207,6 +242,25 @@ class TestWebPing(unittest.TestCase):
         
         url_field = URLField( "test_ping", "title", "this is a test" )
         result = WebPing.ping( url_field.to_python("https://www.penfolds.com"), timeout=3 )
+        
+        self.assertEquals(result.response_code, 200)
+    
+    def test_ping_over_proxy(self):
+        
+        if self.proxy_address is None:
+            print "No proxy address defined, proxy based test will not run"
+            return
+            
+        if self.proxy_port is None:
+            print "No proxy port defined, proxy based test will not run"
+            return
+            
+        if self.proxy_type is None:
+            print "No proxy type defined, proxy based test will not run"
+            return
+        
+        url_field = URLField( "test_ping", "title", "this is a test" )
+        result = WebPing.ping( url_field.to_python("http://textcritical.com"), timeout=3, proxy_type=self.proxy_type, proxy_server=self.proxy_address, proxy_port=self.proxy_port)
         
         self.assertEquals(result.response_code, 200)
         
