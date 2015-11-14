@@ -128,7 +128,7 @@ class WebPing(ModularInput):
         """
         
         if logger:
-            logger.debug('Performing ping, url="%s"', url.geturl())
+            logger.info('Performing ping, url="%s"', url.geturl())
         
         # Determine which type of proxy is to be used (if any)
         resolved_proxy_type = cls.resolve_proxy_type(proxy_type, logger=logger)
@@ -188,7 +188,7 @@ class WebPing(ModularInput):
             with Timer() as timer:
                 
                 # Make the client
-                http = requests.get(url.geturl(), proxies=proxies, timeout=timeout, cert=cert)
+                http = requests.get(url.geturl(), proxies=proxies, timeout=timeout, cert=cert, verify=False)
                 
                 # Get the hash of the content
                 response_md5 = hashlib.md5(http.text).hexdigest()
@@ -200,7 +200,7 @@ class WebPing(ModularInput):
             response_code = http.status_code    
             request_time = timer.msecs
             
-        # Handle time outs    
+        # Handle time outs
         except requests.exceptions.Timeout:
             
             # Note that the connection timed out
