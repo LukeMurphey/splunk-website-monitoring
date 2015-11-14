@@ -109,4 +109,6 @@ Change History
 |         | Fixed issue where multiple log entries were being created for the same event                                     |
 |---------|------------------------------------------------------------------------------------------------------------------|
 | 1.3.1   | Added more rows to the list of items on the Status Overview dashboard                                            |
+|---------|------------------------------------------------------------------------------------------------------------------|
+| 1.3.2   | Disabling server SSL certificate verification which is incorrectly failing on valid certificates at times        |
 +---------+------------------------------------------------------------------------------------------------------------------+
