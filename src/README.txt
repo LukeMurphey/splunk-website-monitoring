@@ -113,4 +113,5 @@ Change History
 | 1.3.2   | Disabling server SSL certificate verification which is incorrectly failing on valid certificates at times        |
 |---------|------------------------------------------------------------------------------------------------------------------|
 | 1.4.0   | Adding HTTP authentication support                                                                               |
+|         | Added improved modular input UI                                                                                  |
 +---------+------------------------------------------------------------------------------------------------------------------+
