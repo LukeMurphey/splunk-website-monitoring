@@ -1,0 +1,11 @@
+<script type="text/javascript">
+$('#eaiform').on('submit', function(event){
+
+  if( $('#spl-ctrl_sourcetypeSelect_id').val() === "auto" ){
+    $('#sourcetype_id').val("");
+  }
+  else if( $('#spl-ctrl_sourcetypeSelect_id').val() === "spl-ctrl_from_list" ){
+    $('#sourcetype_id').val( $('#spl-ctrl_from_list_id').val() );
+  }
+});
+</script>
