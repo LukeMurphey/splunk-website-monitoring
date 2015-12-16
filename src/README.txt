@@ -111,4 +111,6 @@ Change History
 | 1.3.1   | Added more rows to the list of items on the Status Overview dashboard                                            |
 |---------|------------------------------------------------------------------------------------------------------------------|
 | 1.3.2   | Disabling server SSL certificate verification which is incorrectly failing on valid certificates at times        |
+|---------|------------------------------------------------------------------------------------------------------------------|
+| 1.4.0   | Adding HTTP authentication support                                                                               |
 +---------+------------------------------------------------------------------------------------------------------------------+
