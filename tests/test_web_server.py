@@ -43,8 +43,8 @@ class Handler(BaseHTTPRequestHandler):
             
         elif self.headers.getheader('Authorization') == ('Basic ' + encoded_password):
             self.do_HEAD()
-            self.wfile.write(self.headers.getheader('Authorization'))
-            self.wfile.write('authenticated!')
+            #self.wfile.write(self.headers.getheader('Authorization'))
+            #self.wfile.write('authenticated!')
             
             with open( os.path.join("web_files", "test_page.html"), "r") as webfile:
                 self.wfile.write(webfile.read())#.replace('\n', '')

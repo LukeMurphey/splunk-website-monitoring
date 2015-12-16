@@ -125,6 +125,7 @@ class TestWebPing(WebsiteMonitoringAppTest):
         
     @classmethod
     def tearDownClass(cls):
+        #time.sleep(30)
         cls.httpd.shutdown()
     
     def setUp(self):
@@ -263,6 +264,22 @@ class TestWebPing(WebsiteMonitoringAppTest):
         result = WebPing.ping( url_field.to_python("http://textcritical.com"), timeout=3, proxy_type=self.proxy_type, proxy_server=self.proxy_address, proxy_port=self.proxy_port)
         
         self.assertEquals(result.response_code, 200)
+        
+    def test_ping_with_authentication(self):
+        
+        # Try with valid authentication
+        url_field = URLField( "test_ping", "title", "this is a test" )
+        result = WebPing.ping( url_field.to_python("http://127.0.0.1:8888"), timeout=3, username="admin", password="changeme" )
+        
+        self.assertEquals(result.response_code, 200)
+        
+        self.assertEquals(result.response_md5, '1f6c14189070f50c4c06ada640c14850') # This is 1f6c14189070f50c4c06ada640c14850 on disk
+        self.assertEquals(result.response_sha224, 'deaf4c0062539c98b4e957712efcee6d42832fed2d803c2bbf984b23')
+        
+        # Verify that bad authentication fails
+        result = WebPing.ping( url_field.to_python("http://127.0.0.1:8888"), timeout=3, username="admin", password="wrongpassword" )
+        
+        self.assertEquals(result.response_code, 401)
         
 if __name__ == '__main__':
     unittest.main()

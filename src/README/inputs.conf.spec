@@ -18,3 +18,9 @@ client_certificate = <value>
 
 client_certificate_key = <value>
 * Defines the path to the client certificate key (necessary if the key is in a separate file from the certificate)
+
+username = <value>
+* Defines the username to use for authenticating (only HTTP authentication supported)
+
+password = <value>
+* Defines the password to use for authenticating (only HTTP authentication supported)

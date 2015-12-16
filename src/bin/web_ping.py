@@ -76,7 +76,9 @@ class WebPing(ModularInput):
                 DurationField("interval", "Interval", "The interval defining how often to perform the check; can include time units (e.g. 15m for 15 minutes, 8h for 8 hours)", empty_allowed=False),
                 Field("configuration", "Configuration", "Defines a specific proxy configuration to use (in website_monitoring.spec) if not using the default; only used if you want to have multiple proxy servers", none_allowed=True, empty_allowed=True),
                 Field("client_certificate", "Client Certificate Path", "Defines the path to the client certificate (if the website requires client SSL authentication)", none_allowed=True, empty_allowed=True),
-                Field("client_certificate_key", "Client Certificate Key Path", "Defines the path to the client certificate key (necessary of the key is in a separate file from the certificate)", none_allowed=True, empty_allowed=True)
+                Field("client_certificate_key", "Client Certificate Key Path", "Defines the path to the client certificate key (necessary of the key is in a separate file from the certificate)", none_allowed=True, empty_allowed=True),
+                Field("username", "Username", "The username to use for authenticating (only HTTP authentication supported)", none_allowed=True, empty_allowed=True, required_on_create=False, required_on_edit=False),
+                Field("password", "Password", "The password to use for authenticating (only HTTP authentication supported)", none_allowed=True, empty_allowed=True, required_on_create=False, required_on_edit=False)
                 ]
         
         ModularInput.__init__( self, scheme_args, args, logger_name='web_availability_modular_input' )
@@ -110,12 +112,14 @@ class WebPing(ModularInput):
             return None
         
     @classmethod
-    def ping(cls, url, timeout=30, proxy_type=None, proxy_server=None, proxy_port=None, proxy_user=None, proxy_password=None, client_certificate=None, client_certificate_key=None, logger=None):
+    def ping(cls, url, username=None, password=None, timeout=30, proxy_type=None, proxy_server=None, proxy_port=None, proxy_user=None, proxy_password=None, client_certificate=None, client_certificate_key=None, logger=None):
         """
         Perform a ping to a website. Returns a WebPing.Result instance.
         
         Argument:
         url -- The url to connect to. This object ought to be an instance derived from using urlparse.
+        username -- The password to use for authentication
+        password -- The username to use for authentication
         timeout -- The amount of time to quit waiting on a connection.
         proxy_type -- The type of the proxy server (must be one of: socks4, socks5, http)
         proxy_server -- The proxy server to use.
@@ -182,13 +186,19 @@ class WebPing(ModularInput):
         timed_out       = False
         response_size   = None
         
+        # Make an auth object if necessary
+        auth = None
+        
+        if username is not None and password is not None:
+            auth = (username, password)
+        
         try:
             
             # Perform the request
             with Timer() as timer:
                 
                 # Make the client
-                http = requests.get(url.geturl(), proxies=proxies, timeout=timeout, cert=cert, verify=False)
+                http = requests.get(url.geturl(), proxies=proxies, timeout=timeout, cert=cert, verify=False, auth=auth)
                 
                 # Get the hash of the content
                 response_md5 = hashlib.md5(http.text).hexdigest()
@@ -332,6 +342,8 @@ class WebPing(ModularInput):
         url                    = cleaned_params["url"]
         client_certificate     = cleaned_params.get("client_certificate", None)
         client_certificate_key = cleaned_params.get("client_certificate_key", None)
+        username               = cleaned_params.get("username", None)
+        password               = cleaned_params.get("password", None)
         timeout                = self.timeout
         sourcetype             = cleaned_params.get("sourcetype", "web_ping")
         host                   = cleaned_params.get("host", None)
@@ -349,7 +361,7 @@ class WebPing(ModularInput):
                 return
             
             # Perform the ping
-            result = WebPing.ping(url, timeout, proxy_type, proxy_server, proxy_port, proxy_user, proxy_password, client_certificate, client_certificate_key, logger=self.logger)
+            result = WebPing.ping(url, username, password, timeout, proxy_type, proxy_server, proxy_port, proxy_user, proxy_password, client_certificate, client_certificate_key, logger=self.logger)
             
             # Send the event
             self.output_result( result, stanza, title, host=host, index=index, source=source, sourcetype=sourcetype, unbroken=True, close=True, proxy_server=proxy_server, proxy_port=proxy_port, proxy_user=proxy_user, proxy_type=proxy_type )
