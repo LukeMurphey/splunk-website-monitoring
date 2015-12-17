@@ -280,6 +280,7 @@ class TestWebPing(WebsiteMonitoringAppTest):
         result = WebPing.ping( url_field.to_python("http://127.0.0.1:8888"), timeout=3, username="admin", password="wrongpassword" )
         
         self.assertEquals(result.response_code, 401)
+        self.assertGreater(result.request_time, 0)
         
 if __name__ == '__main__':
     unittest.main()
