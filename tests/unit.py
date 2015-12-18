@@ -265,7 +265,7 @@ class TestWebPing(WebsiteMonitoringAppTest):
         
         self.assertEquals(result.response_code, 200)
         
-    def test_ping_with_authentication(self):
+    def test_ping_with_basic_authentication(self):
         
         # Try with valid authentication
         url_field = URLField( "test_ping", "title", "this is a test" )
@@ -281,6 +281,38 @@ class TestWebPing(WebsiteMonitoringAppTest):
         
         self.assertEquals(result.response_code, 401)
         self.assertGreater(result.request_time, 0)
+        
+    def test_ping_with_digest_authentication(self):
+        
+        # Try with valid authentication
+        url_field = URLField( "test_ping", "title", "this is a test" )
+        result = WebPing.ping( url_field.to_python("http://httpbin.org/digest-auth/auth/user/passwd"), timeout=3, username="user", password="passwd" )
+        
+        self.assertEquals(result.response_code, 200)
+        
+    def test_determine_auth_method_basic(self):
+        
+        # Try with basic auth
+        url_field = URLField( "test_ping", "title", "this is a test" )
+        auth_type = WebPing.determine_auth_type( url_field.to_python("http://127.0.0.1:8888"))
+        
+        self.assertEquals(auth_type, WebPing.HTTP_AUTH_BASIC)
+        
+    def test_determine_auth_method_digest(self):
+        
+        # Try with digest auth
+        url_field = URLField( "test_ping", "title", "this is a test" )
+        auth_type = WebPing.determine_auth_type( url_field.to_python("http://httpbin.org/digest-auth/auth/user/passwd"))
+        
+        self.assertEquals(auth_type, WebPing.HTTP_AUTH_DIGEST)
+        
+    def test_determine_auth_method_none(self):
+        
+        # Try with digest auth
+        url_field = URLField( "test_ping", "title", "this is a test" )
+        auth_type = WebPing.determine_auth_type( url_field.to_python("http://127.0.0.1:8888/test_page"))
+        
+        self.assertEquals(auth_type, WebPing.HTTP_AUTH_NONE)
         
 if __name__ == '__main__':
     unittest.main()

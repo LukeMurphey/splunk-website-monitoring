@@ -13,6 +13,7 @@ import os
 import socket
 from website_monitoring_app import socks
 from website_monitoring_app import requests
+from website_monitoring_app.requests_ntlm import HttpNtlmAuth
     
 class Timer(object):
     """
@@ -46,6 +47,11 @@ class WebPing(ModularInput):
     """
     
     PARSE_URL_RE = re.compile( r"http[s]?[:]//(.*)", re.IGNORECASE)
+    
+    HTTP_AUTH_BASIC = 'basic'
+    HTTP_AUTH_DIGEST = 'digest'
+    HTTP_AUTH_NTLM = 'ntlm'
+    HTTP_AUTH_NONE = None
     
     class Result(object):
         """
@@ -90,6 +96,13 @@ class WebPing(ModularInput):
         
     @classmethod
     def resolve_proxy_type(cls, proxy_type, logger=None):
+        """
+        Determine the type of the proxy to be used based on the string.
+        
+        Argument:
+        proxy_type -- A string representing the proxy type (e.g. "socks4")
+        logger -- The logger object to use for logging
+        """
         
         # Make sure the proxy string is not none
         if proxy_type is None:
@@ -110,6 +123,72 @@ class WebPing(ModularInput):
             if logger:
                 logger.warn("Proxy type is not recognized: %s", proxy_type)
             return None
+        
+    @classmethod
+    def determine_auth_type(cls, url, proxies=None, timeout=None, cert=None, logger=None):
+        """
+        Determine the authentication type that is appropriate to authenticate to the given web-server.
+        
+        Argument:
+        url -- The url to connect to. This object ought to be an instance derived from using urlparse
+        proxies -- The proxies to use
+        timeout -- The amount of time to quit waiting on a connection
+        cert -- A tuple representing the certificate to use
+        logger -- The logger object to use for logging
+        """
+        
+        # Perform a request to the URL and see what authentication method is required
+        # Make the client
+        http = requests.get(url.geturl(), proxies=proxies, timeout=timeout, cert=cert, verify=False)
+        
+        try:
+            
+            auth_header = http.headers['WWW-Authenticate']
+            
+            if auth_header is not None:
+                m = re.search('^([a-zA-Z0-9]+) ', auth_header)
+                auth_type = m.group(1)
+                return auth_type.lower()
+            
+        except Exception:
+            if logger:
+                logger.exception("Unable to determine authentication type") 
+                
+    @classmethod
+    def create_auth_for_request(cls, auth_type, username, password, logger=None):
+        """
+        Create the auth object for the requests library so that any HTTP authentication is taken care of.
+        
+        Argument:
+        auth_type -- A string indicating the type of authentication require (e.g. "digest")
+        username -- The password to use for authentication
+        password -- The username to use for authentication
+        logger -- The logger object to use for logging
+        """
+        
+        # No authentication
+        if auth_type == cls.HTTP_AUTH_NONE:
+            return None
+        
+        # Digest authentication
+        elif auth_type == cls.HTTP_AUTH_DIGEST:
+            return requests.auth.HTTPDigestAuth(username, password)
+        
+        # NTLM authentication
+        elif auth_type == cls.HTTP_AUTH_NTLM:
+            return HttpNtlmAuth(username, password)
+        
+        # Basic authentication
+        elif auth_type == cls.HTTP_AUTH_BASIC:
+            return requests.auth.HTTPBasicAuth(username, password)
+        
+        # Unknown authentication type
+        else:
+            
+            if logger:
+                logger.warn('Unknown type of authentication requested, auth_type=%s', auth_type)
+            
+            return (username, password)
         
     @classmethod
     def ping(cls, url, username=None, password=None, timeout=30, proxy_type=None, proxy_server=None, proxy_port=None, proxy_user=None, proxy_password=None, client_certificate=None, client_certificate_key=None, logger=None):
@@ -188,9 +267,15 @@ class WebPing(ModularInput):
         
         # Make an auth object if necessary
         auth = None
+        auth_type = None
         
         if username is not None and password is not None:
-            auth = (username, password)
+            
+            # Determine the auth type
+            auth_type = cls.determine_auth_type(url, proxies=proxies, timeout=timeout, cert=cert, logger=logger)
+        
+            # Get the authentication class for request
+            auth = cls.create_auth_for_request(auth_type, username, password, logger)
         
         try:
             
