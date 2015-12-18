@@ -276,6 +276,9 @@ class WebPing(ModularInput):
         
             # Get the authentication class for request
             auth = cls.create_auth_for_request(auth_type, username, password, logger)
+            
+            if logger is not None:
+                logger.debug("Discovered auth_type=%s", auth_type)
         
         try:
             
