@@ -150,6 +150,16 @@ class TestWebPing(WebsiteMonitoringAppTest):
         self.assertEquals(result.response_code, 200)
         self.assertGreater(result.request_time, 0)
         
+    def test_ping_non_existent_domain(self):
+        # https://answers.splunk.com/answers/337070/website-monitoring-app-setup.html#answer-338487
+        
+        url_field = URLField( "test_ping_non_existent_domain", "title", "this is a test" )
+        
+        result = WebPing.ping( url_field.to_python("http://xyz"), timeout=3 )
+        
+        self.assertEquals(result.response_code, 0)
+        self.assertEquals(result.request_time, 0)
+        
     def test_ping_timeout(self):
         url_field = URLField( "test_ping_timeout", "title", "this is a test" )
         
