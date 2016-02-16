@@ -304,6 +304,11 @@ class WebPing(ModularInput):
             # Note that the connection timed out
             timed_out = True
             
+        except requests.exceptions.SSLError as e:
+            
+            if logger:
+                logger.error("An SSL exception was thrown when executing a web request: " + str(e))
+            
         except requests.exceptions.ConnectionError as e:
             
             if e.args is not None and len(e.args) > 0 and hasattr(e.args[0], 'reason') and hasattr(e.args[0].reason, 'errno') and e.args[0].reason.errno in [60, 61]:
