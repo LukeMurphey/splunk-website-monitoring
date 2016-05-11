@@ -29,6 +29,18 @@ class Handler(BaseHTTPRequestHandler):
             self.do_HEAD()
             self.wfile.write('<html><body><div class="user-agent">%s</div></body></html>' % str(self.headers['user-agent']))
             
+        # Check the user-agent and return 201 when the user-agent is "USER_AGENT_CHECK"
+        if self.path == "/user_agent_check":
+            
+            if 'user-agent' in self.headers and self.headers['user-agent'] == 'USER_AGENT_CHECK':
+                self.send_response(201)
+            else:
+                print "user-agent was not set to 'USER_AGENT_CHECK'"
+            
+            self.do_HEAD()
+            self.wfile.write('<html><body></body></html>')
+            
+            
         # Present the HTML page with no authentication
         if self.path == "/test_page":
             self.do_HEAD()

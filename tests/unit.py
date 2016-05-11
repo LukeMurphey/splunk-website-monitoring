@@ -324,5 +324,23 @@ class TestWebPing(WebsiteMonitoringAppTest):
         
         self.assertEquals(auth_type, WebPing.HTTP_AUTH_NONE)
         
+    def test_custom_user_agent(self):
+        """
+        http://lukemurphey.net/issues/1341
+        """
+        web_ping = WebPing(timeout=3)
+        
+        url_field = URLField( "test_ping", "title", "this is a test" )
+        
+        # Make sure that the server is validating the user-agent by returning 200 when the user-agent doesn't match
+        # This just validates that the test case works
+        result = WebPing.ping( url_field.to_python("http://127.0.0.1:8888/user_agent_check"), user_agent="USER_AGENT_CHECK_DOESNT_MATCH", timeout=3 )
+        self.assertEquals(result.response_code, 200)
+        
+        # Make sure that the server is validating the user-agent which returns 201 when the user-agent matches "USER_AGENT_CHECK"
+        result = WebPing.ping( url_field.to_python("http://127.0.0.1:8888/user_agent_check"), user_agent="USER_AGENT_CHECK", timeout=3 )
+        self.assertEquals(result.response_code, 201)
+        
+        
 if __name__ == '__main__':
     unittest.main()

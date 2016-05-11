@@ -84,7 +84,8 @@ class WebPing(ModularInput):
                 Field("client_certificate", "Client Certificate Path", "Defines the path to the client certificate (if the website requires client SSL authentication)", none_allowed=True, empty_allowed=True),
                 Field("client_certificate_key", "Client Certificate Key Path", "Defines the path to the client certificate key (necessary of the key is in a separate file from the certificate)", none_allowed=True, empty_allowed=True),
                 Field("username", "Username", "The username to use for authenticating (only HTTP authentication supported)", none_allowed=True, empty_allowed=True, required_on_create=False, required_on_edit=False),
-                Field("password", "Password", "The password to use for authenticating (only HTTP authentication supported)", none_allowed=True, empty_allowed=True, required_on_create=False, required_on_edit=False)
+                Field("password", "Password", "The password to use for authenticating (only HTTP authentication supported)", none_allowed=True, empty_allowed=True, required_on_create=False, required_on_edit=False),
+                Field("user_agent", "User Agent", "The user-agent to use when communicating with the server", none_allowed=True, empty_allowed=True, required_on_create=False, required_on_edit=False)
                 ]
         
         ModularInput.__init__( self, scheme_args, args, logger_name='web_availability_modular_input' )
@@ -191,7 +192,7 @@ class WebPing(ModularInput):
             return (username, password)
         
     @classmethod
-    def ping(cls, url, username=None, password=None, timeout=30, proxy_type=None, proxy_server=None, proxy_port=None, proxy_user=None, proxy_password=None, client_certificate=None, client_certificate_key=None, logger=None):
+    def ping(cls, url, username=None, password=None, timeout=30, proxy_type=None, proxy_server=None, proxy_port=None, proxy_user=None, proxy_password=None, client_certificate=None, client_certificate_key=None, user_agent=None, logger=None):
         """
         Perform a ping to a website. Returns a WebPing.Result instance.
         
@@ -207,6 +208,7 @@ class WebPing(ModularInput):
         proxy_password -- The port on the proxy server to use.
         client_certificate -- The path to the client certificate to use.
         client_certificate_key -- The path to the client key to use.
+        user_agent -- The string to use for the user-agent
         logger -- The logger object to use for logging
         """
         
@@ -265,6 +267,14 @@ class WebPing(ModularInput):
         timed_out       = False
         response_size   = None
         
+        # Setup the headers as necessary
+        headers = {}
+        
+        if user_agent is not None:
+            if logger:
+                logger.info("Setting user-agent=%s", user_agent)
+            headers['User-Agent'] = user_agent
+        
         # Make an auth object if necessary
         auth = None
         auth_type = None
@@ -286,7 +296,7 @@ class WebPing(ModularInput):
             with Timer() as timer:
                 
                 # Make the client
-                http = requests.get(url.geturl(), proxies=proxies, timeout=timeout, cert=cert, verify=False, auth=auth)
+                http = requests.get(url.geturl(), proxies=proxies, timeout=timeout, cert=cert, verify=False, auth=auth, headers=headers)
                 
                 # Get the hash of the content
                 response_md5 = hashlib.md5(http.text).hexdigest()
@@ -442,6 +452,7 @@ class WebPing(ModularInput):
         host                   = cleaned_params.get("host", None)
         index                  = cleaned_params.get("index", "default")
         conf_stanza            = cleaned_params.get("configuration", None)
+        user_agent             = cleaned_params.get("user_agent", None)
         source                 = stanza
         
         if self.needs_another_run( input_config.checkpoint_dir, stanza, interval ):
@@ -454,7 +465,7 @@ class WebPing(ModularInput):
                 return
             
             # Perform the ping
-            result = WebPing.ping(url, username, password, timeout, proxy_type, proxy_server, proxy_port, proxy_user, proxy_password, client_certificate, client_certificate_key, logger=self.logger)
+            result = WebPing.ping(url, username, password, timeout, proxy_type, proxy_server, proxy_port, proxy_user, proxy_password, client_certificate, client_certificate_key, user_agent, logger=self.logger)
             
             # Send the event
             self.output_result( result, stanza, title, host=host, index=index, source=source, sourcetype=sourcetype, unbroken=True, close=True, proxy_server=proxy_server, proxy_port=proxy_port, proxy_user=proxy_user, proxy_type=proxy_type )

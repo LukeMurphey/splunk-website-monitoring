@@ -1,0 +1,154 @@
+<%page args="element" />
+<div class="selection_panel" style="display:none">
+	<div class="description">${element['description']}</div>
+<%
+import json
+import collections
+
+choices = json.loads(element['options'])
+choices = collections.OrderedDict(sorted(choices.items()))
+%>
+	<ul>
+		% for name, value in choices.items():
+		<li>
+			<a class="selection_choice" href="#" title="${value}" data-value="${value}">${name}</a>
+		</li>
+		% endfor
+	</ul>
+</div>
+<style>
+#selection_dialog_content{
+	padding: 16px;
+	min-height: 150px;
+	min-width: 400px;
+	max-height: 300px;
+    overflow-y: scroll;
+}
+
+#selection_dialog_content td{
+	padding: 3px;
+}
+
+#selection_dialog_content table.matches{
+	width: 95%;
+}
+
+#selection_dialog_content table.matches tbody tr:nth-of-type(2n)
+{
+	background:#EEE;
+}
+
+#selection_dialog_content .table_scroll{
+	max-height: 200px;
+	overflow-y: scroll;
+	border: 1px solid #888;
+}
+
+#selection_dialog_content div.matches{
+	margin-top: 16px;
+	font-weight: bold;
+}
+
+#selection_dialog_content .validation_errors{
+	color: #C42323;
+	font-weight: bold;
+}
+
+#selection_dialog_content ul{
+	margin-left: 0px;
+}
+
+#selection_dialog_content li{
+	border:1px solid #eee;
+	background-color: #f6f6f6;
+	margin: 5px;
+	padding: 3px;
+	list-style-type: none;
+}
+
+#selection_dialog_content .error_message{
+	color: #C42323;
+	font-weight: bold;
+}
+
+.selection_panel > .description{
+	margin-bottom: 12px;
+}
+
+.selection_panel{
+	font-size: small;
+}
+
+#show_dialog{
+	padding-left: 2px;
+}
+</style>
+
+<div>
+	<a id="show_dialog" href="#">${element['title']}</a>
+</div>
+<script type="text/javascript">
+
+	var popup = null;
+
+	var entityMap = {
+	    "&": "&amp;",
+	    "<": "&lt;",
+	    ">": "&gt;",
+	    '"': '&quot;',
+	    "'": '&#39;',
+	    "/": '&#x2F;'
+	};
+
+	function escapeHtml(string) {
+	    return String(string).replace(/[&<>"'\/]/g, function (s) {
+	      return entityMap[s];
+	    });
+	}
+	
+	function shortenString(s){
+		var max_length = 80;
+		
+		if(s.length > max_length){
+			return s.substr(0, max_length-1) + "..."
+		}
+		else{
+			return s;
+		}
+	}
+	
+	function selectItem(ev){
+		var value = $(ev.target).data('value');
+		console.info("Selected value of " + value);
+		$("#${element['field_to_populate']}").val(value);
+		
+		popup.destroyPopup();
+		return false;
+	}
+	
+	function openDialog(){
+		$(".selection_panel").clone().appendTo("#selection_dialog_content");
+		$("#selection_dialog_content > .selection_panel").show();
+		$(".selection_choice").on("click", selectItem);
+	}
+	
+	$(document).ready(
+			function(){
+				
+				$('#show_dialog').click(
+						function() {
+							_mypopup = new Splunk.Popup('<div id="selection_dialog_content"></div>',
+								    {
+								            title : "${element['title']}",
+								            pclass : "selection_dialog",
+								            cloneFlag : false
+								    });
+							
+							popup = _mypopup;
+							openDialog();
+							return false;
+						}
+				);
+			}
+	);
+</script>

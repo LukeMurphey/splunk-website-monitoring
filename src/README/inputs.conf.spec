@@ -24,3 +24,6 @@ username = <value>
 
 password = <value>
 * Defines the password to use for authenticating (only HTTP authentication supported)
+
+user_agent = <value>
+* Defines the user-agent string used by the HTTP client
