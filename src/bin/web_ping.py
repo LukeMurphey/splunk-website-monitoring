@@ -325,7 +325,7 @@ class WebPing(ModularInput):
                 timed_out = True
                 
             elif logger:
-                logger.exception("A connection exception was thrown when executing a web request")
+                logger.exception("A connection exception was thrown when executing a web request, this can happen if the domain name, IP address is invalid or if network connectivity is down or blocked by a firewall, see url=http://lukemurphey.net/projects/splunk-website-monitoring/wiki/Troubleshooting")
                 
         except socks.GeneralProxyError:
             # This may be thrown if the user configured the proxy settings incorrectly
