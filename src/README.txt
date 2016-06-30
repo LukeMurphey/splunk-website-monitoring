@@ -117,5 +117,6 @@ Change History
 |---------|------------------------------------------------------------------------------------------------------------------|
 | 1.5.0   | Added ability to specify the user-agent string                                                                   |
 |---------|------------------------------------------------------------------------------------------------------------------|
-|         | Updated connection error message to make it more clear how to troubleshoot the problem                           |
+| 1.5.1   | Updated connection error message to make it more clear how to troubleshoot the problem                           |
+|         | Eliminating error message regarding InsecureRequestWarning                                                       |
 +---------+------------------------------------------------------------------------------------------------------------------+

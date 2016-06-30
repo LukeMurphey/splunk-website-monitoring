@@ -14,6 +14,12 @@ import socket
 from website_monitoring_app import socks
 from website_monitoring_app import requests
 from website_monitoring_app.requests_ntlm import HttpNtlmAuth
+
+# Disable the SSL certificate warning
+# http://lukemurphey.net/issues/1390
+# We don't support SSL certicate checking at this point because I haven;t found a good way to include the SSL cert libraries into a SPlunk app.
+from website_monitoring_app.requests.packages.urllib3.exceptions import InsecureRequestWarning
+requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
     
 class Timer(object):
     """
