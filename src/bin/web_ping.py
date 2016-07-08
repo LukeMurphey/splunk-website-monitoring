@@ -150,16 +150,26 @@ class WebPing(ModularInput):
         
         try:
             
-            auth_header = http.headers['WWW-Authenticate']
-            
-            if auth_header is not None:
-                m = re.search('^([a-zA-Z0-9]+) ', auth_header)
-                auth_type = m.group(1)
-                return auth_type.lower()
+            # Determine if the authentication header is present and use it to determine the authentication type
+            if 'WWW-Authenticate' in http.headers:
+                auth_header = http.headers['WWW-Authenticate']
+                
+                if auth_header is not None:
+                    m = re.search('^([a-zA-Z0-9]+) ', auth_header)
+                    auth_type = m.group(1)
+                    return auth_type.lower()
+                
+            # No authentication header is present
+            else:
+                if logger:
+                    logger.exception("Unable to determine authentication type (no www-authenticate header); will default to basic authentication")
+                
+                return cls.HTTP_AUTH_NONE
             
         except Exception:
+            
             if logger:
-                logger.exception("Unable to determine authentication type") 
+                logger.exception("Unable to determine authentication type")
                 
     @classmethod
     def create_auth_for_request(cls, auth_type, username, password, logger=None):
@@ -289,12 +299,19 @@ class WebPing(ModularInput):
             
             # Determine the auth type
             auth_type = cls.determine_auth_type(url, proxies=proxies, timeout=timeout, cert=cert, logger=logger)
-        
+            
+            # The authentication type could not be determined. However, we know that authentication is required since a username and password was provided. Default to 
+            if auth_type == cls.HTTP_AUTH_NONE:
+                auth_type = cls.HTTP_AUTH_BASIC
+                
+                if logger:
+                    logger.info("Authentication type could not be automatically discovered; auth_type=%s", auth_type)
+                    
+            elif logger is not None:
+                logger.debug("Discovered auth_type=%s", auth_type)
+            
             # Get the authentication class for request
             auth = cls.create_auth_for_request(auth_type, username, password, logger)
-            
-            if logger is not None:
-                logger.debug("Discovered auth_type=%s", auth_type)
         
         try:
             

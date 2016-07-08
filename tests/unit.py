@@ -300,6 +300,20 @@ class TestWebPing(WebsiteMonitoringAppTest):
         
         self.assertEquals(result.response_code, 200)
         
+    def test_ping_with_basic_authentication_optional(self):
+        
+        # Try with valid authentication
+        url_field = URLField( "test_ping", "title", "this is a test" )
+        result = WebPing.ping( url_field.to_python("http://127.0.0.1:8888/optional_auth"), timeout=3, username="admin", password="changeme" )
+        
+        self.assertEquals(result.response_code, 203)
+        
+        # Verify that no authentication still works
+        result = WebPing.ping( url_field.to_python("http://127.0.0.1:8888/optional_auth"), timeout=3)
+        
+        self.assertEquals(result.response_code, 202)
+        self.assertGreater(result.request_time, 0)
+        
     def test_determine_auth_method_basic(self):
         
         # Try with basic auth
@@ -340,7 +354,6 @@ class TestWebPing(WebsiteMonitoringAppTest):
         # Make sure that the server is validating the user-agent which returns 201 when the user-agent matches "USER_AGENT_CHECK"
         result = WebPing.ping( url_field.to_python("http://127.0.0.1:8888/user_agent_check"), user_agent="USER_AGENT_CHECK", timeout=3 )
         self.assertEquals(result.response_code, 201)
-        
         
 if __name__ == '__main__':
     unittest.main()

@@ -48,6 +48,18 @@ class Handler(BaseHTTPRequestHandler):
             with open( os.path.join("web_files", "test_page.html"), "r") as webfile:
                 self.wfile.write(webfile.read())#.replace('\n', '')
         
+        # Present the HTML page with optional authentication
+        elif self.path == "/optional_auth":
+            
+            if self.headers.getheader('Authorization') == None:
+                self.send_response(202)
+                self.wfile.write('not authenticated')
+            
+            elif self.headers.getheader('Authorization') == ('Basic ' + encoded_password):
+                self.send_response(203)
+                self.wfile.write('authenticated')
+            
+            
         # Present frontpage with user authentication.
         elif self.headers.getheader('Authorization') == None:
             self.do_AUTHHEAD()
