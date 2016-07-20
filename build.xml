@@ -18,7 +18,18 @@
           <include name="*.jar" />
         </fileset>
     </path>
-    
+	
+    <!-- ================================= 
+          target: initialize_libraries
+         ================================= -->
+	<target name="initialize_libraries">
+		<taskdef resource="net/sf/antcontrib/antlib.xml">
+		     <classpath>
+		    	<pathelement location="${basedir}/lib/ant-contrib-0.6.jar"/>
+		     </classpath>
+		</taskdef>
+	</target>
+	
     <!-- ================================= 
           target: clean
          ================================= -->
@@ -91,8 +102,8 @@
     <!-- ================================= 
           target: populate_export_dir
          ================================= -->
-    <target name="populate_export_dir" depends="get_build_number">
-        
+    <target name="populate_export_dir" depends="get_build_number,initialize_libraries">
+    	
         <!-- Copy the files over that need substitution. This should only be
              applied to text files since Ant may corrupt binary files otherwise. -->
         <copy todir="${export_dir}/${value.build.appname}">
@@ -109,21 +120,67 @@
             </filterset>
         </copy>
         
-        <!-- Copy the binary files over. -->
+        <!-- Copy the binary files over (excluding the javascript files which are to be minified) -->
         <copy todir="${export_dir}/${value.build.appname}">
             <fileset dir="${value.src.directory}">
                 <exclude name="**/*.conf" />
                 <exclude name="**/*.txt" />
                 <exclude name="**/*.xml" />
+            	<exclude name="**/*.js" />
+            	<exclude name="**/*.css" />
             </fileset>
         </copy>
+    	
+    	<!-- Deploy the CSS and JS (and optionally minimize it) -->
+    	<if>
+    		<or>
+    			<equals arg1="${minimize}" arg2="true" />
+    			<equals arg1="${minimize}" arg2="1" />
+    		</or>
+    		<then>
+				<!-- The mapper to map the original source files to the minified versions with the same name, but different path -->
+		    	<mapper id="to_export_dir_mapper" type="glob" from="*" to="${export_dir}/${value.build.appname}/*" />
+		    	
+				<!-- Minify the Javascript files -->		
+			    <apply executable="java" parallel="false">
+			    	
+			    	<!-- Source of the files -->	
+			        <fileset dir="${basedir}/src">
+			    		<include name="**/*.js" />
+			        	<include name="**/*.css" />
+			        </fileset>
+			        <arg line="-jar" />
+			        <arg path="lib/yuicompressor-2.4.8.jar" />
+			        <srcfile />
+			        <arg line="-o"/>
+			    	<mapper refid="to_export_dir_mapper" />
+			        <targetfile />
+			    </apply>
+    		</then>
+    		<else>
+    	        <!-- Copy the unoptimized files over -->
+    	        <copy todir="${export_dir}/${value.build.appname}">
+    	            <fileset dir="${value.src.directory}">
+    	            	<include name="**/*.js" />
+    	            	<include name="**/*.css" />
+    	            </fileset>
+    	        </copy>
+    		</else>
+    	</if>
 
     </target>
         
     <!-- ================================= 
+          target: set_minimize_for_package
+         ================================= -->
+	<target name="set_minimize_for_package">
+		<property name="minimize" value="${value.build.minimize}"/>
+	</target>
+	
+    <!-- ================================= 
           target: package
          ================================= -->
-    <target name="package" depends="setup_tmp_directory_for_export,populate_export_dir" description="Create the Splunk package of the app">
+    <target name="package" depends="setup_tmp_directory_for_export,set_minimize_for_package,populate_export_dir" description="Create the Splunk package of the app">
         
         <!-- Make the directory where we will store the files -->
         <mkdir dir="${value.build.packageoutput.directory}" />
@@ -153,7 +210,7 @@
     <target name="setup_tmp_directory_for_deployment">
         
         <!-- Create a reference to the directory to send the files to -->
-        <property name="export_dir" value="${value.deploy.splunk_home}/etc/apps/" />
+        <property name="export_dir" value="${value.deploy.splunk_home}/etc/apps" />
         
         <!-- Make the app directory if it does not yet exist -->
         <mkdir dir="${export_dir}" />
@@ -161,9 +218,23 @@
     </target>
     
     <!-- ================================= 
+          target: skip_bump
+         ================================= -->
+	<target name="skip_bump">
+		<property name="skip_bump">1</property>
+	</target>
+	
+    <!-- =================================
+          target: set_minimize_for_deploy
+         ================================= -->
+	<target name="set_minimize_for_deploy">
+		<property name="minimize" value="${value.deploy.minimize}"/>
+	</target>
+	
+    <!-- ================================= 
           target: deploy
          ================================= -->
-    <target name="deploy" depends="splunk.bump_if_necessary,setup_tmp_directory_for_deployment,populate_export_dir" description="Deploys the app to an instance of Splunk" >
+    <target name="deploy" depends="splunk.bump_if_necessary,setup_tmp_directory_for_deployment,set_minimize_for_deploy,populate_export_dir" description="Deploys the app to an instance of Splunk" >
         <echo>App ${value.build.appname} build ${value.build.number} deployed to ${export_dir}</echo>
     </target>
     
@@ -191,11 +262,19 @@
 	  	</echo> 	
 	</target>
 	
+<!-- ================================= 
+      target: does_appserver_exist	
+     ================================= -->
+<target name="does_appserver_exist">
+    <condition property="appserver_dir_exists">
+      <available file="${basedir}/${value.src.directory}/appserver/" type="dir"/>
+    </condition>
+</target>
 
-    <!-- ================================= 
-          target: is_appserver_up_to_date
-         ================================= -->
-    <target name="is_appserver_up_to_date" description="Determine if the code in the appserver directory of the Splunk install is outdated">
+<!-- ================================= 
+      target: is_appserver_up_to_date
+     ================================= -->
+<target name="is_appserver_up_to_date" description="Determine if the code in the appserver directory of the Splunk install is outdated" depends="does_appserver_exist" if="appserver_dir_exists">
     	
     	<uptodate property="appserver_up_to_date">
     		
@@ -211,8 +290,17 @@
     <!-- ================================= 
           target: splunk.bump_if_necessary
          ================================= -->
-    <target name="splunk.bump_if_necessary" unless="appserver_up_to_date" depends="is_appserver_up_to_date">
-    	<antcall target="splunk.bump" />
+    <target name="splunk.bump_if_necessary" unless="appserver_up_to_date" if="appserver_dir_exists" depends="initialize_libraries,does_appserver_exist,is_appserver_up_to_date">
+    	<if>
+    		<bool>
+    			<not>
+    				<isset property="skip_bump" />
+    			</not>
+    		</bool>
+    		<then>
+    			<antcall target="splunk.bump" />
+    		</then>
+    	</if>
     </target>
 	
     <!-- ================================= 
@@ -246,24 +334,10 @@
     <!-- ================================= 
           target: splunk.bump
          ================================= -->
-    <target name="splunk.bump" depends="splunk.get_push_version" description="Bump Splunk">
-		    	
+    <target name="splunk.bump" depends="splunk.get_push_version,initialize_libraries" description="Bump Splunk">
+		
     	<!-- Increment the value -->
-    	<script language="javascript">
-    		var currentValue = parseInt(project.getProperty("value.deploy.bump"), 10);
-    		
-    		var newBump = currentValue + 1;
-    		
-    		if(isNaN(newBump)){
-    			echo = project.createTask("echo");
-    			echo.setMessage("The loaded push-version is invalid; it will be reset to 100");
-    		    echo.perform();
-    			newBump = 100;
-    		}
-    		
-    		project.setProperty("value.deploy.bump_updated", newBump);
-    	
-    	</script>
+    	<math result="value.deploy.bump_updated" operand1="${value.deploy.bump}" operation="+" operand2="1" datatype="int"/>
     	
     	<!-- Set the current value of bump -->
     	<echo file="${value.deploy.splunk_home}/var/run/splunk/push-version.txt">${value.deploy.bump_updated}</echo>
@@ -316,7 +390,7 @@
     <!-- ================================= 
           target: splunk.deploy_and_restart
          ================================= -->
-    <target name="splunk.deploy_and_restart" description="Deploys the application and restarts Splunk" depends="deploy,splunk.restart" />
+    <target name="splunk.deploy_and_restart" description="Deploys the application and restarts Splunk" depends="skip_bump,deploy,splunk.restart" />
 	
     <!-- ================================= 
           target: splunk.refresh
