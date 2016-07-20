@@ -82,6 +82,30 @@ require([
 	            expect(view.isValidInterval("2h")).toBe(true);
 	        });
 	        
+	        it("validation of interval with only an integer", function() {
+	        	var view = new BatchInputCreateView();
+	            
+	            expect(view.isValidInterval("2")).toBe(true);
+	        });
+	        
+	        it("validation of interval with a bad time unit", function() {
+	        	var view = new BatchInputCreateView();
+	            
+	            expect(view.isValidInterval("2z")).toBe(false);
+	        });
+	        
+	        it("validation of interval with no count", function() {
+	        	var view = new BatchInputCreateView();
+	            
+	            expect(view.isValidInterval("m")).toBe(false);
+	        });
+	        
+	        it("validation of interval that is blank", function() {
+	        	var view = new BatchInputCreateView();
+	            
+	            expect(view.isValidInterval("")).toBe(false);
+	        });
+	        
 	    });
 
 	}

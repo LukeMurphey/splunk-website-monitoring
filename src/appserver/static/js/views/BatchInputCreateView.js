@@ -251,6 +251,31 @@ define([
          */
         validate: function(){
         	
+        	var issues = 0;
+        	
+        	// Validate the URLs
+        	if($("#urls", this.$el).tagsinput('items').length === 0){
+        		issues = issues + 1;
+        		$(".control-group.urls", this.$el).addClass("error");
+        		$(".control-group.urls .help-inline", this.$el).show();
+        	}
+        	else{
+        		$(".control-group.urls", this.$el).removeClass("error");
+        		$(".control-group.urls .help-inline", this.$el).hide();
+        	}
+        	
+        	// Validate the interval
+        	if(!this.isValidInterval($("#interval", this.$el).val())){
+        		issues = issues + 1;
+        		$(".control-group.interval", this.$el).addClass("error");
+        		$(".control-group.interval .help-inline", this.$el).show();
+        	}
+        	else{
+           		$(".control-group.interval", this.$el).removeClass("error");
+        		$(".control-group.interval .help-inline", this.$el).hide();
+        	}
+        	
+        	return issues === 0;
         },
         
         /**
@@ -297,14 +322,19 @@ define([
          * Create the inputs based on the inputs.
          */
         doCreateInputs: function(){
-        	this.hideMessages();
         	
-        	this.processed_queue = [];
-        	this.processing_queue = $("#urls", this.$el).tagsinput('items');
-        	this.interval = $("#interval", this.$el).val();
-        	//this.index = $("#index", this.$el).val();
+        	if(this.validate()){
+            	
+            	this.hideMessages();
+            	
+            	this.processed_queue = [];
+            	this.processing_queue = $("#urls", this.$el).tagsinput('items');
+            	this.interval = $("#interval", this.$el).val();
+            	//this.index = $("#index", this.$el).val();
+            	
+            	this.createNextInput();
+        	}
         	
-        	this.createNextInput();
         },
         
         /**
