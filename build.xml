@@ -262,19 +262,30 @@
 	  	</echo> 	
 	</target>
 	
-<!-- ================================= 
-      target: does_appserver_exist	
-     ================================= -->
-<target name="does_appserver_exist">
-    <condition property="appserver_dir_exists">
-      <available file="${basedir}/${value.src.directory}/appserver/" type="dir"/>
-    </condition>
-</target>
+	<!-- ===================================================================
+		  target: splunk.custom_root_endpoint
+		 =================================================================== -->
+	<target name="splunk.custom_root_endpoint" description="Configure SplunkWeb for easier web development">
+	    <mkdir dir="${value.deploy.splunk_home}/etc/system/local/"/>
+	    
+	  	<echo file="${value.deploy.splunk_home}/etc/system/local/web.conf">[settings]
+	  	root_endpoint=/custom_endpoint
+	  	</echo>
+	</target>
+	
+	<!-- ================================= 
+      	 target: does_appserver_exist	
+     	 ================================= -->
+	<target name="does_appserver_exist">
+    	<condition property="appserver_dir_exists">
+      		<available file="${basedir}/${value.src.directory}/appserver/" type="dir"/>
+    	</condition>
+	</target>
 
-<!-- ================================= 
-      target: is_appserver_up_to_date
-     ================================= -->
-<target name="is_appserver_up_to_date" description="Determine if the code in the appserver directory of the Splunk install is outdated" depends="does_appserver_exist" if="appserver_dir_exists">
+	<!-- ================================= 
+         target: is_appserver_up_to_date
+         ================================= -->
+	<target name="is_appserver_up_to_date" description="Determine if the code in the appserver directory of the Splunk install is outdated" depends="does_appserver_exist" if="appserver_dir_exists">
     	
     	<uptodate property="appserver_up_to_date">
     		
