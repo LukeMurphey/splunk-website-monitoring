@@ -1,0 +1,26 @@
+.bootstrap-tagsinput > .label-info{
+	background-color: #777;
+	border: #777;
+	text-transform: none;
+}
+
+.create-inputs{
+	margin-top: 16px;
+}
+
+/* Tell the dialogs to use an inline-block so that they fit nicely next to other elements */
+#info-message, #warning-message{
+	display: inline-block;
+    vertical-align: top;
+    padding-bottom: 0px;
+	margin-bottom: 0px;
+}
+
+/* Reinstate the display none if the hide class is set (since the CSS about overrides this) */
+#info-message.hide, #warning-message.hide{
+	display: none;
+}
+
+.message-dialogs{
+	margin-bottom: 16px;
+}

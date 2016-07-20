@@ -40,6 +40,12 @@ require([
 	            expect(view.generateStanza("http://textcritical.net")).toBe("textcritical_net");
 	        });
 	        
+	        it("creation of a stanza from URL with list of existing stanzas", function() {
+	        	var view = new BatchInputCreateView();
+	            
+	            expect(view.generateStanza("http://textcritical.net", ["textcritical_net", "textcritical_net_1"])).toBe("textcritical_net_2");
+	        });
+	        
 	        it("parsing of URL", function() {
 	        	var view = new BatchInputCreateView();
 	        	var parsed = view.parseURL("http://textcritical.net");

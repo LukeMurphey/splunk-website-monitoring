@@ -1,10 +1,24 @@
 <form class="form-horizontal">
 
+  <h2>Batch Create Website Monitoring Inputs</h2>
+
+  <div class="message-dialogs">
+			<div id="warning-message" class="alert alert-warning hide">
+				<i class="icon-alert"></i>
+				<div class="message">Warning!</div>
+			</div>
+			
+			<div id="info-message" class="alert alert-info hide">
+				<i class="icon-alert"></i>
+				<div class="message">Ok!</div>
+			</div>
+  </div>
 
   <div class="control-group">
-    <label class="control-label" for="inputEmail">URLs</label>
+    <label class="control-label" for="urls">URLs</label>
     <div class="controls">
-      <textarea id="urls" rows="3"></textarea>
+      <input type="text" id="urls" placeholder="e.g. http://splunk.com">
+      <span class="help-block ">Enter a list of URLs and press enter or a comma to add another</span>
     </div>
   </div>
 
