@@ -245,6 +245,13 @@ define([
         		// Show a message noting that we are done
         		this.showInfoMessage("Done creating the inputs (" + this.processed_queue.length + " created)");
         		
+        		if(this.unprocessed_queue.length === 1){
+        			this.showWarningMessage("1 input could not be created");
+        		}
+        		else if(this.unprocessed_queue.length > 0){
+        			this.showWarningMessage("" + this.unprocessed_queue.length + " inputs could not be created");
+        		}
+        		
         		// Hide the dialog
         		$("#progress-modal", this.$el).modal('hide');
         		
@@ -357,6 +364,7 @@ define([
             	this.hideMessages();
             	
             	this.processed_queue = [];
+            	this.unprocessed_queue = [];
             	this.processing_queue = $("#urls", this.$el).tagsinput('items');
             	this.interval = $("#interval", this.$el).val();
             	//this.index = $("#index", this.$el).val();

@@ -8,9 +8,7 @@
 	margin-top: 16px;
 }
 
-/* Tell the dialogs to use an inline-block so that they fit nicely next to other elements */
 #info-message, #warning-message{
-	display: inline-block;
     vertical-align: top;
     padding-bottom: 0px;
 	margin-bottom: 0px;
