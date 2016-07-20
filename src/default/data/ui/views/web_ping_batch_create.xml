@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='utf-8'?>
 
-<form script="batch_create.js" stylesheet="batch_create.css">
+<form script="web_ping_batch_create.js">
 	<label>Create Inputs</label>
 	
 	<row>
