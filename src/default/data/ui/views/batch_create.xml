@@ -1,0 +1,12 @@
+<?xml version='1.0' encoding='utf-8'?>
+
+<form script="batch_create.js" stylesheet="batch_create.css">
+	<label>Create Inputs</label>
+	
+	<row>
+		<html>
+			<div id="batch-create-inputs"></div>
+		</html>
+	</row>
+	
+</form>

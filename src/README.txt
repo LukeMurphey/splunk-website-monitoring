@@ -120,4 +120,6 @@ Change History
 | 1.5.1   | Updated connection error message to make it more clear how to troubleshoot the problem                           |
 |         | Eliminating error message regarding InsecureRequestWarning                                                       |
 |         | Fixed error that can happen when attempting to determine authentication type                                     |
+|---------|------------------------------------------------------------------------------------------------------------------|
+| 1.6     | Added page to create multiple inputs (batch creation)                                                            |
 +---------+------------------------------------------------------------------------------------------------------------------+

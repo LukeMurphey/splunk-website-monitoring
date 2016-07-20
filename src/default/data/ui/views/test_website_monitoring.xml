@@ -1,0 +1,15 @@
+<dashboard script="tests.js" isDashboard="false" isVisible="false">
+    <label>Website Monitoring Tests</label>
+    
+    <row>
+        <html id="element1">
+	        <div id="HTMLReporter" class="jasmine_reporter">
+	            <div class="banner">
+	                <span class="title">Unit Tests</span>
+	                <span class="version"></span>
+	            </div>
+	        </div>
+	        <div id="TestOutput"></div>
+        </html>
+    </row>
+</dashboard>
