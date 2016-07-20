@@ -40,7 +40,8 @@ define([
         },
         
         events: {
-        	"click .create-inputs" : "doCreateInputs"
+        	"click .create-inputs" : "doCreateInputs",
+        	"click .stop-creating-inputs" : "stopCreateInputs"
         },
         
         initialize: function() {
@@ -51,9 +52,11 @@ define([
         	// These are internal variables
         	this.processing_queue = [];
         	this.processed_queue = [];
+        	this.unprocessed_queue = [];
         	this.interval = null;
         	this.index = null;
         	this.dont_duplicate = true;
+        	this.stop_processing = false;
         },
         
         /**
@@ -207,10 +210,15 @@ define([
         		  
         			// On error
         			error: function(jqXHR, textStatus, errorThrown){
+        				
+        				// These responses indicate that the user doesn't have permission of the input already exists
         				if( jqXHR.status != 403 && jqXHR.status != 409 ){
         					console.info('Input creation failed');
-        					this.showWarningMessage("The input could not be created");
         				}
+    					
+    					// Remember that we couldn't process this on
+    					this.unprocessed_queue.push(url);
+    					
         			}.bind(this)
         	});
         	
@@ -222,9 +230,23 @@ define([
          */
         createNextInput: function(){
         	
+        	// Stop if we are asked to
+        	if(this.stop_processing){
+        		return;
+        	}
+        	
+        	// Update the progress bar
+        	var progress = 100 * ((this.processed_queue.length + this.unprocessed_queue.length) / (this.processing_queue.length + this.processed_queue.length + this.unprocessed_queue.length));
+        	$(".bar", this.$el).css("width", progress + "%");
+        	
         	// Stop if we are done
         	if(this.processing_queue.length === 0){
+        		
+        		// Show a message noting that we are done
         		this.showInfoMessage("Done creating the inputs (" + this.processed_queue.length + " created)");
+        		
+        		// Hide the dialog
+        		$("#progress-modal", this.$el).modal('hide');
         		
         		// Clear the inputs we successfully created
 				for(var c = 0; c < this.processed_queue.length; c++){
@@ -319,6 +341,13 @@ define([
         },
         
         /**
+         * Stop creating the inputs.
+         */
+        stopCreateInputs: function(){
+        	this.stop_processing = true;
+        },
+        
+        /**
          * Create the inputs based on the inputs.
          */
         doCreateInputs: function(){
@@ -332,6 +361,11 @@ define([
             	this.interval = $("#interval", this.$el).val();
             	//this.index = $("#index", this.$el).val();
             	
+            	// Open the progress dialog
+            	this.stop_processing = false;
+            	$("#progress-modal", this.$el).modal();
+            	
+            	// Start the process
             	this.createNextInput();
         	}
         	
