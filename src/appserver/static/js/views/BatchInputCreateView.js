@@ -247,6 +247,53 @@ define([
         },
         
         /**
+         * Validate the inputs.
+         */
+        validate: function(){
+        	
+        },
+        
+        /**
+         * Returns true if the item is a valid URL.
+         */
+        isValidURL: function(url){
+        	var regex = new RegExp("^(http[s]?:\\/\\/(www\\.)?|ftp:\\/\\/(www\\.)?|www\\.){1}([0-9A-Za-z-\\.@:%_\+~#=]+)+((\\.[a-zA-Z]{2,3})+)(/(.)*)?(\\?(.)*)?");
+        	
+        	return regex.test(url);
+        },
+        
+        /**
+         * Returns true if the item is a valid interval.
+         */
+        isValidInterval: function(interval){
+        	
+        	var re = /^\s*([0-9]+([.][0-9]+)?)\s*([dhms])?\s*$/gi;
+        	
+        	if(re.exec(interval)){
+        		return true;
+        	}
+        	else{
+        		return false;
+        	}
+        },
+        
+        /**
+         * Ensure that the tag is a valid URL.
+         */
+        validateURL: function(event) {
+        	if(!this.isValidURL(event.item)){
+        		
+        		// Try adding the protocol to see if the user just left that part out.
+        		if(this.isValidURL("http://" + event.item)){
+        			$("#urls").tagsinput('add', "http://" + event.item);
+        		}
+        		
+        		event.cancel = true;
+        		
+        	}
+        },
+        
+        /**
          * Create the inputs based on the inputs.
          */
         doCreateInputs: function(){
@@ -325,7 +372,10 @@ define([
         		//'some_option' : some_option
         	}));
         	
-        	$("#urls").tagsinput('items')
+        	// Render the URL as tags
+        	$("#urls").tagsinput('items');
+        	
+        	$("#urls").on('beforeItemAdd', this.validateURL.bind(this));
         }
     });
     

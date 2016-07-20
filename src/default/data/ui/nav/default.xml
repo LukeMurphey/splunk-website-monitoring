@@ -2,4 +2,5 @@
   <view name="status_overview" default="true" />
   <view name="status_history" />
   <view name="site_changes" />
+  <view name="batch_create" />
 </nav>

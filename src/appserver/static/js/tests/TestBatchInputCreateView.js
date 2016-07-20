@@ -51,6 +51,37 @@ require([
 	        	var parsed = view.parseURL("http://textcritical.net");
 	            expect(parsed.hostname).toBe("textcritical.net");
 	        });
+	        
+	        it("validation of valid URL", function() {
+	        	var view = new BatchInputCreateView();
+	            
+	            expect(view.isValidURL("http://textcritical.net")).toBe(true);
+	        });
+	        
+	        it("validation of valid URL (with https)", function() {
+	        	var view = new BatchInputCreateView();
+	            
+	            expect(view.isValidURL("https://textcritical.net")).toBe(true);
+	        });
+	        
+	        it("validation of url missing protocol", function() {
+	        	var view = new BatchInputCreateView();
+	        	
+	            expect(view.isValidURL("textcritical.net")).toBe(false);
+	        });
+	        
+	        it("validation of url with implied protocol", function() {
+	        	var view = new BatchInputCreateView();
+	        	
+	            expect(view.isValidURL("//textcritical.net")).toBe(false);
+	        });
+	        
+	        it("validation of interval", function() {
+	        	var view = new BatchInputCreateView();
+	            
+	            expect(view.isValidInterval("2h")).toBe(true);
+	        });
+	        
 	    });
 
 	}
