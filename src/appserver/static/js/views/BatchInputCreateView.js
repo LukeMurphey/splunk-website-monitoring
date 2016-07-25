@@ -58,6 +58,10 @@ define([
         	this.dont_duplicate = true;
         	this.stop_processing = false;
         	this.capabilities = null;
+        	this.inputs = null;
+        	this.existing_input_names = [];
+        	
+        	this.getExistingInputs();
         },
         
         /**
@@ -160,7 +164,7 @@ define([
         	
         	// Populate defaults for the arguments
         	if(name === null){
-        		name = this.generateStanza(url);
+        		name = this.generateStanza(url, this.existing_input_names);
         	}
         	
         	if(title === null){
@@ -191,6 +195,10 @@ define([
         				
         				// Remember that we processed this one
         				this.processed_queue.push(url);
+        				
+        				// Make sure that we add the name so that we can detect duplicated names
+        				this.existing_input_names.push(name);
+        				
         			}.bind(this),
         		  
         			// On complete
@@ -246,11 +254,17 @@ define([
         		// Show a message noting that we are done
         		this.showInfoMessage("Done creating the inputs (" + this.processed_queue.length + " created)");
         		
+        		var extra_message = "";
+        		
+        		if(this.dont_duplicate){
+        			extra_message = " (duplicates are being skipped)";
+        		}
+        		
         		if(this.unprocessed_queue.length === 1){
-        			this.showWarningMessage("1 input could not be created");
+        			this.showWarningMessage("1 input was not created" + extra_message);
         		}
         		else if(this.unprocessed_queue.length > 0){
-        			this.showWarningMessage("" + this.unprocessed_queue.length + " inputs could not be created");
+        			this.showWarningMessage("" + this.unprocessed_queue.length + " inputs were not created" + extra_message);
         		}
         		
         		// Hide the dialog
@@ -268,10 +282,22 @@ define([
         		// Get the next entry
         		var url = this.processing_queue.pop();
         		
-            	// Get a list of users to show from which to load the context
-                $.when(this.createInput(url, this.interval, this.index)).done(function(){
-                	this.createNextInput();
-          		}.bind(this));
+        		// Make sure this URL doesn't already exist, skip it if necessary
+        		if(this.dont_duplicate && this.isAlreadyMonitored(url)){
+        			$("#urls", this.$el).tagsinput('remove', url);
+        			this.unprocessed_queue.push(url);
+        			console.info("Skipping creation of an input that already existed for " + url);
+        			this.createNextInput();
+        		}
+        		
+        		// 
+        		else{
+                	// Process the next input
+                    $.when(this.createInput(url, this.interval, this.index)).done(function(){
+                    	this.createNextInput();
+              		}.bind(this));
+        		}
+
         		
         	}
         },
@@ -368,6 +394,7 @@ define([
             	this.unprocessed_queue = [];
             	this.processing_queue = $("#urls", this.$el).tagsinput('items');
             	this.interval = $("#interval", this.$el).val();
+            	this.dont_duplicate = $(".dont-duplicate", this.$el).is(':checked');
             	//this.index = $("#index", this.$el).val();
             	
             	// Open the progress dialog
@@ -461,6 +488,52 @@ define([
         	}
 
             return $.inArray(capability, this.capabilities) >= 0;
+
+        },
+        
+        /**
+         * Determine if the given URL is already monitored.
+         */
+        isAlreadyMonitored: function(url){
+        	
+        	for(var c = 0; c < this.inputs.length; c++){
+        		
+        		if(this.inputs[c].content.url === url){
+        			return true;
+        		}
+        		
+        	}
+        	
+        	return false;
+        },
+        
+        /**
+         * Get a list of the existing inputs.
+         */
+        getExistingInputs: function(){
+
+        	var uri = splunkd_utils.fullpath("/servicesNS/admin/search/data/inputs/web_ping?output_mode=json");
+
+	        // Fire off the request
+        	jQuery.ajax({
+        		url:     uri,
+        		type:    'GET',
+        		async:   false,
+        		success: function(result) {
+        			
+        			if(result !== undefined){
+        				this.inputs = result.entry;
+        			}
+        			
+        			// Populate a list of the existing input names
+        			this.existing_input_names = [];
+        			
+                	for(var c = 0; c < this.inputs.length; c++){
+                		this.existing_input_names.push(this.inputs[c]["name"]);
+                	}
+
+        		}.bind(this)
+        	});
 
         },
         
