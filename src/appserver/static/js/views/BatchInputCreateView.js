@@ -57,6 +57,7 @@ define([
         	this.index = null;
         	this.dont_duplicate = true;
         	this.stop_processing = false;
+        	this.capabilities = null;
         },
         
         /**
@@ -436,12 +437,42 @@ define([
         },
         
         /**
+         * Determine if the user has the given capability.
+         */
+        hasCapability: function(capability){
+
+        	var uri = Splunk.util.make_url("/splunkd/__raw/services/authentication/current-context?output_mode=json");
+
+        	if( this.capabilities === null ){
+
+	            // Fire off the request
+	            jQuery.ajax({
+	            	url:     uri,
+	                type:    'GET',
+	                async:   false,
+	                success: function(result) {
+
+	                	if(result !== undefined){
+	                		this.capabilities = result.entry[0].content.capabilities;
+	                	}
+
+	                }.bind(this)
+	            });
+        	}
+
+            return $.inArray(capability, this.capabilities) >= 0;
+
+        },
+        
+        /**
          * Render the view.
          */
         render: function () {
         	
+        	var has_permission = this.hasCapability('edit_modinput_web_ping');
+        	
         	this.$el.html(_.template(Template, {
-        		//'some_option' : some_option
+        		'has_permission' : has_permission
         	}));
         	
         	// Render the URL as tags

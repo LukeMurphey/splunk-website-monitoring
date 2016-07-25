@@ -1,3 +1,10 @@
+<% if(!has_permission) { %>
+	<div class="alert alert-warning">
+    	<i class="icon-alert"></i>
+		You do not have permission to make inputs. You need the "edit_modinput_web_ping" capability to make and edit Website Monitoring inputs.
+    </div>
+<% } else { %>
+
 <div id="progress-modal" class="modal hide fade" tabindex="-1" role="dialog" aria-hidden="true" data-backdrop="static" data-keyboard="false">
   <div class="modal-header">
     <h3>Creating Inputs</h3>
@@ -14,7 +21,6 @@
     <button class="btn btn-primary pull-right stop-creating-inputs" data-dismiss="modal">Stop</button>
   </div>
 </div>
-
 
 <form class="form-horizontal">
 
@@ -60,3 +66,4 @@
     </div>
   </div>
 </form>
+<% } %>
