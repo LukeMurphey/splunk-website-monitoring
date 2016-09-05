@@ -145,10 +145,10 @@ class WebPing(ModularInput):
         """
         
         # Perform a request to the URL and see what authentication method is required
-        # Make the client
-        http = requests.get(url.geturl(), proxies=proxies, timeout=timeout, cert=cert, verify=False)
-        
         try:
+            
+            # Make the GET
+            http = requests.get(url.geturl(), proxies=proxies, timeout=timeout, cert=cert, verify=False)
             
             # Determine if the authentication header is present and use it to determine the authentication type
             if 'WWW-Authenticate' in http.headers:

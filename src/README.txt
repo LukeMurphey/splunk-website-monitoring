@@ -122,4 +122,7 @@ Change History
 |         | Fixed error that can happen when attempting to determine authentication type                                     |
 |---------|------------------------------------------------------------------------------------------------------------------|
 | 1.6     | Added page to create multiple inputs (batch creation)                                                            |
+|---------|------------------------------------------------------------------------------------------------------------------|
+| 1.6.1   | Fixed issue where the input could fail when attempting to determine the authentication type                      |
+|         | Made input more resilient to errors (restarts upon errors)                                                       |
 +---------+------------------------------------------------------------------------------------------------------------------+
