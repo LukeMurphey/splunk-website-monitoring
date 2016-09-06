@@ -46,7 +46,7 @@ A: Yes, see http://lukemurphey.net/projects/splunk-website-monitoring/wiki/Using
 
 Q: Can I allow non-admin users to make and edit inputs?
 
-A: Yes, just assign users the "edit_modinput_web_ping" capability. You will likely want to give them the "list_inputs"capability too.
+A: Yes, just assign users the "edit_modinput_web_ping" capability. You will likely want to give them the "list_inputs" capability too.
 
 
 
@@ -125,4 +125,7 @@ Change History
 |---------|------------------------------------------------------------------------------------------------------------------|
 | 1.6.1   | Fixed issue where the input could fail when attempting to determine the authentication type                      |
 |         | Made input more resilient to errors (restarts upon errors)                                                       |
+|---------|------------------------------------------------------------------------------------------------------------------|
+| 1.6.2   | Message indicating that authentication method could not be determined is now a warning.                          |
+|         | Splunkd connection exceptions are more gracefually handled when attempting to determine proxy configuration      |
 +---------+------------------------------------------------------------------------------------------------------------------+
