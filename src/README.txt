@@ -126,5 +126,7 @@ Change History
 | 1.6.1   | Fixed issue where the input could fail when attempting to determine the authentication type                      |
 |         | Made input more resilient to errors (restarts upon errors)                                                       |
 |---------|------------------------------------------------------------------------------------------------------------------|
-| 1.6.2   | Input now recovers from Splunkd connection exceptions when attempting to retrieve the proxy configuration        |
+| 1.6.2   | Message indicating that authentication method could not be determined is now a warning.                          |
+|         | Splunkd connection exceptions are more gracefually handled when attempting to determine proxy configuration      |
 +---------+------------------------------------------------------------------------------------------------------------------+
+

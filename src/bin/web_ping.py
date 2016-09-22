@@ -162,7 +162,7 @@ class WebPing(ModularInput):
             # No authentication header is present
             else:
                 if logger:
-                    logger.exception("Unable to determine authentication type (no www-authenticate header); will default to basic authentication")
+                    logger.warn("Unable to determine authentication type (no www-authenticate header); will default to basic authentication")
                 
                 return cls.HTTP_AUTH_NONE
             
@@ -455,7 +455,10 @@ class WebPing(ModularInput):
             self.logger.debug("Proxy information loaded, stanza=%s", stanza)
             
         except splunk.ResourceNotFound:
-            self.logger.error("Unable to find the proxy configuration for the specified configuration stanza=%s", stanza)
+            self.logger.error('Unable to find the proxy configuration for the specified configuration stanza=%s, error="not found"', stanza)
+            raise
+        except splunk.SplunkdConnectionException:
+            self.logger.error('Unable to find the proxy configuration for the specified configuration stanza=%s error="splunkd connection error"', stanza)
             raise
         
         return website_monitoring_config.proxy_type, website_monitoring_config.proxy_server, website_monitoring_config.proxy_port, website_monitoring_config.proxy_user, website_monitoring_config.proxy_password
