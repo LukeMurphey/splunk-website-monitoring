@@ -127,6 +127,6 @@ Change History
 |         | Made input more resilient to errors (restarts upon errors)                                                       |
 |---------|------------------------------------------------------------------------------------------------------------------|
 | 1.6.2   | Message indicating that authentication method could not be determined is now a warning.                          |
-|         | Splunkd connection exceptions are more gracefually handled when attempting to determine proxy configuration      |
+|         | Splunkd connection exceptions are more gracefully handled when attempting to determine proxy configuration       |
 +---------+------------------------------------------------------------------------------------------------------------------+
 
