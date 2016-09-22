@@ -32,7 +32,7 @@ require(['jquery','underscore','splunkjs/mvc', 'website_status_cell_renderer', '
 	
 	    var infoMessageView = new InfoMessageView({
 	    	search_manager: hasInputSearch,
-	    	message: 'No website monitoring inputs exist yet; create one to monitor a website. <a target="_blank" href="../../manager/website_monitoring/adddata/selectsource?input_type=web_ping&modinput=1&input_mode=1">Create a website monitoring input now.</a>',
+	    	message: 'Create an input to monitor a website. <a target="_blank" href="../../manager/website_monitoring/adddata/selectsource?input_type=web_ping&modinput=1&input_mode=1">Create a website monitoring input now.</a>',
 	    	eval_function: function(searchResults){ return searchResults.rows[0][0] === "0" }
 	    });
 	    
