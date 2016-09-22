@@ -484,7 +484,10 @@ class WebPing(ModularInput):
             try:
                 proxy_type, proxy_server, proxy_port, proxy_user, proxy_password = self.get_proxy_config(input_config.session_key, conf_stanza)
             except splunk.ResourceNotFound:
-                self.logger.error("The proxy configuration could not be loaded. The execution will be skipped for this input with stanza=%s", stanza)
+                self.logger.error("The proxy configuration could not be loaded (was not found). The execution will be skipped for this input with stanza=%s", stanza)
+                return
+            except splunk.SplunkdConnectionException:
+                self.logger.error("The proxy configuration could not be loaded (Splunkd connection exception). The execution will be skipped for this input with stanza=%s", stanza)
                 return
             
             # Perform the ping
