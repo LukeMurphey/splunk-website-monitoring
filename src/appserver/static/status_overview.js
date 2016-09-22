@@ -20,9 +20,9 @@ require(['jquery','underscore','splunkjs/mvc', 'website_status_cell_renderer', '
 	    // Make the search that will determine if website monitoring inputs exist
 	    var hasInputSearch = new SearchManager({
 	        "id": "webping-inputs-search",
-	        "earliest_time": "-24h@h",
+	        "earliest_time": "-48h@h",
 	        "latest_time": "now",
-	        "search":'| rest /services/data/inputs/web_ping | stats count',
+	        "search":'| rest /services/data/inputs/web_ping | append [search sourcetype="web_ping" | head 1] | stats count',
 	        "cancelOnUnload": true,
 	        "autostart": false,
 	        "app": '',

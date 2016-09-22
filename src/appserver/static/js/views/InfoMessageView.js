@@ -49,6 +49,8 @@ define([
 			 this.show_if_results = options.show_if_results;
 			 this.eval_function = options.eval_function;
 			 
+			 this.existing_message_el = null; // This keeps a reference to the element where a message has already been placed
+			 
 			 this.setupSearch();
 		 },
 		 
@@ -66,7 +68,18 @@ define([
 		        '   </div>' +
 		        '</div>';
 			 
-			 this.message_el.append(content);
+			 // If we already posted a message, then replace the existing message
+			 if(this.existing_message_el !== null){
+				 this.existing_message_el.html(content_html);
+				 
+			 }
+			 
+			 // Otherwise, make a new one
+			 else{
+				 var content_html = $(content);
+				 this.message_el.append(content_html);
+				 this.existing_message_el = content_html;
+		 	 }
 			 
 		 },
 
