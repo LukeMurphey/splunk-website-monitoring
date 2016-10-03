@@ -185,7 +185,7 @@ define([
         	
         	// Perform the call
         	$.ajax({
-        			url: splunkd_utils.fullpath("/servicesNS/admin/search/data/inputs/web_ping"),
+        			url: splunkd_utils.fullpath("/servicesNS/admin/website_monitoring/data/inputs/web_ping"),
         			data: data,
         			type: 'POST',
         			
