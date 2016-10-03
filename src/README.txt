@@ -126,9 +126,11 @@ Change History
 | 1.6.1   | Fixed issue where the input could fail when attempting to determine the authentication type                      |
 |         | Made input more resilient to errors (restarts upon errors)                                                       |
 |---------|------------------------------------------------------------------------------------------------------------------|
-| 1.6.2   | Message indicating that authentication method could not be determined is now a warning.                          |
+| 1.6.2   | Message indicating that authentication method could not be determined is now a warning                           |
 |         | Splunkd connection exceptions are more gracefully handled when attempting to determine proxy configuration       |
 |         | Fixed issue where the message indicating that no inputs existed could sometimes be shown more than once          |
 |         | Fixed issue where the message indicating that no inputs existed would show when inputs did exist (on other hosts)|
+|---------|------------------------------------------------------------------------------------------------------------------|
+| 1.6.3   | Fixed issue where batch created inputs were made in the search app as opposed to the Website Monitoring app      |
 +---------+------------------------------------------------------------------------------------------------------------------+
 
