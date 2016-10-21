@@ -10,8 +10,10 @@ import os
 import hashlib
 import json
 from urlparse import urlparse
+from threading import RLock
 
 from splunk.appserver.mrsparkle.lib.util import make_splunkhome_path
+from splunk.util import normalizeBoolean as normBool
 
 class FieldValidationException(Exception):
     pass
@@ -345,6 +347,32 @@ class DurationField(Field):
 
     def to_string(self, value):        
         return str(value)
+    
+class DeprecatedField(Field):
+    """
+    Represents a field that is no longer used. This should be used when you want the input to pass validation with arguments that are no longer used.
+    """
+    def __init__(self, name, title, description, none_allowed=True, empty_allowed=True, required_on_create=False, required_on_edit=False):
+        """
+        Create the field.
+        
+        Arguments:
+        name -- Set the name of the field (e.g. "database_server")
+        title -- Set the human readable title (e.g. "Database server")
+        description -- Set the human readable description of the field (e.g. "The IP or domain name of the database server")
+        none_allowed -- Is a value of none allowed?
+        empty_allowed -- Is an empty string allowed?
+        required_on_create -- Is this field required when creating?
+        required_on_edit -- Is this field required when editing?
+        """
+        
+        return super(DeprecatedField, self).__init__(name, title, description, none_allowed=none_allowed, empty_allowed=empty_allowed, required_on_create=required_on_create, required_on_edit=required_on_edit)
+    
+    def to_python(self, value):
+        return None
+    
+    def to_string(self, value):
+        return ""
 
 class ModularInputConfig():
     
@@ -547,12 +575,13 @@ class ModularInput():
         # Return the content as a string WITHOUT the XML header.
         return doc.documentElement.toxml()
     
-    def escape_spaces(self, s):
+    def escape_spaces(self, s, encapsulate_in_double_quotes=False):
         """
-        If the string contains spaces, then add double quotes around the string. This is useful when outputting fields and values to Splunk since a space will cause Splunk to not recognize the entire value.
+        If the string contains spaces or is empty, then add double quotes around the string. This is useful when outputting fields and values to Splunk since a space will cause Splunk to not recognize the entire value.
         
         Arguments:
         s -- A string to escape.
+        encapsulate_in_double_quotes -- If true, the value will have double-spaces added around it.
         """
         
         # Make sure the input is a string
@@ -564,13 +593,13 @@ class ModularInput():
             s = s.replace('"', '\\"')
             s = s.replace("'", "\\'")
         
-        if s is not None and " " in s:
+        if s is not None and (" " in s or encapsulate_in_double_quotes or s == ""):
             return '"' + s + '"'
         
         else:
             return s
     
-    def create_event_string(self, data_dict, stanza, sourcetype, source, index, host=None, unbroken=False, close=False):
+    def create_event_string(self, data_dict, stanza, sourcetype, source, index, host=None, unbroken=False, close=False, encapsulate_value_in_double_quotes=False):
         """
         Create a string representing the event.
         
@@ -582,6 +611,7 @@ class ModularInput():
         index -- The index to send the event to
         unbroken -- 
         close -- 
+        encapsulate_value_in_double_quotes -- If true, the value will have double-quotes added around it.
         """
         
         # Make the content of the event
@@ -599,7 +629,7 @@ class ModularInput():
             
             # Write out each value
             for v in values:
-                v_escaped = self.escape_spaces(v)
+                v_escaped = self.escape_spaces(v, encapsulate_in_double_quotes=encapsulate_value_in_double_quotes)
                 
                 
                 if len(data_str) > 0:
@@ -633,7 +663,7 @@ class ModularInput():
         # added with a "</done>" tag.
         return self._print_event(self.document, event)
         
-    def output_event(self, data_dict, stanza, index=None, sourcetype=None, source=None, host=None, unbroken=False, close=False, out=sys.stdout ):
+    def output_event(self, data_dict, stanza, index=None, sourcetype=None, source=None, host=None, unbroken=False, close=False, out=sys.stdout, encapsulate_value_in_double_quotes=False ):
         """
         Output the given even so that Splunk can see it.
         
@@ -647,20 +677,21 @@ class ModularInput():
         close -- 
         out -- The stream to send the event to (defaults to standard output)
         host -- The host
+        encapsulate_value_in_double_quotes -- If true, the value will have double-quotes added around it. This is useful in cases where the app contains props & transforms that require the value to have double-spaces.
         """
         
-        output = self.create_event_string(data_dict, stanza, sourcetype, source, index, host, unbroken, close)
+        output = self.create_event_string(data_dict, stanza, sourcetype, source, index, host, unbroken, close, encapsulate_value_in_double_quotes=encapsulate_value_in_double_quotes)
         
-        out.write(output)
-        out.flush()
+        with self.lock:
+            out.write(output)
+            out.flush()
     
     def __init__(self, scheme_args, args=None, sleep_interval=5, logger_name='python_modular_input'):
         """
         Set up the modular input.
         
         Arguments:
-        title -- The title of the modular input (e.g. "Database Connector")
-        description -- A description of the input (e.g. "Get data from a database")
+        scheme_args -- The scheme args indicating the run-time mode of the input
         args -- A list of Field instances for validating the arguments
         sleep_interval -- How often to sleep between runs
         logger_name -- The logger name to append to the logger
@@ -670,7 +701,7 @@ class ModularInput():
         default_scheme_args = {
                                "use_external_validation" : "true",
                                "streaming_mode" : "xml",
-                               "use_single_instance" : "true"
+                               "use_single_instance" : True
         }
         
         scheme_args = dict(default_scheme_args.items() + scheme_args.items())
@@ -678,7 +709,10 @@ class ModularInput():
         # Set the scheme arguments.
         for arg in scheme_args:
             setattr(self, arg, self._is_valid_param(arg, scheme_args.get(arg)))
-                
+              
+        # Convert over the use_single_instance argument to a boolean
+        self.use_single_instance = normBool(self.use_single_instance)
+        
         if args is None:
             self.args = []
         else:
@@ -691,6 +725,9 @@ class ModularInput():
             
         # Create the document used for sending events to Splunk through
         self.document = self._create_document()
+        
+        # Make a lock for controlling access to underlying functions
+        self.lock = RLock()
         
         # Check and save the logger name
         self._logger = None
@@ -760,6 +797,12 @@ class ModularInput():
     def logger(self, logger):
         self._logger = logger
         
+    def bool_to_str(self, s):
+        if s:
+            return "true"
+        else:
+            return "false"
+        
     def get_scheme(self):
         """
         Get the scheme of the inputs parameters and return as a string.
@@ -804,7 +847,7 @@ class ModularInput():
         element_use_single_instance = doc.createElement("use_single_instance")
         element_scheme.appendChild(element_use_single_instance)
         
-        element_use_single_instance_text = doc.createTextNode(self.use_single_instance)
+        element_use_single_instance_text = doc.createTextNode(self.bool_to_str(self.use_single_instance))
         element_use_single_instance.appendChild(element_use_single_instance_text)
         
         # Create the elements to stored args element
@@ -830,6 +873,11 @@ class ModularInput():
         """
         
         for arg in self.args:
+            
+            # Skip the interval argument if in multi-instance mode since Splunk will complain otherwise
+            if not self.use_single_instance and arg.name == "interval":
+                continue
+            
             element_arg = doc.createElement("arg")
             element_arg.setAttribute("name", arg.name)
             
@@ -902,7 +950,7 @@ class ModularInput():
             
     def validate_parameters(self, stanza, parameters):
         """
-        Validate the parameter set for a stanza and returns a dictionary of cleaner parameters.
+        Validate the parameter set for a stanza and returns a dictionary of cleaned parameters.
         
         Arguments:
         stanza -- The stanza name
@@ -927,6 +975,11 @@ class ModularInput():
             if name in all_args:
                 cleaned_params[name] = all_args[name].to_python(value)
                 
+            # Allow the interval argument since it is internal but allowed even if not explicitly declared
+            elif name == "interval" and self.use_single_instance == False:
+                self.logger.warn("use_single_instance=%r", self.use_single_instance)
+                pass 
+            
             # Throw an exception if the argument could not be found
             else:
                 raise FieldValidationException("The parameter '%s' is not a valid argument" % (name))
@@ -1125,19 +1178,20 @@ class ModularInput():
         data -- A dictionary with the data to save
         """
         
-        fp = None
-        
-        try:
-            fp = open( self.get_file_path(checkpoint_dir, stanza), 'w' )
+        with self.lock:
+            fp = None
             
-            json.dump(data, fp)
-            
-        except Exception:
-            self.logger.exception("Failed to save checkpoint directory") 
-            
-        finally:
-            if fp is not None:
-                fp.close()
+            try:
+                fp = open( self.get_file_path(checkpoint_dir, stanza), 'w' )
+                
+                json.dump(data, fp)
+                
+            except Exception:
+                self.logger.exception("Failed to save checkpoint directory") 
+                
+            finally:
+                if fp is not None:
+                    fp.close()
     
     def do_shutdown(self):
         """
