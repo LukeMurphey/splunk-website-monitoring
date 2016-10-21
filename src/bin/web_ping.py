@@ -7,8 +7,10 @@ import re
 import hashlib
 import sys
 import time
+import threading
 import splunk
 import os
+import logging
 
 import socket
 from website_monitoring_app import socks
@@ -59,6 +61,8 @@ class WebPing(ModularInput):
     HTTP_AUTH_NTLM = 'ntlm'
     HTTP_AUTH_NONE = None
     
+    USE_MULTI_THREADING = True
+    
     class Result(object):
         """
         The results object designates the results of connecting to a website.
@@ -94,12 +98,14 @@ class WebPing(ModularInput):
                 Field("user_agent", "User Agent", "The user-agent to use when communicating with the server", none_allowed=True, empty_allowed=True, required_on_create=False, required_on_edit=False)
                 ]
         
-        ModularInput.__init__( self, scheme_args, args, logger_name='web_availability_modular_input' )
+        ModularInput.__init__( self, scheme_args, args, logger_name='web_availability_modular_input', logger_level=logging.DEBUG )
         
         if timeout > 0:
             self.timeout = timeout
         else:
             self.timeout = 30
+            
+        self.threads = {}
         
     @classmethod
     def resolve_proxy_type(cls, proxy_type, logger=None):
@@ -481,29 +487,53 @@ class WebPing(ModularInput):
         user_agent             = cleaned_params.get("user_agent", None)
         source                 = stanza
         
-        if self.needs_another_run( input_config.checkpoint_dir, stanza, interval ):
+        # Clean up old threads
+        for thread_stanza in self.threads.keys():
+            if not self.threads[thread_stanza].isAlive():
+                self.logger.info("Removing inactive thread for stanza=%s", thread_stanza)
+                del self.threads[thread_stanza]
+        
+        # Stop if we have a running thread
+        if stanza in self.threads:
+            self.logger.debug("No need to execute this stanza since a thread already running for stanza=%s", stanza)
+        
+        # Determines if the input needs another run
+        elif self.needs_another_run( input_config.checkpoint_dir, stanza, interval ):
             
-            # Get the proxy configuration
-            try:
-                proxy_type, proxy_server, proxy_port, proxy_user, proxy_password = self.get_proxy_config(input_config.session_key, conf_stanza)
-            except splunk.ResourceNotFound:
-                self.logger.error("The proxy configuration could not be loaded (was not found). The execution will be skipped for this input with stanza=%s", stanza)
-                return
-            except splunk.SplunkdConnectionException:
-                self.logger.error("The proxy configuration could not be loaded (Splunkd connection exception). The execution will be skipped for this input with stanza=%s", stanza)
-                return
-            
-            # Perform the ping
-            result = WebPing.ping(url, username, password, timeout, proxy_type, proxy_server, proxy_port, proxy_user, proxy_password, client_certificate, client_certificate_key, user_agent, logger=self.logger)
-            
-            # Send the event
-            self.output_result( result, stanza, title, host=host, index=index, source=source, sourcetype=sourcetype, unbroken=True, close=True, proxy_server=proxy_server, proxy_port=proxy_port, proxy_user=proxy_user, proxy_type=proxy_type )
-            
-            # Get the time that the input last ran
-            last_ran = self.last_ran(input_config.checkpoint_dir, stanza)
-            
-            # Save the checkpoint so that we remember when we last 
-            self.save_checkpoint(input_config.checkpoint_dir, stanza, self.get_non_deviated_last_run(last_ran, interval, stanza) )
+            def run_ping():
+                # Get the proxy configuration
+                try:
+                    proxy_type, proxy_server, proxy_port, proxy_user, proxy_password = self.get_proxy_config(input_config.session_key, conf_stanza)
+                except splunk.ResourceNotFound:
+                    self.logger.error("The proxy configuration could not be loaded (was not found). The execution will be skipped for this input with stanza=%s", stanza)
+                    return
+                except splunk.SplunkdConnectionException:
+                    self.logger.error("The proxy configuration could not be loaded (Splunkd connection exception). The execution will be skipped for this input with stanza=%s", stanza)
+                    return
+                
+                # Perform the ping
+                result = WebPing.ping(url, username, password, timeout, proxy_type, proxy_server, proxy_port, proxy_user, proxy_password, client_certificate, client_certificate_key, user_agent, logger=self.logger)
+                
+                # Send the event
+                self.output_result( result, stanza, title, host=host, index=index, source=source, sourcetype=sourcetype, unbroken=True, close=True, proxy_server=proxy_server, proxy_port=proxy_port, proxy_user=proxy_user, proxy_type=proxy_type )
+                
+                with self.lock:
+                    # Get the time that the input last ran
+                    last_ran = self.last_ran(input_config.checkpoint_dir, stanza)
+                    
+                    # Save the checkpoint so that we remember when we last
+                    self.save_checkpoint(input_config.checkpoint_dir, stanza, self.get_non_deviated_last_run(last_ran, interval, stanza) )
+                    
+            if not WebPing.USE_MULTI_THREADING:
+                run_ping()
+            else:
+                
+                # Start a thread
+                t = threading.Thread(name='web_ping:' + stanza, target=run_ping)
+                self.threads[stanza] = t
+                t.start()
+                
+                self.logger.info("Added thread to the queue for stanza=%s, thread_count=%i", stanza, len(self.threads))
             
 if __name__ == '__main__':
     try:
