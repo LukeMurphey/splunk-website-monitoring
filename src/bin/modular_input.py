@@ -686,7 +686,7 @@ class ModularInput():
             out.write(output)
             out.flush()
     
-    def __init__(self, scheme_args, args=None, sleep_interval=5, logger_name='python_modular_input'):
+    def __init__(self, scheme_args, args=None, sleep_interval=5, logger_name='python_modular_input', logger_level=None):
         """
         Set up the modular input.
         
@@ -728,6 +728,12 @@ class ModularInput():
         
         # Make a lock for controlling access to underlying functions
         self.lock = RLock()
+        
+        # Initialize the logger level
+        if logger_level is None:
+            self.logger_level = logging.INFO
+        else:
+            self.logger_level = logger_level
         
         # Check and save the logger name
         self._logger = None
@@ -782,7 +788,7 @@ class ModularInput():
         
         logger = logging.getLogger(self.logger_name)
         logger.propagate = False # Prevent the log messages from being duplicated in the python.log file
-        logger.setLevel(logging.INFO)
+        logger.setLevel(self.logger_level)
         
         file_handler = handlers.RotatingFileHandler(make_splunkhome_path(['var', 'log', 'splunk', self.logger_name + '.log']), maxBytes=25000000, backupCount=5)
         formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
