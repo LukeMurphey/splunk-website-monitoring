@@ -61,7 +61,7 @@ class WebPing(ModularInput):
     HTTP_AUTH_NTLM = 'ntlm'
     HTTP_AUTH_NONE = None
     
-    USE_MULTI_THREADING = True
+    DEFAULT_THREAD_LIMIT = 200
     
     class Result(object):
         """
@@ -78,7 +78,7 @@ class WebPing(ModularInput):
             self.response_md5 = response_md5
             self.response_sha224 = response_sha224
     
-    def __init__(self, timeout=30):
+    def __init__(self, timeout=30, thread_limit=None):
 
         scheme_args = {'title': "Website Availability Check",
                        'description': "Connects to a website in order to obtain performance statistics",
@@ -105,6 +105,11 @@ class WebPing(ModularInput):
         else:
             self.timeout = 30
             
+        if thread_limit is None:
+            self.thread_limit = WebPing.DEFAULT_THREAD_LIMIT
+        else:
+            self.thread_limit = thread_limit
+        
         self.threads = {}
         
     @classmethod
@@ -279,7 +284,7 @@ class WebPing(ModularInput):
         else:
             cert = None
             
-        if logger:
+        if logger and cert is not None:
             logger.debug("Using client certificate %s", cert)
         
         request_time    = 0
@@ -294,7 +299,8 @@ class WebPing(ModularInput):
         
         if user_agent is not None:
             if logger:
-                logger.info("Setting user-agent=%s", user_agent)
+                logger.debug("Setting user-agent=%s", user_agent)
+            
             headers['User-Agent'] = user_agent
         
         # Make an auth object if necessary
@@ -524,8 +530,15 @@ class WebPing(ModularInput):
                     # Save the checkpoint so that we remember when we last
                     self.save_checkpoint(input_config.checkpoint_dir, stanza, self.get_non_deviated_last_run(last_ran, interval, stanza) )
                     
-            if not WebPing.USE_MULTI_THREADING:
+            # If this is not running in multi-threading mode, then run it now in the main thread
+            if self.thread_limit <= 1:
                 run_ping()
+                
+            # If the number of threads is at or above the limit, then wait until the number of threads comes down
+            elif len(self.threads) >= self.thread_limit:
+                self.logger.warn("Threat limit has been reached and thus this execution will be skipped for stanza=%s, thread_count=%i", stanza, len(self.threads))
+            
+            # Execute the input as a separate thread
             else:
                 
                 # Start a thread
