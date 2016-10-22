@@ -20,7 +20,7 @@ Getting Support
 
 Go to the following website if you need support:
 
-     http://splunk-base.splunk.com/apps/83317/answers/
+     https://answers.splunk.com/app/questions/1493.html
 
 You can access the source-code and get technical details about the app at:
 
@@ -134,6 +134,9 @@ Change History
 | 1.6.3   | Fixed issue where batch created inputs were made in the search app as opposed to the Website Monitoring app      |
 |---------|------------------------------------------------------------------------------------------------------------------|
 | 2.0     | Input now uses a multi-threaded model supporting a vastly higher number of inputs                                |
-|         | Added a health monitoring dashboard                                                                              |
+|         | Added health monitoring dashboards                                                                               |
+|         | Fixed issue where sometimes the status was left blank when a connection to a website failed                      |
+|         | Updated the Status History dashboard with new single value widgets                                               |
+|         | Fixed incorrect link to answers in README                                                                        |
 +---------+------------------------------------------------------------------------------------------------------------------+
 
