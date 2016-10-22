@@ -138,5 +138,6 @@ Change History
 |         | Fixed issue where sometimes the status was left blank when a connection to a website failed                      |
 |         | Updated the Status History dashboard with new single value widgets                                               |
 |         | Fixed incorrect link to answers in README                                                                        |
+|         | Improved handling of connection errors on Windows                                                                |
 +---------+------------------------------------------------------------------------------------------------------------------+
 

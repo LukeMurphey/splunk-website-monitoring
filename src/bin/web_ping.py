@@ -356,7 +356,7 @@ class WebPing(ModularInput):
             
         except requests.exceptions.ConnectionError as e:
             
-            if e.args is not None and len(e.args) > 0 and hasattr(e.args[0], 'reason') and hasattr(e.args[0].reason, 'errno') and e.args[0].reason.errno in [60, 61]:
+            if e.args is not None and len(e.args) > 0 and hasattr(e.args[0], 'reason') and hasattr(e.args[0].reason, 'errno') and e.args[0].reason.errno in [60, 61, 10060, 10061]:
                 timed_out = True
                 
             elif logger:
