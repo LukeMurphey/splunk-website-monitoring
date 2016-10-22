@@ -3,8 +3,9 @@
 <form script="status_history.js" >
 	<label>Status History</label>
 	
-	<fieldset>
-		<input type="time">
+	<fieldset autoRun="true">
+		<input type="time" token="field1">
+		    <label></label>
 			<default>Last 24 hours</default>
 		</input>
 		<input type="text" token="title">
@@ -13,60 +14,127 @@
 		</input>
 	</fieldset>
 	 
-	<row>		
-		<single>
-			<searchTemplate>sourcetype="web_ping" title="$title$" | stats avg(total_time) as response_time | rangemap field=response_time low=0-`response_time_threshold` default=severe | eval response_time=round(response_time, 2)." ms"</searchTemplate>
-			<option name="beforeLabel">Average response time: </option>
-			<option name="field">response_time</option>
-			<option name="classField">range</option>
-		</single>
-		<single>
-			<searchTemplate>sourcetype="web_ping" title="$title$" | stats max(total_time) as response_time | rangemap field=response_time low=0-`response_time_threshold` default=severe | eval response_time=round(response_time, 2)." ms"</searchTemplate>
-			<option name="beforeLabel">Maximum response time: </option>
-			<option name="field">response_time</option>
-			<option name="classField">range</option>
-		</single>
-	</row>
+  <row>
+    <panel>
+      <single>
+        <search>
+          <query>sourcetype="web_ping" title="$title$" | timechart avg(total_time) as response_time</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+        </search>
+        <option name="afterLabel">ms</option>
+        <option name="underLabel">Average Response Time</option>
+        <option name="colorBy">value</option>
+        <option name="colorMode">block</option>
+        <option name="numberPrecision">0</option>
+        <option name="rangeColors">["0x65a637","0xf7bc38","0xf58f39","0xd93f3c"]</option>
+        <option name="rangeValues">[500,750,999]</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trendColorInterpretation">standard</option>
+        <option name="trendDisplayMode">percent</option>
+        <option name="trendInterval">auto</option>
+        <option name="useColors">1</option>
+        <option name="useThousandSeparators">1</option>
+      </single>
+    </panel>
+    <panel>
+      <single>
+        <search>
+          <query>sourcetype="web_ping" title="$title$" | stats max(total_time) as response_time</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+        </search>
+        <option name="afterLabel">ms</option>
+        <option name="underLabel">Maximum Response Time</option>
+        <option name="colorBy">value</option>
+        <option name="colorMode">block</option>
+        <option name="numberPrecision">0</option>
+        <option name="rangeColors">["0x65a637","0xf7bc38","0xf58f39","0xd93f3c"]</option>
+        <option name="rangeValues">[500,750,999]</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trendColorInterpretation">standard</option>
+        <option name="trendDisplayMode">absolute</option>
+        <option name="trendInterval">auto</option>
+        <option name="useColors">1</option>
+        <option name="useThousandSeparators">1</option>
+      </single>
+    </panel>
+  </row>
 	 
 	<row>
 		<chart>
 			<title>Response Time History (Average)</title>
-		  	<searchString>
-		    	sourcetype="web_ping" title="$title$" | timechart avg(total_time) as response_time | eval response_time_over_threshold=if(response_time>`response_time_threshold`,response_time,0) | eval response_time=if(response_time>`response_time_threshold`,0,response_time)
-		  	</searchString>
+		  	<search>
+          	  	<query>sourcetype="web_ping" title="$title$" | timechart avg(total_time) as response_time | eval response_time_over_threshold=if(response_time>`response_time_threshold`,response_time,0) | eval response_time=if(response_time>`response_time_threshold`,0,response_time)</query>
+		  	    <earliest>$field1.earliest$</earliest>
+          		<latest>$field1.latest$</latest>
+		  	</search>
 		  	<option name="height">200px</option>
 		  	<option name="charting.chart">column</option>
 		  	<option name="charting.chart.stackMode">stacked</option>
 			<option name="charting.legend.labels">[response_time_over_threshold,response_time]</option>
-			<option name="charting.seriesColors">[0xff1f24,0x069C00]</option>
+			<option name="charting.seriesColors">[0xd93f3c,0x65a637]</option>
 			<option name="charting.legend.placement">none</option>	
-			<drilldown>
-				<link><![CDATA[/app/website_monitoring/flashtimeline/?q=search%20sourcetype%3Dweb_ping%20title%3D"$form.title$"%20%7C%20%60format_events%60&earliest=$earliest$&latest=$latest$]]></link>
-			</drilldown>
 		</chart>
 	</row>
 	
-	<row>
-		<single>
-			<searchTemplate>sourcetype="web_ping" title="$title$" | fillnull value=1000 response_code | eval success=case(response_code>=400, 0, timed_out == "True", 0) | fillnull value=1 success | chart count as total, sum(success) as successes | eval availability=round(100*(successes/total),2) | rangemap field=availability severe=0-99 default=low</searchTemplate>
-			<option name="beforeLabel">Availability: </option>
-			<option name="field">availability</option>
-			<option name="classField">range</option>
-			<option name="afterLabel">%</option>
-		</single>
-		<single>
-			<searchTemplate>sourcetype="web_ping" title="$title$" `filter_inoperable` | stats count as count | rangemap field=count low=0-0 default=severe</searchTemplate>
-			<option name="beforeLabel">Failures detected: </option>
-			<option name="field">count</option>
-			<option name="classField">range</option>
-			<option name="linkView">flashtimeline</option>
-			<option name="linkSearch">sourcetype="web_ping" `filter_inoperable`</option>
-		</single>
-	</row>
+  <row>
+    <panel>
+      <single>
+        <search>
+          <query>sourcetype="web_ping" title="$title$" | fillnull value=1000 response_code | eval success=case(response_code&gt;=400, 0, timed_out == "True", 0) | fillnull value=1 success | chart count as total, sum(success) as successes | eval availability=round(100*(successes/total),2) | fields availability</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+        </search>
+        <option name="afterLabel">%</option>
+        <option name="underLabel">Availability</option>
+        <option name="colorBy">value</option>
+        <option name="colorMode">block</option>
+        <option name="numberPrecision">0.00</option>
+        <option name="rangeColors">["0xd93f3c","0x65a637"]</option>
+        <option name="rangeValues">[99]</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trendColorInterpretation">standard</option>
+        <option name="trendDisplayMode">absolute</option>
+        <option name="trendInterval">auto</option>
+        <option name="useColors">1</option>
+        <option name="useThousandSeparators">1</option>
+      </single>
+    </panel>
+    <panel>
+      <single>
+        <search>
+          <query>sourcetype="web_ping" title="$title$" `filter_inoperable` | stats count as count</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+        </search>
+        <option name="underLabel">Failures</option>
+        <option name="colorBy">value</option>
+        <option name="colorMode">block</option>
+        <option name="numberPrecision">0</option>
+        <option name="rangeColors">["0x65a637","0xd93f3c"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trendColorInterpretation">standard</option>
+        <option name="trendDisplayMode">absolute</option>
+        <option name="trendInterval">auto</option>
+        <option name="useColors">1</option>
+        <option name="useThousandSeparators">1</option>
+      </single>
+    </panel>
+  </row>
 	
 	<row>
 		<table>
-			<searchString>sourcetype="web_ping" title="$title$" `filter_inoperable` | eval time=_time | eval response_time=total_time | convert ctime(time) | fillnull response_code value="Connection failed" | eval response_code=if(timed_out == "True", "Connection timed out", response_code) | fields - _raw _time | fields time title url response_code</searchString>
+			<search>
+          	  	<query>sourcetype="web_ping" title="$title$" `filter_inoperable` | eval time=_time | eval response_time=total_time | convert ctime(time) | fillnull response_code value="Connection failed" | eval response_code=if(timed_out == "True", "Connection timed out", response_code) | eval response_code=if(response_code="", "Connection failed", response_code) | fields - _raw _time | fields time title url response_code</query>
+	         	<earliest>$field1.earliest$</earliest>
+	            <latest>$field1.latest$</latest>
+	        </search>
 			<title>Failures</title>
 			<option name="count">10</option>
 			<option name="displayRowNumbers">true</option>
