@@ -15,8 +15,9 @@
 .table tr th:nth-of-type(7){
      display:none;   
 }
-
 /*
+ * The following improves the styling of the status overview dashboard by removing the white border and padding.
+ */
 #element1{
     background-color: #eee;
 }
@@ -34,5 +35,3 @@
     padding-left: 0px;
     padding-right: 0px;
 }
-
-*/
