@@ -495,10 +495,20 @@ class WebPing(ModularInput):
         
         # Clean up old threads
         for thread_stanza in self.threads.keys():
+            
+            # Keep track of the number of removed threads so that we can make sure to emit a log message noting the number of threads
+            removed_threads = 0
+            
+            # IF the thread isn't alive, prune it
             if not self.threads[thread_stanza].isAlive():
-                self.logger.info("Removing inactive thread for stanza=%s", thread_stanza)
+                removed_threads = removed_threads + 1
+                self.logger.debug("Removing inactive thread for stanza=%s, thread_count=%i", thread_stanza, len(self.threads))
                 del self.threads[thread_stanza]
-        
+            
+            # If we removed threads, note the updated count in the logs so that it can be tracked
+            if removed_threads > 0:
+                self.logger.info("Removed inactive threads, thread_count=%i, removed_thread_count=%i", len(self.threads), removed_threads)
+            
         # Stop if we have a running thread
         if stanza in self.threads:
             self.logger.debug("No need to execute this stanza since a thread already running for stanza=%s", stanza)
