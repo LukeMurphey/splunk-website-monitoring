@@ -1,5 +1,5 @@
 <form>
-  <label>Health</label>
+  <label>Logs</label>
   <fieldset submitButton="true" autoRun="true">
     <input type="time" token="field1">
       <label></label>
@@ -25,58 +25,24 @@
   <row>
     <panel>
       <chart>
-        <title>Executing Threads</title>
-        <search>
-          <query>index=_internal sourcetype=web_availability_modular_input  thread_count | timechart avg(thread_count)</query>
-          <earliest>$field1.earliest$</earliest>
-          <latest>$field1.latest$</latest>
-        </search>
-        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
-        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
-        <option name="charting.axisTitleX.visibility">visible</option>
-        <option name="charting.axisTitleY.visibility">visible</option>
-        <option name="charting.axisTitleY2.visibility">visible</option>
-        <option name="charting.axisX.scale">linear</option>
-        <option name="charting.axisY.scale">linear</option>
-        <option name="charting.axisY2.enabled">0</option>
-        <option name="charting.axisY2.scale">inherit</option>
-        <option name="charting.chart">area</option>
-        <option name="charting.chart.bubbleMaximumSize">50</option>
-        <option name="charting.chart.bubbleMinimumSize">10</option>
-        <option name="charting.chart.bubbleSizeBy">area</option>
-        <option name="charting.chart.nullValueMode">gaps</option>
-        <option name="charting.chart.showDataLabels">none</option>
-        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
-        <option name="charting.chart.stackMode">default</option>
-        <option name="charting.chart.style">shiny</option>
-        <option name="charting.drilldown">all</option>
-        <option name="charting.layout.splitSeries">0</option>
-        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
-        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
-        <option name="charting.legend.placement">right</option>
-      </chart>
-    </panel>
-  </row>
-  <row>
-    <panel>
-      <chart>
         <search>
           <query>index=_internal sourcetype=web_availability_modular_input $severity$ | rex field=_raw "(?&lt;severity&gt;(DEBUG)|(ERROR)|(WARNING)|(INFO)|(CRITICAL)) (?&lt;message&gt;.*)" | fillnull severity value="UNDEFINED" | timechart count(severity) as count by severity</query>
           <earliest>$field1.earliest$</earliest>
           <latest>$field1.latest$</latest>
         </search>
-        <title>Messages by Severity (over time)</title>
+        <title>Logs by Severity (over time)</title>
         <option name="charting.chart">area</option>
         <option name="count">10</option>
         <option name="displayRowNumbers">true</option>
         <option name="charting.chart.stackMode">stacked</option>
         <option name="charting.legend.labels">[DEBUG,INFO,WARNING,ERROR,CRITICAL]</option>
-        <option name="charting.seriesColors">[0x888888,0xb2d16d,0x6ab7c8,0xfac61c,0xf8912c,0xd85d3d]</option>
+        <option name="charting.seriesColors">[0xb2d16d,0x6ab7c8,0xfac61c,0xf8912c,0xd85d3d]</option>
+        <option name="charting.legend.masterLegend"></option>
       </chart>
     </panel>
     <panel>
       <table>
-        <title>Events by Severity</title>
+        <title>Logs by Severity</title>
         <search>
           <query>index=_internal sourcetype=web_availability_modular_input | rex field=_raw "(?&lt;severity&gt;(DEBUG)|(ERROR)|(WARNING)|(INFO)|(CRITICAL)) (?&lt;message&gt;.*)" | fillnull value="undefined" vendor_severity | stats sparkline count by severity | sort -count</query>
           <earliest>$field1.earliest$</earliest>
@@ -93,9 +59,9 @@
   <row>
     <panel>
       <table>
-        <title>Latest Events</title>
+        <title>Latest Logs</title>
         <search>
-          <query>index=_internal sourcetype=web_availability_modular_input $severity$ | rex field=_raw "(?&lt;severity&gt;(DEBUG)|(ERROR)|(WARNING)|(INFO)|(CRITICAL)) (?&lt;message&gt;.*)" | eval time=_time | convert ctime(time) | table time severity message</query>
+          <query>index=_internal sourcetype=web_availability_modular_input $severity$ | rex field=_raw "(?&lt;severity&gt;(DEBUG)|(ERROR)|(WARNING)|(INFO)|(CRITICAL)) (?&lt;message&gt;.*)" | sort -_time | eval time=_time | convert ctime(time) | table time severity message</query>
           <earliest>$field1.earliest$</earliest>
           <latest>$field1.latest$</latest>
         </search>

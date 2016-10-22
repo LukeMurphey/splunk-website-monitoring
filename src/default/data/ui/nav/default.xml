@@ -3,5 +3,8 @@
   <view name="status_history" />
   <view name="site_changes" />
   <view name="web_ping_batch_create" />
-  <view name="web_ping_health" />
+  <collection label="Health">
+  	<view name="web_ping_logs" />
+  	<view name="web_ping_status" />
+  </collection>
 </nav>
