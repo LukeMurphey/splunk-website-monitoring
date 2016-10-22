@@ -139,5 +139,7 @@ Change History
 |         | Updated the Status History dashboard with new single value widgets                                               |
 |         | Fixed incorrect link to answers in README                                                                        |
 |         | Improved handling of connection errors on Windows                                                                |
+|         | Improved styling of the Status Overview dashboard                                                                |
+|         | Changed the batch creation page to be no longer be considered a dashboard                                        |
 +---------+------------------------------------------------------------------------------------------------------------------+
 
