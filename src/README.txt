@@ -142,5 +142,6 @@ Change History
 |         | Improved styling of the Status Overview dashboard                                                                |
 |         | Changed the batch creation page to be no longer be considered a dashboard                                        |
 |         | New app icon                                                                                                     |
+|         | Replaced rest call on the Status Overview dashboard with a lookup                                                |
 +---------+------------------------------------------------------------------------------------------------------------------+
 
