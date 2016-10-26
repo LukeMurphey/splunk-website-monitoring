@@ -143,6 +143,6 @@ Change History
 |         | Changed the batch creation page to be no longer be considered a dashboard                                        |
 |         | New app icon                                                                                                     |
 |         | Replaced rest call on the Status Overview dashboard with a lookup                                                |
-|         | Fixed NTLM authentication and improved auth-detection of the authentication that the server supports             |
+|         | Fixed NTLM authentication and improved detection of the authentication that the server supports                  |
 +---------+------------------------------------------------------------------------------------------------------------------+
 
