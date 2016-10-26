@@ -178,7 +178,7 @@ class TestWebPing(WebsiteMonitoringAppTest):
         
     def get_test_dir(self):
         return os.path.dirname(os.path.abspath(__file__))
-        
+    
     def test_needs_another_run(self):
         
         # Test case where file does not exist
@@ -299,7 +299,23 @@ class TestWebPing(WebsiteMonitoringAppTest):
         result = WebPing.ping( url_field.to_python("http://httpbin.org/digest-auth/auth/user/passwd"), timeout=3, username="user", password="passwd" )
         
         self.assertEquals(result.response_code, 200)
+    
+    def test_ping_with_ntlm_authentication(self):
         
+        # Try with valid authentication
+        url_field = URLField( "test_ping", "title", "this is a test" )
+        result = WebPing.ping( url_field.to_python("http://127.0.0.1:8888/ntlm_auth"), timeout=3, username="user\\domain", password="passwd" )
+        
+        self.assertEquals(result.response_code, 200)
+        
+    def test_ping_with_ntlm_negotiate_authentication(self):
+        
+        # Try with valid authentication
+        url_field = URLField( "test_ping", "title", "this is a test" )
+        result = WebPing.ping( url_field.to_python("http://127.0.0.1:8888/ntlm_auth_negotiate"), timeout=3, username="user\\domain", password="passwd" )
+        
+        self.assertEquals(result.response_code, 200)
+    
     def test_ping_with_basic_authentication_optional(self):
         
         # Try with valid authentication
@@ -329,7 +345,23 @@ class TestWebPing(WebsiteMonitoringAppTest):
         auth_type = WebPing.determine_auth_type( url_field.to_python("http://httpbin.org/digest-auth/auth/user/passwd"))
         
         self.assertEquals(auth_type, WebPing.HTTP_AUTH_DIGEST)
+    
+    def test_determine_auth_method_ntlm(self):
         
+        # Try with digest auth
+        url_field = URLField( "test_ping", "title", "this is a test" )
+        auth_type = WebPing.determine_auth_type( url_field.to_python("http://127.0.0.1:8888/ntlm_auth"))
+        
+        self.assertEquals(auth_type, WebPing.HTTP_AUTH_NTLM)
+        
+    def test_determine_auth_method_ntlm_comma_header(self):
+        
+        # Try with digest auth
+        url_field = URLField( "test_ping", "title", "this is a test" )
+        auth_type = WebPing.determine_auth_type( url_field.to_python("http://127.0.0.1:8888/ntlm_auth_negotiate"))
+        
+        self.assertEquals(auth_type, WebPing.HTTP_AUTH_NTLM)
+    
     def test_determine_auth_method_none(self):
         
         # Try with digest auth
@@ -354,6 +386,6 @@ class TestWebPing(WebsiteMonitoringAppTest):
         # Make sure that the server is validating the user-agent which returns 201 when the user-agent matches "USER_AGENT_CHECK"
         result = WebPing.ping( url_field.to_python("http://127.0.0.1:8888/user_agent_check"), user_agent="USER_AGENT_CHECK", timeout=3 )
         self.assertEquals(result.response_code, 201)
-        
+    
 if __name__ == '__main__':
     unittest.main()

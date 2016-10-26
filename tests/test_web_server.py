@@ -59,6 +59,32 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_response(203)
                 self.wfile.write('authenticated')
             
+        # Present the HTML page with NTLM authentication
+        # This is basically a fake NTLM session. This is the best I can do in a unit test since simulating a AD environment and a web-server with NTLM auth is not easy.
+        elif self.path == "/ntlm_auth" or self.path == "/ntlm_auth_negotiate":
+            
+            if self.path == "/ntlm_auth_negotiate":
+                auth_header = "Negotiate, NTLM"
+            else:
+                auth_header = "NTLM"
+            
+            if self.headers.getheader('Authorization') == None:
+                self.send_response(401)
+                self.send_header('WWW-Authenticate', auth_header)
+                self.send_header('Content-type', 'text/html')
+                self.wfile.write('not authenticated')
+                
+            # Do the challenge
+            elif self.headers.getheader('Authorization') is not None and len(self.headers.getheader('Authorization')) < 200:
+                # NTLM TlRMTVNTUAABAAAAB7IIogQABAA2AAAADgAOACgAAAAFASgKAAAAD0xNVVJQSEVZLU1CUDE1VVNFUg==
+                self.send_response(401)
+                self.send_header('WWW-Authenticate', 'NTLM TlRMTVNTUAACAAAAAAAAACgAAAABAAAAAAAAAAAAAAA=') # The challenge
+                self.wfile.write('not authenticated, step two')
+            
+            elif self.headers.getheader('Authorization'):
+                # NTLM TlRMTVNTUAADAAAAGAAYAHgAAAAYABgAkAAAAAgACABIAAAADAAMAFAAAAAcABwAXAAAAAAAAACoAAAABYKIogUBKAoAAAAPVQBTAEUAUgBkAG8AbQBhAGkAbgBMAE0AVQBSAFAASABFAFkALQBNAEIAUAAxADUAjkdanfmkRwLTvPN8tRWYl1fpobeVQMN00VGvOdOFEzgb0gY0ZnA0W8LL0pJ3BlOW
+                self.send_response(200)
+                self.wfile.write('authenticated')
             
         # Present frontpage with user authentication.
         elif self.headers.getheader('Authorization') == None:

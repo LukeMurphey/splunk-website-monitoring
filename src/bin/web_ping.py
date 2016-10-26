@@ -59,6 +59,7 @@ class WebPing(ModularInput):
     HTTP_AUTH_BASIC = 'basic'
     HTTP_AUTH_DIGEST = 'digest'
     HTTP_AUTH_NTLM = 'ntlm'
+    HTTP_AUTH_NEGOTIATE = 'negotiate'
     HTTP_AUTH_NONE = None
     
     DEFAULT_THREAD_LIMIT = 200
@@ -161,14 +162,25 @@ class WebPing(ModularInput):
             # Make the GET
             http = requests.get(url.geturl(), proxies=proxies, timeout=timeout, cert=cert, verify=False)
             
+            # Find the authentication header irrespective of case
+            auth_header_value = None
+            
+            for header, value in http.headers.items():
+                if header.lower() == 'www-authenticate':
+                    auth_header_value = value
+                    break
+            
             # Determine if the authentication header is present and use it to determine the authentication type
-            if 'WWW-Authenticate' in http.headers:
-                auth_header = http.headers['WWW-Authenticate']
+            if auth_header_value is not None:
                 
-                if auth_header is not None:
-                    m = re.search('^([a-zA-Z0-9]+) ', auth_header)
-                    auth_type = m.group(1)
-                    return auth_type.lower()
+                # Handle the pesky cases where a comma separated value is provided in the header for NTLM negotiation (like "negotiate, ntlm")
+                if 'ntlm' in auth_header_value.lower():
+                    return cls.HTTP_AUTH_NTLM
+                
+                # Otherwise, check the HTTP header for the authentication header
+                m = re.search('^([a-zA-Z0-9]+)', auth_header_value)
+                auth_type = m.group(1)
+                return auth_type.lower()
                 
             # No authentication header is present
             else:
@@ -324,7 +336,7 @@ class WebPing(ModularInput):
             
             # Get the authentication class for request
             auth = cls.create_auth_for_request(auth_type, username, password, logger)
-        
+            
         try:
             
             # Perform the request
