@@ -144,5 +144,6 @@ Change History
 |         | New app icon                                                                                                     |
 |         | Replaced rest call on the Status Overview dashboard with a lookup                                                |
 |         | Fixed NTLM authentication and improved detection of the authentication that the server supports                  |
+|         | Improved messaging regarding the execution gaps and splunkd connection exception messages                        |
 +---------+------------------------------------------------------------------------------------------------------------------+
 
