@@ -22,7 +22,13 @@ from website_monitoring_app.requests_ntlm import HttpNtlmAuth
 # We don't support SSL certicate checking at this point because I haven;t found a good way to include the SSL cert libraries into a SPlunk app.
 from website_monitoring_app.requests.packages.urllib3.exceptions import InsecureRequestWarning
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
-    
+
+class NTLMAuthenticationValueException(Exception):
+    """
+    This class is used to communicate that the NTLM authentication information is invalid.
+    """
+    pass
+
 class Timer(object):
     """
     This class is used to time durations.
@@ -216,7 +222,10 @@ class WebPing(ModularInput):
         
         # NTLM authentication
         elif auth_type == cls.HTTP_AUTH_NTLM:
-            return HttpNtlmAuth(username, password)
+            try:
+                return HttpNtlmAuth(username, password)
+            except ValueError as e:
+                raise NTLMAuthenticationValueException(e)
         
         # Basic authentication
         elif auth_type == cls.HTTP_AUTH_BASIC:
@@ -540,8 +549,11 @@ class WebPing(ModularInput):
                     return
                 
                 # Perform the ping
-                result = WebPing.ping(url, username, password, timeout, proxy_type, proxy_server, proxy_port, proxy_user, proxy_password, client_certificate, client_certificate_key, user_agent, logger=self.logger)
-                
+                try:
+                    result = WebPing.ping(url, username, password, timeout, proxy_type, proxy_server, proxy_port, proxy_user, proxy_password, client_certificate, client_certificate_key, user_agent, logger=self.logger)
+                except NTLMAuthenticationValueException as e:
+                    self.logger.warn("NTLM authentication failed due to configuration issue stanza=%s, message=%i", stanza, str(e))
+                    
                 # Send the event
                 self.output_result( result, stanza, title, host=host, index=index, source=source, sourcetype=sourcetype, unbroken=True, close=True, proxy_server=proxy_server, proxy_port=proxy_port, proxy_user=proxy_user, proxy_type=proxy_type )
                 
@@ -571,10 +583,17 @@ class WebPing(ModularInput):
                 self.logger.info("Added thread to the queue for stanza=%s, thread_count=%i", stanza, len(self.threads))
             
 if __name__ == '__main__':
+    
+    web_ping = None
+    
     try:
         web_ping = WebPing()
         web_ping.execute()
         sys.exit(0)
     except Exception as e:
-        #self.logger.exception("Unhandled exception was caught, this may be due to a defect in the script") # This logs general exceptions that would have been unhandled otherwise (such as coding errors)
-        raise e
+        
+        # This logs general exceptions that would have been unhandled otherwise (such as coding errors)
+        if web_ping is not None and web_ping.logger is not None:
+            web_ping.logger.exception("Unhandled exception was caught, this may be due to a defect in the script")
+        else:
+            raise e

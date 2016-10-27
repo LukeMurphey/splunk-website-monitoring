@@ -10,7 +10,7 @@ from StringIO import StringIO
 
 sys.path.append( os.path.join("..", "src", "bin") )
 
-from web_ping import URLField, DurationField, WebPing
+from web_ping import URLField, DurationField, WebPing, NTLMAuthenticationValueException
 from modular_input import Field, FieldValidationException
 from website_monitoring_rest_handler import HostFieldValidator
 
@@ -315,6 +315,12 @@ class TestWebPing(WebsiteMonitoringAppTest):
         result = WebPing.ping( url_field.to_python("http://127.0.0.1:8888/ntlm_auth_negotiate"), timeout=3, username="user\\domain", password="passwd" )
         
         self.assertEquals(result.response_code, 200)
+    
+    def test_ping_with_ntlm_authentication_missing_domain(self):
+        
+        # Try with missing domain
+        url_field = URLField( "test_ping", "title", "this is a test" )
+        self.assertRaises(NTLMAuthenticationValueException, lambda: WebPing.ping( url_field.to_python("http://127.0.0.1:8888/ntlm_auth"), timeout=3, username="user", password="passwd" ))
     
     def test_ping_with_basic_authentication_optional(self):
         
