@@ -482,7 +482,7 @@ class WebPing(ModularInput):
             self.logger.error('Unable to find the proxy configuration for the specified configuration stanza=%s, error="not found"', stanza)
             raise
         except splunk.SplunkdConnectionException:
-            self.logger.error('Unable to find the proxy configuration for the specified configuration stanza=%s error="splunkd connection error"', stanza)
+            self.logger.error('Unable to find the proxy configuration for the specified configuration stanza=%s error="splunkd connection error", see url=http://lukemurphey.net/projects/splunk-website-monitoring/wiki/Troubleshooting', stanza)
             raise
         
         return website_monitoring_config.proxy_type, website_monitoring_config.proxy_server, website_monitoring_config.proxy_port, website_monitoring_config.proxy_user, website_monitoring_config.proxy_password
@@ -536,7 +536,7 @@ class WebPing(ModularInput):
                     self.logger.error("The proxy configuration could not be loaded (was not found). The execution will be skipped for this input with stanza=%s", stanza)
                     return
                 except splunk.SplunkdConnectionException:
-                    self.logger.error("The proxy configuration could not be loaded (Splunkd connection exception). The execution will be skipped for this input with stanza=%s", stanza)
+                    self.logger.error("The proxy configuration could not be loaded (Splunkd connection exception). The execution will be skipped for this input with stanza=%s, see url=http://lukemurphey.net/projects/splunk-website-monitoring/wiki/Troubleshooting", stanza)
                     return
                 
                 # Perform the ping
