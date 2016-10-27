@@ -552,7 +552,7 @@ class WebPing(ModularInput):
                 try:
                     result = WebPing.ping(url, username, password, timeout, proxy_type, proxy_server, proxy_port, proxy_user, proxy_password, client_certificate, client_certificate_key, user_agent, logger=self.logger)
                 except NTLMAuthenticationValueException as e:
-                    self.logger.warn("NTLM authentication failed due to configuration issue stanza=%s, message=%i", stanza, str(e))
+                    self.logger.warn('NTLM authentication failed due to configuration issue stanza=%s, message="%i"', stanza, str(e))
                     
                 # Send the event
                 self.output_result( result, stanza, title, host=host, index=index, source=source, sourcetype=sourcetype, unbroken=True, close=True, proxy_server=proxy_server, proxy_port=proxy_port, proxy_user=proxy_user, proxy_type=proxy_type )
