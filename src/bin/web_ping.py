@@ -561,7 +561,7 @@ class WebPing(ModularInput):
                     # Get the time that the input last ran
                     last_ran = self.last_ran(input_config.checkpoint_dir, stanza)
                     
-                    # Save the checkpoint so that we remember when we last
+                    # Save the checkpoint so that we remember when we last ran the input
                     self.save_checkpoint(input_config.checkpoint_dir, stanza, self.get_non_deviated_last_run(last_ran, interval, stanza) )
                     
             # If this is not running in multi-threading mode, then run it now in the main thread
