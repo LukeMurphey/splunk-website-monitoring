@@ -1169,7 +1169,7 @@ class ModularInput():
             # To catch up, we'll set it to the current time
             last_ran_derived = time.time()
             
-            self.logger.info("Previous run was too far in the past (gap=%rs) and thus some executions of the input may have been missed (stanza=%s)", int(last_ran_derived-last_ran), stanza)
+            self.logger.info("Previous run was too far in the past (gap=%rs) and thus some executions of the input may have been missed (stanza=%s)", int(round(last_ran_derived-last_ran)), stanza)
             
         #self.logger.info("Calculated non-deviated last_ran=%r from previous_last_ran=%r", last_ran_derived, last_ran)
         return last_ran_derived
