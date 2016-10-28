@@ -2,7 +2,7 @@ define(['jquery', 'underscore', 'splunkjs/mvc', 'views/shared/results_table/rend
     
     var WebsiteStatusCellRenderer = BaseCellRenderer.extend({
     	 canRender: function(cell) {
-    		 return ($.inArray(cell.field, ["title", "response_code", "response_time", "average"]) >= 0);
+    		 return ($.inArray(cell.field, ["title", "response_code", "response_time", "average"]) >= 0); // Add "url" to this list to render the favicon
 		 },
 		 
 		 render: function($td, cell) {
@@ -44,6 +44,23 @@ define(['jquery', 'underscore', 'splunkjs/mvc', 'views/shared/results_table/rend
 					 $td.addClass("success");
 				 }
 				 
+			 }
+			 
+			 else if(cell.field == "url" ){
+				 
+				 // Parse the URL
+				 var getLocation = function(href) {
+					    var l = document.createElement("a");
+					    l.href = href;
+					    return l;
+			     };
+				 
+			     $td.html(_.template('<img height="16" width="16" src="http://www.google.com/s2/favicons?domain=<%- domain %>" /> <%- value %>', {
+		            	value: cell.value,
+		            	domain: getLocation(cell.value).hostname
+		         }));
+			     
+			     return;
 			 }
 			 
 			 // Render the cell
