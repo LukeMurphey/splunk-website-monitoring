@@ -49,13 +49,13 @@
 		  	<format field="sparkline_response_time" type="sparkline">
 		    	<option name="type">bar</option>
 		        <option name="height">20</option>
-		        <option name="barColor">#069C00</option>
-		        <option name="fillColor">#069C00</option>
-		        <option name="lineColor">#069C00</option>
-		        <option name="spotColor">#069C00</option>
+		        <option name="barColor">#65a637</option>
+		        <option name="fillColor">#65a637</option>
+		        <option name="lineColor">#65a637</option>
+		        <option name="spotColor">#65a637</option>
 		        <option name="colorMap">
-		          <option name="800:1000">#FFA500</option>
-		          <option name="1000:">#C42323</option>
+		          <option name="800:1000">#f2b827</option>
+		          <option name="1000:">#d6563c</option>
 		        </option>
 		    </format>
 			<drilldown>

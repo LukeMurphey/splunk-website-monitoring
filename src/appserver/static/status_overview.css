@@ -35,3 +35,35 @@
     padding-left: 0px;
     padding-right: 0px;
 }
+
+.title{
+	font-weight:bold !important;
+	font-size: larger;
+}
+
+.table-chrome.table-striped > tbody > tr > td.response_code.success{
+	background-color: #65A636;
+    color: white;
+    font-weight: bold;
+}
+
+.table-chrome.table-striped > tbody > tr > td.response_code.failure,
+.table-chrome.table-striped > tbody > tr > td.response_time.failure,
+.table-chrome.table-striped > tbody > tr > td.average.failure{
+	background-color: #d6563c;
+    color: white;
+    font-weight: bold;
+}
+
+/*
+ * 
+ */
+.response-failure{
+	background-color: #C42323;
+}
+
+.response-success{
+	background-color: #61a035; /* #00a009; */
+}
+
+
