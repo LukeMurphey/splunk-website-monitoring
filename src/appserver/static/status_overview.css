@@ -41,6 +41,9 @@
 	font-size: larger;
 }
 
+/*
+ * The following sets the color of the row indicating if the response was a failure or not.
+ */
 .table-chrome.table-striped > tbody > tr > td.response_code.success{
 	background-color: #65A636;
     color: white;
@@ -56,6 +59,13 @@
 }
 
 /*
+ * This makes the stopwatch icons and the status icons line up
+ */
+.response_time.failure > i, .average.failure > i{
+	margin-right: 3px;
+}
+
+/*
  * Setting background color of the cells indicating success or failure.
  */
 .response-failure{
@@ -66,4 +76,16 @@
 	background-color: #61a035; /* #00a009; */
 }
 
+/*
+ * Add some padding so that the cells without an icon line up with those that do.
+ */
+ /*
+.response_time.success{
+	padding-left: 22px;
+}
+
+.average.success{
+	padding-left: 22px;
+}
+*/
 
