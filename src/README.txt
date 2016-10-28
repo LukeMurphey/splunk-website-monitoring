@@ -145,5 +145,7 @@ Change History
 |         | Replaced rest call on the Status Overview dashboard with a lookup                                                |
 |         | Fixed NTLM authentication and improved detection of the authentication that the server supports                  |
 |         | Improved messaging regarding the execution gaps and splunkd connection exception messages                        |
+|         | Improved appearance of the Status Overview table                                                                 |
+|         | Fixed intermittent Javascript error on the Status Overview dashboard                                             |
 +---------+------------------------------------------------------------------------------------------------------------------+
 
