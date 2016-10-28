@@ -56,7 +56,7 @@
 }
 
 /*
- * 
+ * Setting background color of the cells indicating success or failure.
  */
 .response-failure{
 	background-color: #C42323;
