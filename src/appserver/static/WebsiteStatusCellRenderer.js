@@ -1,11 +1,4 @@
-define(function(require, exports, module) {
-	
-    // Load dependencies
-    var _ = require('underscore');
-    var mvc = require('splunkjs/mvc');
-    var $ = require('jquery');
-    
-    var BaseCellRenderer = require('views/shared/results_table/renderers/BaseCellRenderer');
+define(['jquery', 'underscore', 'splunkjs/mvc', 'views/shared/results_table/renderers/BaseCellRenderer'], function($, _, mvc, BaseCellRenderer) {
     
     var WebsiteStatusCellRenderer = BaseCellRenderer.extend({
     	 canRender: function(cell) {
@@ -30,13 +23,13 @@ define(function(require, exports, module) {
 				 }
 				 else if( int_value >= 100 ){
 					 $td.addClass("success");
-					 icon = 'circle-filled';
+					 icon = 'check';
 				 }
 				 else{
 					 $td.addClass("failure");
 					 icon = 'alert';
 				 }
-				 
+				
 			 }
 			 
 			 // Handle the response_time and average fields
