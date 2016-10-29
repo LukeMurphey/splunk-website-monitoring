@@ -1,27 +1,9 @@
 /*
- * Hide the 'time_exceeded' column since it is only used for determining if the response time should be marked as high
- */
-.table tr td:nth-of-type(5),
-.table tr th:nth-of-type(5),
-.table tr td:nth-of-type(5),
-.table tr th:nth-of-type(5){
-     display:none;   
-}
-
-/*
- * Hide the 'avg_time_exceeded' column since it is only used for determining if the average response time should be marked as high
- */
-.table tr td:nth-of-type(7),
-.table tr th:nth-of-type(7){
-     display:none;   
-}
-
-/*
  * Hide the range column on small devices
  */
 @media(max-width:1024px) {
-	.table tr td:nth-of-type(9),
-	.table tr th:nth-of-type(9){
+	.table tr td:nth-of-type(7),
+	.table tr th:nth-of-type(7){
 		 display:none;   
 	}
 }
