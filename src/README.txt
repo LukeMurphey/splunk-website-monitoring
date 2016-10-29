@@ -147,5 +147,6 @@ Change History
 |         | Improved messaging regarding the execution gaps and splunkd connection exception messages                        |
 |         | Improved appearance of the Status Overview table                                                                 |
 |         | Fixed intermittent Javascript error on the Status Overview dashboard                                             |
+|         | Made the Status Overview page more responsive (works better on iPads)                                            |
 +---------+------------------------------------------------------------------------------------------------------------------+
 
