@@ -1,12 +1,17 @@
 /*
- * Hide the range column on small devices
+ * Hide the range and title columns on small devices
  */
 @media(max-width:1024px) {
 	.table tr td:nth-of-type(7),
 	.table tr th:nth-of-type(7){
 		 display:none;   
 	}
+	.table tr td:nth-of-type(1),
+	.table tr th:nth-of-type(1){
+		 display:none;   
+	}
 }
+
 
 /*
  * The following improves the styling of the status overview dashboard by removing the white border and padding.
