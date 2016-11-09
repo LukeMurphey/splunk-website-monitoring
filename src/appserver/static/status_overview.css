@@ -48,11 +48,20 @@
     font-weight: bold;
 }
 
+.table-chrome.table-striped > tbody > tr > td.response_code.success.highlighted{
+	background-color: #74b744 !important;
+}
+
 .table-chrome.table-striped > tbody > tr > td.response_time.failure,
 .table-chrome.table-striped > tbody > tr > td.average.failure{
 	background-color: #d6563c;
     color: white;
     font-weight: bold;
+}
+
+.table-chrome.table-striped > tbody > tr > td.response_time.failure.highlighted,
+.table-chrome.table-striped > tbody > tr > td.average.failure.highlighted{
+	background-color: #e66146 !important;
 }
 
 .table-chrome.table-striped > tbody > tr > td.response_code.failure{
@@ -62,9 +71,27 @@
     font-weight: bold;
 }
 
+/*
+ * Style the cells in the table that are high but not so as to be considered a failure.
+ */
 .table-chrome.table-striped > tbody > tr > td.response_time.response-100,
 .table-chrome.table-striped > tbody > tr > td.average.response-100{
-	background-color: #f1d4d4;
+	background-color: #e8cece; /* #ffad00; */
+}
+
+.table-chrome.table-striped > tbody > tr > td.response_time.response-75,
+.table-chrome.table-striped > tbody > tr > td.average.response-75{
+	background-color: #f5e7e7; /* #ffd885 */
+}
+
+.table-chrome.table-striped > tbody > tr > td.response_time.response-100.highlighted,
+.table-chrome.table-striped > tbody > tr > td.average.response-100.highlighted{
+	background-color: #e8cece !important;
+}
+
+.table-chrome.table-striped > tbody > tr > td.response_time.response-75.highlighted,
+.table-chrome.table-striped > tbody > tr > td.average.response-75.highlighted{
+	background-color: #f5e7e7 !important;
 }
 
 /*
@@ -84,19 +111,6 @@
 .response-success{
 	background-color: #61a035; /* #00a009; */
 }
-
-/*
- * Add some padding so that the cells without an icon line up with those that do.
- */
- /*
-.response_time.success{
-	padding-left: 22px;
-}
-
-.average.success{
-	padding-left: 22px;
-}
-*/
 
 /*
  * Font icons below
