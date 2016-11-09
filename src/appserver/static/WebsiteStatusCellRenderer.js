@@ -46,7 +46,9 @@ define(['jquery', 'underscore', 'splunkjs/mvc', 'views/shared/results_table/rend
 					 
 					 var percent = 0;
 					 
-					 if(float_value <= 250){
+					 if(float_value <= 100){
+						 percent = 0;
+					 }else if(float_value <= 250){
 						 percent = 25;
 					 }
 					 else if(float_value <= 500){

@@ -12,7 +12,6 @@
 	}
 }
 
-
 /*
  * The following improves the styling of the status overview dashboard by removing the white border and padding.
  */
@@ -34,6 +33,10 @@
     padding-right: 0px;
 }
 
+#dashboard > .fieldset{
+	margin-bottom: 0px;
+}
+
 .title{
 	font-weight:bold !important;
 	font-size: larger;
@@ -43,7 +46,7 @@
  * The following sets the color of the row indicating if the response was a failure or not.
  */
 .table-chrome.table-striped > tbody > tr > td.response_code.success{
-	background-color: #65A636;
+	background-color: #65A636; /* #3677a6 */
     color: white;
     font-weight: bold;
 }
@@ -74,14 +77,16 @@
 /*
  * Style the cells in the table that are high but not so as to be considered a failure.
  */
+ 
+ /* Red-ish version:
 .table-chrome.table-striped > tbody > tr > td.response_time.response-100,
 .table-chrome.table-striped > tbody > tr > td.average.response-100{
-	background-color: #e8cece; /* #ffad00; */
+	background-color: #e8cece;
 }
 
 .table-chrome.table-striped > tbody > tr > td.response_time.response-75,
 .table-chrome.table-striped > tbody > tr > td.average.response-75{
-	background-color: #f5e7e7; /* #ffd885 */
+	background-color: #f5e7e7;
 }
 
 .table-chrome.table-striped > tbody > tr > td.response_time.response-100.highlighted,
@@ -93,6 +98,36 @@
 .table-chrome.table-striped > tbody > tr > td.average.response-75.highlighted{
 	background-color: #f5e7e7 !important;
 }
+ */
+
+ /* Orange version: */
+.table-chrome.table-striped > tbody > tr > td.response_time.response-100,
+.table-chrome.table-striped > tbody > tr > td.average.response-100{
+	background-color: #ffad00;
+	color: white;
+}
+
+.table-chrome.table-striped > tbody > tr > td.response_time.response-75,
+.table-chrome.table-striped > tbody > tr > td.average.response-75{
+	background-color: #ffd885;
+}
+
+.table-chrome.table-striped > tbody > tr > td.response_time.response-100.highlighted,
+.table-chrome.table-striped > tbody > tr > td.average.response-100.highlighted{
+	background-color: #ffbb2d !important;
+}
+
+.table-chrome.table-striped > tbody > tr > td.response_time.response-75.highlighted,
+.table-chrome.table-striped > tbody > tr > td.average.response-75.highlighted{
+	background-color: #ffd885 !important;
+}
+
+/*
+.table-chrome.table-striped > tbody > tr > td.response_time.response-25,
+.table-chrome.table-striped > tbody > tr > td.average.response-25{
+	background-color: #dceaf5;
+}
+*/
 
 /*
  * This makes the stopwatch icons and the status icons line up
