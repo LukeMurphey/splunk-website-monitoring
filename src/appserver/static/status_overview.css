@@ -122,12 +122,15 @@
 	background-color: #ffd885 !important;
 }
 
-/*
 .table-chrome.table-striped > tbody > tr > td.response_time.response-25,
 .table-chrome.table-striped > tbody > tr > td.average.response-25{
 	background-color: #dceaf5;
 }
-*/
+.table-chrome.table-striped > tbody > tr > td.response_time.response-0,
+.table-chrome.table-striped > tbody > tr > td.average.response-0{
+    background-color: #d7f3c3;
+}
+
 
 /*
  * This makes the stopwatch icons and the status icons line up
