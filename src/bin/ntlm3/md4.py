@@ -110,6 +110,10 @@ class MD4:
 		self.D = (self.D + d) & 0xffffffff
 
 	def digest(self):
+		b = TXT_TO_BYTES(pack('<IIII', self.A, self.B, self.C, self.D))
+		return "".join(map(chr, b))
+
+	def hexdigest(self):
 		return BYTES_TO_HEX(TXT_TO_BYTES(pack('<IIII', self.A, self.B, self.C, self.D)))
 
 if __name__ == '__main__':
