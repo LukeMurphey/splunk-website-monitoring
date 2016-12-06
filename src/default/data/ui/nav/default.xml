@@ -7,4 +7,12 @@
   	<view name="web_ping_logs" />
   	<view name="web_ping_status" />
   </collection>
+  <collection label="Search">
+  	<view name="search" />
+  	<view name="datasets" />
+  	<view name="reports" />
+  	<view name="alerts" />
+  	<view name="dashboards" />
+  </collection>
+  <a href='/manager/website_input/apps/local/website_monitoring/setup?action=edit'>Configuration</a>
 </nav>
