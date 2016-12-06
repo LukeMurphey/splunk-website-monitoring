@@ -150,5 +150,7 @@ Change History
 |         | Made the Status Overview page more responsive (works better on iPads)                                            |
 |---------|------------------------------------------------------------------------------------------------------------------|
 | 2.0.1   | Styling enhancements to the Status Overview dashboard (font icons, cell background colors, etc.)                 |
+|         | Fixed issue where the NTLM authentication didn't work on some Splunk installations                               |
+|         | Added the search views to the nav                                                                                |
 +---------+------------------------------------------------------------------------------------------------------------------+
 
