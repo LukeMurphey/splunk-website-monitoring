@@ -15,6 +15,7 @@ import struct
 import base64
 import hashlib
 import hmac
+from md4 import MD4
 import random
 import re
 import binascii
@@ -393,14 +394,21 @@ def create_LM_hashed_password_v1(passwd):
 
     return res
 
+def hash_md4(data):
+    #return hashlib.new('md4', data)
+    md4 = MD4()
+    md4.update(data)
+    return md4
 
 def create_NT_hashed_password_v1(passwd, user=None, domain=None):
     "create NT hashed password"
     # if the passwd provided is already a hash, we just return the second half
     if re.match(r'^[\w]{32}:[\w]{32}$', passwd):
         return binascii.unhexlify(passwd.split(':')[1])
-
-    digest = hashlib.new('md4', passwd.encode('utf-16le')).digest()
+    
+    #digest = hashlib.new('md4', passwd.encode('utf-16le')).digest()
+    digest = hash_md4(passwd.encode('utf-16le')).digest()
+    
     return digest
 
 
@@ -412,4 +420,5 @@ def create_NT_hashed_password_v2(passwd, user, domain):
 
 
 def create_sessionbasekey(password):
-    return hashlib.new('md4', create_NT_hashed_password_v1(password)).digest()
+    #return hashlib.new('md4', create_NT_hashed_password_v1(password)).digest()
+    return hash_md4(create_NT_hashed_password_v1(password)).digest()
