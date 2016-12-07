@@ -20,6 +20,7 @@ define([
     "splunkjs/mvc/simplesplunkview",
     'text!../app/website_monitoring/js/templates/BatchInputCreateView.html',
     "bootstrap-tags-input",
+    "splunk.util",
     "css!../app/website_monitoring/css/BatchInputCreateView.css",
     "css!../app/website_monitoring/js/lib/bootstrap-tagsinput.css"
 ], function(
@@ -185,7 +186,7 @@ define([
         	
         	// Perform the call
         	$.ajax({
-        			url: splunkd_utils.fullpath("/servicesNS/admin/website_monitoring/data/inputs/web_ping"),
+        			url: splunkd_utils.fullpath("/servicesNS/" + Splunk.util.getConfigValue("USERNAME") +  "/website_monitoring/data/inputs/web_ping"),
         			data: data,
         			type: 'POST',
         			
@@ -335,14 +336,6 @@ define([
         },
         
         /**
-         * Returns true if the item is a valid URL.
-         */
-        isValidURL: function(url){
-        	var regex = /^(https?:\/\/)?([\da-z\.-]+)([:][0-9]+)?([\/\w \.-]*)*\/?$/gi;
-        	return regex.test(url);
-        },
-        
-        /**
          * Returns true if the item is a valid interval.
          */
         isValidInterval: function(interval){
@@ -361,12 +354,12 @@ define([
          * Ensure that the tag is a valid URL.
          */
         validateURL: function(event) {
-        	if(!this.isValidURL(event.item)){
+        	
+        	// Add the protocol if it is missing
+        	if(event.item.indexOf("http://") !== 0 && event.item.indexOf("https://") !== 0){
         		
-        		// Try adding the protocol to see if the user just left that part out.
-        		if(this.isValidURL("http://" + event.item)){
-        			$("#urls").tagsinput('add', "http://" + event.item);
-        		}
+        		// Add the protocol since the user just left that part out
+        		$("#urls").tagsinput('add', "http://" + event.item);
         		
         		event.cancel = true;
         		
