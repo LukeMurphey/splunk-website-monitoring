@@ -511,7 +511,7 @@ define([
          */
         getExistingInputs: function(){
 
-        	var uri = splunkd_utils.fullpath("/servicesNS/admin/search/data/inputs/web_ping?output_mode=json");
+        	var uri = splunkd_utils.fullpath("/servicesNS/nobody/search/data/inputs/web_ping?output_mode=json");
 
 	        // Fire off the request
         	jQuery.ajax({
