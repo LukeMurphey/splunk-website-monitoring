@@ -154,5 +154,6 @@ Change History
 |         | Added the search views to the nav                                                                                |
 |         | Improving the capability checking on the batch input creation page                                               |
 |         | Fixed issues on the batch input creation page that prevent people with permissions from making inputs            |
+|         | Updated the app icon to improve appearance on the main apps page in Splunk                                       |
 +---------+------------------------------------------------------------------------------------------------------------------+
 
