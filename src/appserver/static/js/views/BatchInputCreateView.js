@@ -534,10 +534,23 @@ define([
          */
         render: function () {
         	
-        	var has_permission = this.hasCapability('edit_modinput_web_ping');
+        	// Below is the list of capabilities required
+        	var capabilities_required = ['edit_modinput_web_ping', 'edit_tcp', 'list_inputs'];
         	
+        	// Find out which capabilities are missing
+        	var capabilities_missing = [];
+        	
+        	// Check each one
+        	for(var c = 0; c < capabilities_required.length; c++){
+        		if(!this.hasCapability(capabilities_required[c])){
+        			capabilities_missing.push(capabilities_required[c]);
+        		}
+        	}
+
+        	// Render the view
         	this.$el.html(_.template(Template, {
-        		'has_permission' : has_permission
+        		'has_permission' : capabilities_missing.length === 0,
+        		'capabilities_missing' : capabilities_missing
         	}));
         	
         	// Render the URL as tags

@@ -1,7 +1,7 @@
 <% if(!has_permission) { %>
 	<div class="alert alert-warning">
     	<i class="icon-alert"></i>
-		You do not have permission to make inputs. You need the "edit_modinput_web_ping" capability to make and edit Website Monitoring inputs.
+		You do not have permission to make Website Monitoring inputs. You are missing the following capabilities: <%- capabilities_missing.join(", ") %>.
     </div>
 <% } else { %>
 
