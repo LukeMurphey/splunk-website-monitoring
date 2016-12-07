@@ -46,7 +46,7 @@ A: Yes, see http://lukemurphey.net/projects/splunk-website-monitoring/wiki/Using
 
 Q: Can I allow non-admin users to make and edit inputs?
 
-A: Yes, just assign users the "edit_modinput_web_ping" capability. You will likely want to give them the "list_inputs"capability too.
+A: Yes, just assign users the "edit_modinput_web_ping" and "edit_tcp" capabilities. You will likely want to give them the "list_inputs"capability too.
 
 
 
@@ -152,5 +152,7 @@ Change History
 | 2.0.1   | Styling enhancements to the Status Overview dashboard (font icons, cell background colors, etc.)                 |
 |         | Fixed issue where the NTLM authentication didn't work on some Splunk installations                               |
 |         | Added the search views to the nav                                                                                |
+|         | Improving the capability checking on the batch input creation page                                               |
+|         | Fixed issues on the batch input creation page that prevent people with permissions from making inputs            |
 +---------+------------------------------------------------------------------------------------------------------------------+
 
