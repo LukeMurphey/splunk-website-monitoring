@@ -75,19 +75,19 @@ class Handler(BaseHTTPRequestHandler):
                 self.wfile.write('not authenticated')
                 
             # Do the challenge
-            elif self.headers.getheader('Authorization') == "NTLM TlRMTVNTUAABAAAAB7IIogQABAA2AAAADgAOACgAAAAFASgKAAAAD0xNVVJQSEVZLU1CUDE1VVNFUg==" and len(self.headers.getheader('Authorization')) < 200:
+            elif len(self.headers.getheader('Authorization')) < 200: #self.headers.getheader('Authorization') == "NTLM TlRMTVNTUAABAAAAB7IIogQABAA2AAAADgAOACgAAAAFASgKAAAAD0xNVVJQSEVZLU1CUDE1VVNFUg==":
                 # NTLM TlRMTVNTUAABAAAAB7IIogQABAA2AAAADgAOACgAAAAFASgKAAAAD0xNVVJQSEVZLU1CUDE1VVNFUg==
                 self.send_response(401)
                 self.send_header('WWW-Authenticate', 'NTLM TlRMTVNTUAACAAAAAAAAACgAAAABAAAAAAAAAAAAAAA=') # The challenge
                 self.wfile.write('not authenticated, step two')
             
-            elif self.headers.getheader('Authorization') == "NTLM TlRMTVNTUAADAAAAGAAYAHgAAAAYABgAkAAAAAgACABIAAAADAAMAFAAAAAcABwAXAAAAAAAAACoAAAABYKIogUBKAoAAAAPVQBTAEUAUgBkAG8AbQBhAGkAbgBMAE0AVQBSAFAASABFAFkALQBNAEIAUAAxADUAjkdanfmkRwLTvPN8tRWYl1fpobeVQMN00VGvOdOFEzgb0gY0ZnA0W8LL0pJ3BlOW":
+            else: # elif self.headers.getheader('Authorization') == "NTLM TlRMTVNTUAADAAAAGAAYAHgAAAAYABgAkAAAAAgACABIAAAADAAMAFAAAAAcABwAXAAAAAAAAACoAAAABYKIogUBKAoAAAAPVQBTAEUAUgBkAG8AbQBhAGkAbgBMAE0AVQBSAFAASABFAFkALQBNAEIAUAAxADUAjkdanfmkRwLTvPN8tRWYl1fpobeVQMN00VGvOdOFEzgb0gY0ZnA0W8LL0pJ3BlOW":
                 # NTLM TlRMTVNTUAADAAAAGAAYAHgAAAAYABgAkAAAAAgACABIAAAADAAMAFAAAAAcABwAXAAAAAAAAACoAAAABYKIogUBKAoAAAAPVQBTAEUAUgBkAG8AbQBhAGkAbgBMAE0AVQBSAFAASABFAFkALQBNAEIAUAAxADUAjkdanfmkRwLTvPN8tRWYl1fpobeVQMN00VGvOdOFEzgb0gY0ZnA0W8LL0pJ3BlOW
                 self.send_response(200)
                 self.wfile.write('authenticated')
                 
-            else:
-                print "Auth header not the expected value=", self.headers.getheader('Authorization')
+            #else:
+            #    print "Auth header not the expected value=", self.headers.getheader('Authorization')
             
         # Present frontpage with user authentication.
         elif self.headers.getheader('Authorization') == None:
