@@ -16,6 +16,25 @@ from website_monitoring_rest_handler import HostFieldValidator
 
 from test_web_server import get_server
 
+def skipIfNoProxyServer(func):
+    def _decorator(self, *args, **kwargs):
+        
+        if not hasattr(self, 'proxy_address') or self.proxy_address is None:
+            self.skipTest("No proxy address defined, proxy based test will not run")
+            return
+            
+        elif not hasattr(self, 'proxy_port') or self.proxy_port is None:
+            self.skipTest("No proxy port defined, proxy based test will not run")
+            return
+            
+        elif not hasattr(self, 'proxy_type') or self.proxy_type is None:
+            self.skipTest("No proxy type defined, proxy based test will not run")
+            return
+        else:
+            return func(self, *args, **kwargs)
+        
+    return _decorator
+
 class WebsiteMonitoringAppTest(unittest.TestCase):
     
     def toInt(self, str_int):
@@ -29,7 +48,11 @@ class WebsiteMonitoringAppTest(unittest.TestCase):
         if properties_file is None:
             properties_file = os.path.join( "..", "local.properties")
         
-        fp = open(properties_file)
+        try:
+            fp = open(properties_file)
+        except IOError:
+            return
+        
         regex = re.compile("(?P<key>[^=]+)[=](?P<value>.*)")
         
         settings = {}
@@ -265,19 +288,8 @@ class TestWebPing(WebsiteMonitoringAppTest):
         
         self.assertEquals(result.response_code, 200)
     
+    @skipIfNoProxyServer
     def test_ping_over_proxy(self):
-        
-        if self.proxy_address is None:
-            print "No proxy address defined, proxy based test will not run"
-            return
-            
-        if self.proxy_port is None:
-            print "No proxy port defined, proxy based test will not run"
-            return
-            
-        if self.proxy_type is None:
-            print "No proxy type defined, proxy based test will not run"
-            return
         
         url_field = URLField( "test_ping", "title", "this is a test" )
         result = WebPing.ping( url_field.to_python("http://textcritical.com"), timeout=3, proxy_type=self.proxy_type, proxy_server=self.proxy_address, proxy_port=self.proxy_port)
