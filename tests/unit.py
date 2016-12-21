@@ -95,18 +95,27 @@ class TestDurationField(unittest.TestCase):
     
 class TestWebPing(WebsiteMonitoringAppTest):
     
+    DEFAULT_TEST_WEB_SERVER_PORT = 8888
+    warned_about_no_httpd = False
+    httpd = None
+    
     @classmethod
     def setUpClass(cls):
         
+        cls.web_server_port = int(os.environ.get("TEST_WEB_SERVER_PORT", TestWebPing.DEFAULT_TEST_WEB_SERVER_PORT))
+        
+        # Stop if the web-server was already started
+        if TestWebPing.httpd is not None:
+            return
+        
         attempts = 0
-        cls.httpd = None
         
         sys.stdout.write("Waiting for web-server to start ...")
         sys.stdout.flush()
         
-        while cls.httpd is None and attempts < 20:
+        while TestWebPing.httpd is None and attempts < 20:
             try:
-                cls.httpd = get_server(8888)
+                TestWebPing.httpd = get_server(cls.web_server_port)
                 
                 print " Done"
             except IOError:
@@ -234,7 +243,7 @@ class TestWebPing(WebsiteMonitoringAppTest):
         
         url_field = URLField( "test_ping", "title", "this is a test" )
         
-        result = WebPing.ping( url_field.to_python("http://127.0.0.1:8888/test_page"), timeout=3 )
+        result = WebPing.ping( url_field.to_python("http://127.0.0.1:" + str(self.web_server_port) + "/test_page"), timeout=3 )
         
         self.assertEquals(result.response_code, 200)
         
@@ -279,7 +288,7 @@ class TestWebPing(WebsiteMonitoringAppTest):
         
         # Try with valid authentication
         url_field = URLField( "test_ping", "title", "this is a test" )
-        result = WebPing.ping( url_field.to_python("http://127.0.0.1:8888"), timeout=3, username="admin", password="changeme" )
+        result = WebPing.ping( url_field.to_python("http://127.0.0.1:" + str(self.web_server_port)), timeout=3, username="admin", password="changeme" )
         
         self.assertEquals(result.response_code, 200)
         
@@ -287,7 +296,7 @@ class TestWebPing(WebsiteMonitoringAppTest):
         self.assertEquals(result.response_sha224, 'deaf4c0062539c98b4e957712efcee6d42832fed2d803c2bbf984b23')
         
         # Verify that bad authentication fails
-        result = WebPing.ping( url_field.to_python("http://127.0.0.1:8888"), timeout=3, username="admin", password="wrongpassword" )
+        result = WebPing.ping( url_field.to_python("http://127.0.0.1:" + str(self.web_server_port)), timeout=3, username="admin", password="wrongpassword" )
         
         self.assertEquals(result.response_code, 401)
         self.assertGreater(result.request_time, 0)
@@ -304,7 +313,7 @@ class TestWebPing(WebsiteMonitoringAppTest):
         
         # Try with valid authentication
         url_field = URLField( "test_ping", "title", "this is a test" )
-        result = WebPing.ping( url_field.to_python("http://127.0.0.1:8888/ntlm_auth"), timeout=3, username="user\\domain", password="passwd" )
+        result = WebPing.ping( url_field.to_python("http://127.0.0.1:" + str(self.web_server_port) + "/ntlm_auth"), timeout=3, username="user\\domain", password="passwd" )
         
         self.assertEquals(result.response_code, 200)
         
@@ -312,7 +321,7 @@ class TestWebPing(WebsiteMonitoringAppTest):
         
         # Try with valid authentication
         url_field = URLField( "test_ping", "title", "this is a test" )
-        result = WebPing.ping( url_field.to_python("http://127.0.0.1:8888/ntlm_auth_negotiate"), timeout=3, username="user\\domain", password="passwd" )
+        result = WebPing.ping( url_field.to_python("http://127.0.0.1:" + str(self.web_server_port) + "/ntlm_auth_negotiate"), timeout=3, username="user\\domain", password="passwd" )
         
         self.assertEquals(result.response_code, 200)
     
@@ -320,18 +329,18 @@ class TestWebPing(WebsiteMonitoringAppTest):
         
         # Try with missing domain
         url_field = URLField( "test_ping", "title", "this is a test" )
-        self.assertRaises(NTLMAuthenticationValueException, lambda: WebPing.ping( url_field.to_python("http://127.0.0.1:8888/ntlm_auth"), timeout=3, username="user", password="passwd" ))
+        self.assertRaises(NTLMAuthenticationValueException, lambda: WebPing.ping( url_field.to_python("http://127.0.0.1:" + str(self.web_server_port) + "/ntlm_auth"), timeout=3, username="user", password="passwd" ))
     
     def test_ping_with_basic_authentication_optional(self):
         
         # Try with valid authentication
         url_field = URLField( "test_ping", "title", "this is a test" )
-        result = WebPing.ping( url_field.to_python("http://127.0.0.1:8888/optional_auth"), timeout=3, username="admin", password="changeme" )
+        result = WebPing.ping( url_field.to_python("http://127.0.0.1:" + str(self.web_server_port) + "/optional_auth"), timeout=3, username="admin", password="changeme" )
         
         self.assertEquals(result.response_code, 203)
         
         # Verify that no authentication still works
-        result = WebPing.ping( url_field.to_python("http://127.0.0.1:8888/optional_auth"), timeout=3)
+        result = WebPing.ping( url_field.to_python("http://127.0.0.1:" + str(self.web_server_port) + "/optional_auth"), timeout=3)
         
         self.assertEquals(result.response_code, 202)
         self.assertGreater(result.request_time, 0)
@@ -340,7 +349,7 @@ class TestWebPing(WebsiteMonitoringAppTest):
         
         # Try with basic auth
         url_field = URLField( "test_ping", "title", "this is a test" )
-        auth_type = WebPing.determine_auth_type( url_field.to_python("http://127.0.0.1:8888"))
+        auth_type = WebPing.determine_auth_type( url_field.to_python("http://127.0.0.1:" + str(self.web_server_port)))
         
         self.assertEquals(auth_type, WebPing.HTTP_AUTH_BASIC)
         
@@ -356,7 +365,7 @@ class TestWebPing(WebsiteMonitoringAppTest):
         
         # Try with digest auth
         url_field = URLField( "test_ping", "title", "this is a test" )
-        auth_type = WebPing.determine_auth_type( url_field.to_python("http://127.0.0.1:8888/ntlm_auth"))
+        auth_type = WebPing.determine_auth_type( url_field.to_python("http://127.0.0.1:" + str(self.web_server_port) + "/ntlm_auth"))
         
         self.assertEquals(auth_type, WebPing.HTTP_AUTH_NTLM)
         
@@ -364,7 +373,7 @@ class TestWebPing(WebsiteMonitoringAppTest):
         
         # Try with digest auth
         url_field = URLField( "test_ping", "title", "this is a test" )
-        auth_type = WebPing.determine_auth_type( url_field.to_python("http://127.0.0.1:8888/ntlm_auth_negotiate"))
+        auth_type = WebPing.determine_auth_type( url_field.to_python("http://127.0.0.1:" + str(self.web_server_port) + "/ntlm_auth_negotiate"))
         
         self.assertEquals(auth_type, WebPing.HTTP_AUTH_NTLM)
     
@@ -372,7 +381,7 @@ class TestWebPing(WebsiteMonitoringAppTest):
         
         # Try with digest auth
         url_field = URLField( "test_ping", "title", "this is a test" )
-        auth_type = WebPing.determine_auth_type( url_field.to_python("http://127.0.0.1:8888/test_page"))
+        auth_type = WebPing.determine_auth_type( url_field.to_python("http://127.0.0.1:" + str(self.web_server_port) + "/test_page"))
         
         self.assertEquals(auth_type, WebPing.HTTP_AUTH_NONE)
         
@@ -386,12 +395,12 @@ class TestWebPing(WebsiteMonitoringAppTest):
         
         # Make sure that the server is validating the user-agent by returning 200 when the user-agent doesn't match
         # This just validates that the test case works
-        result = WebPing.ping( url_field.to_python("http://127.0.0.1:8888/user_agent_check"), user_agent="USER_AGENT_CHECK_DOESNT_MATCH", timeout=3 )
+        result = WebPing.ping( url_field.to_python("http://127.0.0.1:" + str(self.web_server_port) + "/user_agent_check"), user_agent="USER_AGENT_CHECK_DOESNT_MATCH", timeout=3 )
         self.assertEquals(result.response_code, 200)
         
         # Make sure that the server is validating the user-agent which returns 201 when the user-agent matches "USER_AGENT_CHECK"
-        result = WebPing.ping( url_field.to_python("http://127.0.0.1:8888/user_agent_check"), user_agent="USER_AGENT_CHECK", timeout=3 )
+        result = WebPing.ping( url_field.to_python("http://127.0.0.1:" + str(self.web_server_port) + "/user_agent_check"), user_agent="USER_AGENT_CHECK", timeout=3 )
         self.assertEquals(result.response_code, 201)
     
 if __name__ == '__main__':
-    unittest.main()
+    unittest.main(testRunner= unittest.TextTestRunner(verbosity=2))

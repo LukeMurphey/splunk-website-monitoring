@@ -1,0 +1,537 @@
+<!-- 
+This Ant build script contains operations that are useful for building Splunk apps. To use it with you app, do the following:
+
+1) Make a build.xml script that imports this build script (see the template below for an example); the build.xml needs to be in the same directory as basebuild.xml
+2) Set the name of the project in the root project node (see SET_APP_NAME_HERE in the example below)
+3) Download ant-contrib-0.6.jar from https://sourceforge.net/projects/ant-contrib/files/ant-contrib/ant-contrib-0.6/ and put it in a "lib" directory (the directory needs to be right next to the build.xml, e.g. "lib/ant-contrib-0.6.jar")
+4) Define a default.properties file to specify default parameters. The default.properties ought to be checked in the source-code repository.
+5) Define a local.properties file to override the default parameters. This file should be install specific and thus should NOT be checked into the source-code repository.
+6) Set environment variables to set system wide options or to control the build script from a CI tool
+
+A basic build script would look like this:
+
+  <project default="package" name="SET_APP_NAME_HERE">
+	<import file="basebuild.xml"/>
+  </project>
+  
+Make sure to replace SET_APP_NAME_HERE with your project name. That should match the name of your app and the directory of app in /etc/apps. Here is a template for a basic build script:
+
+Below are the parameters supported (via the local.properties and default.properties files):
+ * value.build.packageoutput.directory: indicates where created packages should go (defaults to tmp/packages)
+ * value.build.number:                  indicates the build number specified in app.conf (defaults to 1)
+ * value.src.directory:                 indicates where the app code is (defaults to src)
+ * value.version.number:                indicators the version number of the app
+ * value.deploy.splunk_home:            indicates the location of the Splunk install to use for testing and local deployment
+ 
+To use the generated build number, put ${value.build.number} in your file where you want the string replacement to occur. For example, below a snippet from app.conf that will be populated with the build number:
+
+  [install]
+  build = ${value.build.number}
+  
+You can also use ${value.version.number} to substitute your version number in app.conf:
+
+  [launcher]
+  version = ${value.version.number}
+  
+If you want to use environment variables, you can assign the following confoguration options via environment variables:
+
+ * value.build.packageoutput.directory: OUTPUT_DIRECTORY
+ * value.deploy.splunk_home:            SPLUNK_HOME
+ * value.build.minimize:                BUILD_MINIMIZED
+-->
+	
+<project default="package" name="basebuild">
+
+	<!--
+	Properties will be loaded in the following order with the first one taking precedence:
+	
+	* local.properties
+	* Environment variables
+	* default.properties
+	-->
+	
+    <!--
+    Load the properties files, local is loaded first since properties are immutable (cannot be changed
+    by later property files) and we want the local properties to override the default properties
+    -->
+    <property file="local.properties" />
+	
+	<!-- Import some parameters from environment variables -->
+	<property environment="env" />
+	
+	<macrodef name="import_environment_var">
+		<attribute name="property" />
+		<attribute name="variable" />
+		<sequential>
+			<condition property="@{property}" value="${env.@{variable}}">
+				<isset property="env.@{variable}" />
+			</condition>
+		</sequential>
+	</macrodef>
+	
+	<import_environment_var property="value.deploy.splunk_home" variable="SPLUNK_HOME" />
+	<import_environment_var property="value.build.packageoutput.directory" variable="OUTPUT_DIRECTORY" />
+	<import_environment_var property="value.build.minimize" variable="BUILD_MINIMIZED" />
+	<import_environment_var property="value.deploy.minimize" variable="DEPLOY_MINIMIZED" />
+
+	<!-- Import the default properties -->
+    <property file="default.properties" />
+	
+    <!-- Set up some basic parameters -->
+    <property name="value.src.directory" value="src" />
+    <property name="value.temp.directory" value="${java.io.tmpdir}/${user.name}" />
+    <property name="value.build.appname" value="${ant.project.name}" />
+    
+    <!-- Set up the ant classpath -->
+    <path id="ant.classpath">
+        <fileset dir="ant">
+          <include name="*.jar" />
+        </fileset>
+    </path>
+	
+    <!-- ================================= 
+          target: initialize_libraries
+         ================================= -->
+	<target name="initialize_libraries">
+		<taskdef resource="net/sf/antcontrib/antlib.xml">
+		     <classpath>
+		    	<pathelement location="${basedir}/lib/ant-contrib-0.6.jar"/>
+		     </classpath>
+		</taskdef>
+	</target>
+	
+    <!-- ================================= 
+          target: clean
+         ================================= -->
+    <target name="clean" description="Clean up temporary files and directories created by this build script" >
+        
+        <!-- Delete the temporary directory -->
+        <delete quiet="true" includeEmptyDirs="true">
+            <fileset dir="${value.temp.directory}" />
+        </delete>
+        
+        <!-- Delete the local directory where packages are placed -->
+        <delete quiet="true" includeEmptyDirs="true">
+            <fileset dir="tmp" />
+        </delete>
+        
+    </target>
+	
+    <!-- ================================= 
+          target: get_build_number
+         ================================= -->
+	<target name="get_build_number">
+		
+		<macrodef name="get_build_info">
+			<attribute name="path" default="${user.dir}" />
+			<attribute name="format" default="ct" />
+			<attribute name="outputproperty" />
+			
+			<sequential>
+			    <exec failonerror="true" executable="git" outputproperty="@{outputproperty}"> <!-- Fail on error is set to true in order to prevent a bad build number from being included -->
+					<arg value="log"/>
+			    	<arg value="-1"/>
+					<arg value="--pretty=format:%@{format}"/>
+			    	<arg value="--abbrev-commit"/>
+					<arg value="@{path}"/>
+			    </exec>
+			</sequential>
+			
+		</macrodef>
+		
+   		<!-- Run git to get the revision number and date -->
+		<get_build_info outputproperty="value.build.number" />
+		<get_build_info format="cD" outputproperty="value.build.date" />
+		
+		<echo>Revision number is: ${value.build.number} (${value.build.date})</echo>
+		
+	</target>
+    
+    <!-- ================================= 
+          target: clean.packages
+         ================================= -->
+    <target name="clean.packages" description="Clean up the packages created by this build script" >
+        <delete quiet="true" includeEmptyDirs="true">
+            <fileset dir="tmp/packages" />
+        </delete>
+    </target>
+    
+    <!-- ================================= 
+          target: setup_tmp_directory_for_export
+         ================================= -->
+    <target name="setup_tmp_directory_for_export">
+        
+        <!-- Create a temporary directory to send the files to -->
+        <property name="export_dir" value="${value.temp.directory}/package" />
+        
+        <!-- Create the temporary directory -->
+        <mkdir dir="${export_dir}"/>
+        
+    </target>
+    
+    <!-- ================================= 
+          target: populate_export_dir
+         ================================= -->
+    <target name="populate_export_dir" depends="get_build_number,initialize_libraries">
+    	
+        <!-- Copy the files over that need substitution. This should only be
+             applied to text files since Ant may corrupt binary files otherwise. -->
+        <copy todir="${export_dir}/${value.build.appname}">
+            <fileset dir="${value.src.directory}">
+                <include name="**/*.conf" />
+                <include name="**/*.txt" />
+                <include name="**/*.xml" />
+            </fileset>
+            
+            <!-- Perform the substitution of the build information -->
+            <filterset begintoken="${" endtoken="}"> 
+                <filter token="value.build.number" value="${value.build.number}" />
+            	<filter token="value.build.date" value="${value.build.date}" />
+            	<filter token="value.version.number" value="${value.version.number}" />
+            </filterset>
+        </copy>
+        
+        <!-- Copy the binary files over (excluding the javascript files which are to be minified) -->
+        <copy todir="${export_dir}/${value.build.appname}">
+            <fileset dir="${value.src.directory}">
+                <exclude name="**/*.conf" />
+                <exclude name="**/*.txt" />
+                <exclude name="**/*.xml" />
+            	<exclude name="**/*.js" />
+            	<exclude name="**/*.css" />
+            </fileset>
+        </copy>
+    	
+    	<!-- Deploy the CSS and JS (and optionally minimize it) -->
+    	<if>
+    		<or>
+    			<equals arg1="${minimize}" arg2="true" />
+    			<equals arg1="${minimize}" arg2="1" />
+    		</or>
+    		<then>
+				<!-- The mapper to map the original source files to the minified versions with the same name, but different path -->
+		    	<mapper id="to_export_dir_mapper" type="glob" from="*" to="${export_dir}/${value.build.appname}/*" />
+		    	
+				<!-- Minify the Javascript files -->		
+			    <apply executable="java" parallel="false">
+			    	
+			    	<!-- Source of the files -->	
+			        <fileset dir="${basedir}/src">
+			    		<include name="**/*.js" />
+			        	<include name="**/*.css" />
+			        </fileset>
+			        <arg line="-jar" />
+			        <arg path="lib/yuicompressor-2.4.8.jar" />
+			        <srcfile />
+			        <arg line="-o"/>
+			    	<mapper refid="to_export_dir_mapper" />
+			        <targetfile />
+			    </apply>
+    		</then>
+    		<else>
+    	        <!-- Copy the unoptimized files over -->
+    	        <copy todir="${export_dir}/${value.build.appname}">
+    	            <fileset dir="${value.src.directory}">
+    	            	<include name="**/*.js" />
+    	            	<include name="**/*.css" />
+    	            </fileset>
+    	        </copy>
+    		</else>
+    	</if>
+
+    </target>
+        
+    <!-- ================================= 
+          target: set_minimize_for_package
+         ================================= -->
+	<target name="set_minimize_for_package">
+		<property name="minimize" value="${value.build.minimize}"/>
+	</target>
+	
+    <!-- ================================= 
+          target: package
+         ================================= -->
+    <target name="package" depends="setup_tmp_directory_for_export,set_minimize_for_package,populate_export_dir" description="Create the Splunk package of the app">
+        
+        <!-- Make the directory where we will store the files -->
+        <mkdir dir="${value.build.packageoutput.directory}" />
+        
+        <!-- Define where the tar file will go -->
+        <property name="value.temp.tar_package.file" value="${value.temp.directory}/${value.build.appname}.tar" />
+        
+        <!-- Tar the files -->
+        <tar destfile="${value.temp.tar_package.file}">
+        	<tarfileset dir="${export_dir}" filemode="755">
+        		<include name="**/*.sh" />
+        	</tarfileset>
+
+        	<tarfileset dir="${export_dir}">
+        		<exclude name="**/*.sh" />
+        		<exclude name="**/*.pyc" />
+        		<exclude name="**/*.tmp" />
+        	</tarfileset>
+        </tar>
+        
+        <!-- Gzip the files -->
+        <gzip src="${value.temp.tar_package.file}" destfile="${value.build.packageoutput.directory}/${value.build.appname}.tar.gz"/>
+        
+        <!-- Delete the temporary location so that old files do not get streamed in -->
+        <delete dir="${value.temp.directory}" />
+        <echo>App ${value.build.appname} build ${value.build.number} created: ${value.build.packageoutput.directory}/${value.build.appname}.tar.gz</echo>
+
+    </target>
+    
+    <!-- ================================= 
+          target: setup_tmp_directory_for_deployment
+         ================================= -->
+    <target name="setup_tmp_directory_for_deployment">
+        
+        <!-- Create a reference to the directory to send the files to -->
+        <property name="export_dir" value="${value.deploy.splunk_home}/etc/apps" />
+        
+        <!-- Make the app directory if it does not yet exist -->
+        <mkdir dir="${export_dir}" />
+        
+    </target>
+    
+    <!-- ================================= 
+          target: skip_bump
+         ================================= -->
+	<target name="skip_bump">
+		<property name="skip_bump">1</property>
+	</target>
+	
+    <!-- =================================
+          target: set_minimize_for_deploy
+         ================================= -->
+	<target name="set_minimize_for_deploy">
+		<property name="minimize" value="${value.deploy.minimize}"/>
+	</target>
+	
+    <!-- ================================= 
+          target: deploy
+         ================================= -->
+    <target name="deploy" depends="splunk.bump_if_necessary,setup_tmp_directory_for_deployment,set_minimize_for_deploy,populate_export_dir" description="Deploys the app to an instance of Splunk" >
+        
+    	<!-- Set the permissions for *nix hosts -->
+    	<chmod perm="755">
+    		<fileset dir="${export_dir}/${value.build.appname}">
+    		    <include name="**/*.sh"/>
+    		</fileset>
+    	</chmod>
+    	
+    	<echo>App ${value.build.appname} build ${value.build.number} deployed to ${export_dir}</echo>
+    </target>
+    
+    <!-- ================================= 
+          target: splunk.stop
+         ================================= -->
+    <target name="splunk.stop" description="Stop Splunk">
+        <exec executable="${value.deploy.splunk_home}/bin/splunk">
+            <arg line="stop" />
+            <arg line="--accept-license" />
+        </exec>
+    </target>
+    
+	<!-- ===================================================================
+		  target: splunk.web_conf
+		 =================================================================== -->
+	<target name="splunk.web_conf" description="Configure SplunkWeb for easier web development">
+	    <mkdir dir="${value.deploy.splunk_home}/etc/system/local/"/>
+	    
+	  	<echo file="${value.deploy.splunk_home}/etc/system/local/web.conf">[settings]
+	  	enable_gzip=True
+	  	minify_js=False
+	  	minify_css=False
+	  	js_no_cache=True
+	  	</echo> 	
+	</target>
+	
+	<!-- ===================================================================
+		  target: splunk.custom_root_endpoint
+		 =================================================================== -->
+	<target name="splunk.custom_root_endpoint" description="Configure SplunkWeb for easier web development">
+	    <mkdir dir="${value.deploy.splunk_home}/etc/system/local/"/>
+	    
+	  	<echo file="${value.deploy.splunk_home}/etc/system/local/web.conf">[settings]
+	  	root_endpoint=/custom_endpoint
+	  	</echo>
+	</target>
+	
+	<!-- ================================= 
+      	 target: does_appserver_exist	
+     	 ================================= -->
+	<target name="does_appserver_exist">
+    	<condition property="appserver_dir_exists">
+      		<available file="${basedir}/${value.src.directory}/appserver/" type="dir"/>
+    	</condition>
+	</target>
+
+	<!-- ================================= 
+         target: is_appserver_up_to_date
+         ================================= -->
+	<target name="is_appserver_up_to_date" description="Determine if the code in the appserver directory of the Splunk install is outdated" depends="does_appserver_exist" if="appserver_dir_exists">
+    	
+    	<uptodate property="appserver_up_to_date">
+    		
+    		<!-- target should point to the source files -->
+    		<mapper type="glob" from="*" to="${value.deploy.splunk_home}/etc/apps/${value.build.appname}/appserver/*" />
+    		
+    		<!-- srcfiles should point to the deployed files -->
+    	    <srcfiles dir="${basedir}/${value.src.directory}/appserver/" includes="**/*" />
+    	</uptodate>
+	
+    </target>
+	
+    <!-- ================================= 
+          target: splunk.bump_if_necessary
+         ================================= -->
+    <target name="splunk.bump_if_necessary" unless="appserver_up_to_date" if="appserver_dir_exists" depends="initialize_libraries,does_appserver_exist,is_appserver_up_to_date">
+    	<if>
+    		<bool>
+    			<not>
+    				<isset property="skip_bump" />
+    			</not>
+    		</bool>
+    		<then>
+    			<antcall target="splunk.bump" />
+    		</then>
+    	</if>
+    </target>
+	
+    <!-- ================================= 
+          target: splunk.push_version_defined
+         ================================= -->
+	<target name="splunk.push_version_defined">
+		<available file="${value.deploy.splunk_home}/var/run/splunk/push-version.txt" property="value.deploy.bump_available"/>
+	</target>
+	
+    <!-- ================================= 
+          target: splunk.get_push_version
+         ================================= -->
+	<target name="splunk.get_push_version" depends="splunk.push_version_defined,splunk.get_default_push_version" if="value.deploy.bump_available">
+    	<loadfile
+    	      property="value.deploy.bump"
+    	      srcFile="${value.deploy.splunk_home}/var/run/splunk/push-version.txt">
+    	      <filterchain>
+    	        <striplinebreaks/>
+    	      </filterchain>
+    	</loadfile>
+	</target>
+	
+    <!-- ================================= 
+          target: splunk.get_default_push_version
+         ================================= -->
+	<target name="splunk.get_default_push_version" unless="value.deploy.bump_available">
+		<property name="value.deploy.bump">0</property>
+		<echo>No push version available, assigning the default</echo>
+	</target>
+	
+    <!-- ================================= 
+          target: splunk.bump
+         ================================= -->
+    <target name="splunk.bump" depends="splunk.get_push_version,initialize_libraries" description="Bump Splunk">
+		
+    	<!-- Increment the value -->
+    	<math result="value.deploy.bump_updated" operand1="${value.deploy.bump}" operation="+" operand2="1" datatype="int"/>
+    	
+    	<!-- Set the current value of bump -->
+    	<echo file="${value.deploy.splunk_home}/var/run/splunk/push-version.txt">${value.deploy.bump_updated}</echo>
+    	
+    	<echo>The push version was updated from ${value.deploy.bump} to ${value.deploy.bump_updated}</echo>
+    	
+    	<echo>Restarting Splunk's web interface...</echo>
+    	<antcall target="splunk.restart_web" />
+    	
+    </target>
+	
+    <!-- ================================= 
+          target: splunk.start
+         ================================= -->
+    <target name="splunk.start" description="Start Splunk">
+        <exec executable="${value.deploy.splunk_home}/bin/splunk">
+            <arg line="start" />
+            <arg line="--accept-license" />
+        </exec>
+    </target>
+    
+    <!-- ================================= 
+          target: splunk.restart
+         ================================= -->
+    <target name="splunk.restart" description="Start Splunk">
+        <exec executable="${value.deploy.splunk_home}/bin/splunk">
+            <arg line="restart" />
+            <arg line="--accept-license" />
+        </exec>
+    </target>
+    
+    <!-- ================================= 
+          target: splunk.restart_web
+         ================================= -->
+    <target name="splunk.restart_web" description="Restart Splunk">
+        <exec executable="${value.deploy.splunk_home}/bin/splunk">
+		    <arg line="restart" />
+		    <arg line="splunkweb" />
+		    <arg line="--accept-license" />
+		    <arg line="-auth" />
+		    <arg line="admin:changeme" />
+        </exec>
+    </target>
+	
+    <!-- ================================= 
+          target: splunk.deploy_and_refresh
+         ================================= -->
+    <target name="splunk.deploy_and_refresh" description="Deploys the application and forces Splunk to refresh" depends="deploy,splunk.refresh" />
+	
+    <!-- ================================= 
+          target: splunk.deploy_and_restart
+         ================================= -->
+    <target name="splunk.deploy_and_restart" description="Deploys the application and restarts Splunk" depends="skip_bump,deploy,splunk.restart" />
+	
+    <!-- ================================= 
+          target: splunk.refresh
+         ================================= -->
+    <target name="splunk.refresh" description="Refresh Splunk">
+    	
+      	<!-- Define the username and password if not already defined -->
+      	<property name="splunk_username" value="admin"/>
+      	<property name="splunk_password" value="changeme"/>
+      	
+      	<!-- Define a macro that can be used for refreshing Splunk endpoints -->
+      	<macrodef name="reload_conf">
+    		<attribute name="endpoint"/>
+    		<sequential>
+    			<exec failonerror="true" executable="${value.deploy.splunk_home}/bin/splunk"> <!-- Fail on error is set to true -->
+    				<arg value="_internal"/>
+    				<arg value="call"/>
+    				<arg value="/admin/@{endpoint}/_reload"/>
+    				<arg value="-auth"/>
+    				<arg value="${splunk_username}:${splunk_password}"/>
+    				<arg value="--accept-license"/>
+    			</exec>
+    		</sequential>
+      	</macrodef>
+    	
+    	<reload_conf endpoint="savedsearch" />
+    	<reload_conf endpoint="nav" />
+    	<reload_conf endpoint="views" />
+    	
+    </target>
+	
+    <!-- ================================= 
+          target: test.deploy_and_run_unit
+         ================================= -->
+    <target name="test.deploy_and_run_unit" description="Deploys the application and runs tests" depends="skip_bump,deploy,test.run_unit" />
+	
+    <!-- ================================= 
+          target: test.run_unit
+         ================================= -->
+    <target name="test.run_unit" description="Run unit tests">
+        <exec failonerror="true" executable="${value.deploy.splunk_home}/bin/splunk" dir="${basedir}/tests">
+        	<arg line="cmd" />
+        	<arg line="python" />
+        	<arg line="unit.py" />
+        </exec>
+    </target>
+
+</project>
