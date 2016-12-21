@@ -1,9 +1,7 @@
-import SimpleHTTPServer
 import SocketServer
-from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
+from BaseHTTPServer import BaseHTTPRequestHandler
 import os
 import base64
-from StringIO import StringIO
 
 class Handler(BaseHTTPRequestHandler):
     ''' Main class to present webpages and authentication. '''
