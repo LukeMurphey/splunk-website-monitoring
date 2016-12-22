@@ -38,7 +38,6 @@ def skipIfNoProxyServer(func):
 
 class WebsiteMonitoringAppTest(unittest.TestCase):
     
-    DEFAULT_TEST_WEB_SERVER_PORT = 8888
     DEFAULT_TEST_PROXY_SERVER_PORT = 21080
     warned_about_no_proxyd = False
     proxyd = None
@@ -70,7 +69,7 @@ class WebsiteMonitoringAppTest(unittest.TestCase):
             try:
                 fp = open(properties_file)
             except IOError:            
-                return
+                pass
         
         if fp is not None:
             regex = re.compile("(?P<key>[^=]+)[=](?P<value>.*)")
@@ -88,9 +87,9 @@ class WebsiteMonitoringAppTest(unittest.TestCase):
             WebsiteMonitoringAppTest.proxy_address = settings.get("value.test.proxy.address", WebsiteMonitoringAppTest.proxy_address)
             WebsiteMonitoringAppTest.proxy_port = self.toInt(settings.get("value.test.proxy.port", WebsiteMonitoringAppTest.proxy_port))
             WebsiteMonitoringAppTest.proxy_type = settings.get("value.test.proxy.type", None)
-            
+        
         # If no proxy was defined, use the internal proxy server for testing
-        if WebsiteMonitoringAppTest.proxyd is None and (fp is None or WebsiteMonitoringAppTest.proxy_address is None or WebsiteMonitoringAppTest.proxy_port is None or WebsiteMonitoringAppTest.proxy_type is None):
+        if WebsiteMonitoringAppTest.proxyd is None and WebsiteMonitoringAppTest.proxy_address is None:
             
             WebsiteMonitoringAppTest.proxy_address = "127.0.0.1"
             WebsiteMonitoringAppTest.proxy_port = WebsiteMonitoringAppTest.proxy_port
