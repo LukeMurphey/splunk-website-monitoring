@@ -15,6 +15,7 @@ from modular_input import Field, FieldValidationException
 from website_monitoring_rest_handler import HostFieldValidator
 
 from test_web_server import get_server
+from test_proxy_server import get_server as get_proxy_server
 
 def skipIfNoProxyServer(func):
     def _decorator(self, *args, **kwargs):
@@ -37,6 +38,15 @@ def skipIfNoProxyServer(func):
 
 class WebsiteMonitoringAppTest(unittest.TestCase):
     
+    DEFAULT_TEST_WEB_SERVER_PORT = 8888
+    DEFAULT_TEST_PROXY_SERVER_PORT = 21080
+    warned_about_no_proxyd = False
+    proxyd = None
+    proxy_address = None
+    proxy_port = None
+    proxy_type = None
+    config_loaded = False
+    
     def toInt(self, str_int):
         if str_int is None:
             return None
@@ -45,29 +55,59 @@ class WebsiteMonitoringAppTest(unittest.TestCase):
     
     def loadConfig(self, properties_file=None):
         
+        # Stop if we already loaded the configuration
+        if WebsiteMonitoringAppTest.config_loaded:
+            return
+        
+        # Load the port from the environment if possible. This might be get overridden by the local.properties file.
+        WebsiteMonitoringAppTest.proxy_port = int(os.environ.get("TEST_PROXY_SERVER_PORT", WebsiteMonitoringAppTest.DEFAULT_TEST_PROXY_SERVER_PORT))
+        
+        fp = None
+        
         if properties_file is None:
             properties_file = os.path.join( "..", "local.properties")
         
-        try:
-            fp = open(properties_file)
-        except IOError:
-            return
+            try:
+                fp = open(properties_file)
+            except IOError:            
+                return
         
-        regex = re.compile("(?P<key>[^=]+)[=](?P<value>.*)")
-        
-        settings = {}
-        
-        for l in fp.readlines():
-            r = regex.search(l)
+        if fp is not None:
+            regex = re.compile("(?P<key>[^=]+)[=](?P<value>.*)")
             
-            if r is not None:
-                d = r.groupdict()
-                settings[ d["key"] ] = d["value"]
+            settings = {}
+            
+            for l in fp.readlines():
+                r = regex.search(l)
+                
+                if r is not None:
+                    d = r.groupdict()
+                    settings[ d["key"] ] = d["value"]
+            
+            # Load the parameters from the 
+            WebsiteMonitoringAppTest.proxy_address = settings.get("value.test.proxy.address", WebsiteMonitoringAppTest.proxy_address)
+            WebsiteMonitoringAppTest.proxy_port = self.toInt(settings.get("value.test.proxy.port", WebsiteMonitoringAppTest.proxy_port))
+            WebsiteMonitoringAppTest.proxy_type = settings.get("value.test.proxy.type", None)
+            
+        # If no proxy was defined, use the internal proxy server for testing
+        if WebsiteMonitoringAppTest.proxyd is None and (fp is None or WebsiteMonitoringAppTest.proxy_address is None or WebsiteMonitoringAppTest.proxy_port is None or WebsiteMonitoringAppTest.proxy_type is None):
+            
+            WebsiteMonitoringAppTest.proxy_address = "127.0.0.1"
+            WebsiteMonitoringAppTest.proxy_port = WebsiteMonitoringAppTest.proxy_port
+            WebsiteMonitoringAppTest.proxy_type = "http"
+            
+            WebsiteMonitoringAppTest.proxyd = get_proxy_server(WebsiteMonitoringAppTest.proxy_port)
+            
+            def start_server(proxyd):
+                proxyd.serve_forever()
         
-        self.proxy_address = settings.get("value.test.proxy.address", None)
-        self.proxy_port = self.toInt(settings.get("value.test.proxy.port", None))
-        self.proxy_type = settings.get("value.test.proxy.type", None)
-
+            t = threading.Thread(target=start_server, args = (WebsiteMonitoringAppTest.proxyd,))
+            t.daemon = True
+            t.start()
+        
+        # Note that we loaded the config already so that we don't try it again.
+        WebsiteMonitoringAppTest.config_loaded = True
+        
     def setUp(self):
         self.loadConfig()
 
@@ -415,4 +455,8 @@ class TestWebPing(WebsiteMonitoringAppTest):
         self.assertEquals(result.response_code, 201)
     
 if __name__ == '__main__':
-    unittest.main(testRunner= unittest.TextTestRunner(verbosity=2))
+    try:
+        unittest.main(testRunner= unittest.TextTestRunner(verbosity=2))
+    finally:
+        if WebsiteMonitoringAppTest.proxyd is not None:
+            WebsiteMonitoringAppTest.proxyd.shutdown()
