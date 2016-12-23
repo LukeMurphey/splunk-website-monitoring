@@ -14,7 +14,7 @@ from web_ping import URLField, DurationField, WebPing, NTLMAuthenticationValueEx
 from modular_input import Field, FieldValidationException
 from website_monitoring_rest_handler import HostFieldValidator
 
-from test_web_server import get_server
+from unit_test_web_server import UnitTestWithWebServer, skipIfNoServer
 from test_proxy_server import get_server as get_proxy_server
 
 def skipIfNoProxyServer(func):
@@ -165,54 +165,7 @@ def skipIfNoServer(func):
         
     return _decorator
     
-class TestWebPing(WebsiteMonitoringAppTest):
-    
-    DEFAULT_TEST_WEB_SERVER_PORT = 8888
-    warned_about_no_httpd = False
-    httpd = None
-    
-    @classmethod
-    def setUpClass(cls):
-        
-        cls.web_server_port = int(os.environ.get("TEST_WEB_SERVER_PORT", TestWebPing.DEFAULT_TEST_WEB_SERVER_PORT))
-        
-        # Stop if the web-server was already started
-        if TestWebPing.httpd is not None:
-            return
-        
-        attempts = 0
-        
-        sys.stdout.write("Waiting for web-server to start ...")
-        sys.stdout.flush()
-        
-        while TestWebPing.httpd is None and attempts < 75:
-            try:
-                TestWebPing.httpd = get_server(cls.web_server_port)
-                
-                print " Done"
-            except IOError:
-                TestWebPing.httpd = None
-                time.sleep(4)
-                attempts = attempts + 1
-                sys.stdout.write(".")
-                sys.stdout.flush()
-        
-        def start_server(httpd):
-            httpd.serve_forever()
-        
-        t = threading.Thread(target=start_server, args = (TestWebPing.httpd,))
-        t.daemon = True
-        t.start()
-        
-    def test_if_web_server_is_running(self):
-        if TestWebPing.httpd is None and not TestWebPing.warned_about_no_httpd:
-            TestWebPing.warned_about_no_httpd = True
-            self.fail("The test web-server is not running; tests that rely on the built-in web-server will fail or be skipped")
-        
-    @classmethod
-    def tearDownClass(cls):
-        #time.sleep(30)
-        cls.httpd.shutdown()
+class TestWebPing(WebsiteMonitoringAppTest, UnitTestWithWebServer):
     
     def setUp(self):
         
