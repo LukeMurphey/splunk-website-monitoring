@@ -155,6 +155,16 @@ class TestDurationField(unittest.TestCase):
         self.assertRaises( FieldValidationException, lambda: duration_field.to_python("1 treefrog") )
         self.assertRaises( FieldValidationException, lambda: duration_field.to_python("minute") )   
     
+def skipIfNoServer(func):
+    def _decorator(self, *args, **kwargs):
+        if self.httpd is None:
+            # Don't run the test if the server is not running
+            self.skipTest("The web-server is not running")
+        else:
+            return func(self, *args, **kwargs)
+        
+    return _decorator
+    
 class TestWebPing(WebsiteMonitoringAppTest):
     
     DEFAULT_TEST_WEB_SERVER_PORT = 8888
@@ -175,14 +185,14 @@ class TestWebPing(WebsiteMonitoringAppTest):
         sys.stdout.write("Waiting for web-server to start ...")
         sys.stdout.flush()
         
-        while TestWebPing.httpd is None and attempts < 20:
+        while TestWebPing.httpd is None and attempts < 75:
             try:
                 TestWebPing.httpd = get_server(cls.web_server_port)
                 
                 print " Done"
             except IOError:
-                cls.httpd = None
-                time.sleep(2)
+                TestWebPing.httpd = None
+                time.sleep(4)
                 attempts = attempts + 1
                 sys.stdout.write(".")
                 sys.stdout.flush()
@@ -190,9 +200,14 @@ class TestWebPing(WebsiteMonitoringAppTest):
         def start_server(httpd):
             httpd.serve_forever()
         
-        t = threading.Thread(target=start_server, args = (cls.httpd,))
+        t = threading.Thread(target=start_server, args = (TestWebPing.httpd,))
         t.daemon = True
         t.start()
+        
+    def test_if_web_server_is_running(self):
+        if TestWebPing.httpd is None and not TestWebPing.warned_about_no_httpd:
+            TestWebPing.warned_about_no_httpd = True
+            self.fail("The test web-server is not running; tests that rely on the built-in web-server will fail or be skipped")
         
     @classmethod
     def tearDownClass(cls):
@@ -301,6 +316,7 @@ class TestWebPing(WebsiteMonitoringAppTest):
         
         self.assertEqual(data, None)
     
+    @skipIfNoServer
     def test_hash(self):
         
         url_field = URLField( "test_ping", "title", "this is a test" )
@@ -320,7 +336,6 @@ class TestWebPing(WebsiteMonitoringAppTest):
         
         http://lukemurphey.net/issues/1035
         """
-        web_ping = WebPing(timeout=3)
         
         url_field = URLField( "test_ping", "title", "this is a test" )
         result = WebPing.ping( url_field.to_python("https://www.penfolds.com"), timeout=3 )
@@ -335,6 +350,7 @@ class TestWebPing(WebsiteMonitoringAppTest):
         
         self.assertEquals(result.response_code, 200)
         
+    @skipIfNoServer
     def test_ping_with_basic_authentication(self):
         
         # Try with valid authentication
@@ -360,6 +376,7 @@ class TestWebPing(WebsiteMonitoringAppTest):
         
         self.assertEquals(result.response_code, 200)
     
+    @skipIfNoServer
     def test_ping_with_ntlm_authentication(self):
         
         # Try with valid authentication
@@ -368,6 +385,7 @@ class TestWebPing(WebsiteMonitoringAppTest):
         
         self.assertEquals(result.response_code, 200)
         
+    @skipIfNoServer
     def test_ping_with_ntlm_negotiate_authentication(self):
         
         # Try with valid authentication
@@ -382,6 +400,7 @@ class TestWebPing(WebsiteMonitoringAppTest):
         url_field = URLField( "test_ping", "title", "this is a test" )
         self.assertRaises(NTLMAuthenticationValueException, lambda: WebPing.ping( url_field.to_python("http://127.0.0.1:" + str(self.web_server_port) + "/ntlm_auth"), timeout=3, username="user", password="passwd" ))
     
+    @skipIfNoServer
     def test_ping_with_basic_authentication_optional(self):
         
         # Try with valid authentication
@@ -396,6 +415,7 @@ class TestWebPing(WebsiteMonitoringAppTest):
         self.assertEquals(result.response_code, 202)
         self.assertGreater(result.request_time, 0)
         
+    @skipIfNoServer
     def test_determine_auth_method_basic(self):
         
         # Try with basic auth
@@ -412,6 +432,7 @@ class TestWebPing(WebsiteMonitoringAppTest):
         
         self.assertEquals(auth_type, WebPing.HTTP_AUTH_DIGEST)
     
+    @skipIfNoServer
     def test_determine_auth_method_ntlm(self):
         
         # Try with digest auth
@@ -420,6 +441,7 @@ class TestWebPing(WebsiteMonitoringAppTest):
         
         self.assertEquals(auth_type, WebPing.HTTP_AUTH_NTLM)
         
+    @skipIfNoServer
     def test_determine_auth_method_ntlm_comma_header(self):
         
         # Try with digest auth
@@ -428,6 +450,7 @@ class TestWebPing(WebsiteMonitoringAppTest):
         
         self.assertEquals(auth_type, WebPing.HTTP_AUTH_NTLM)
     
+    @skipIfNoServer
     def test_determine_auth_method_none(self):
         
         # Try with digest auth
@@ -435,12 +458,12 @@ class TestWebPing(WebsiteMonitoringAppTest):
         auth_type = WebPing.determine_auth_type( url_field.to_python("http://127.0.0.1:" + str(self.web_server_port) + "/test_page"))
         
         self.assertEquals(auth_type, WebPing.HTTP_AUTH_NONE)
-        
+    
+    @skipIfNoServer
     def test_custom_user_agent(self):
         """
         http://lukemurphey.net/issues/1341
         """
-        web_ping = WebPing(timeout=3)
         
         url_field = URLField( "test_ping", "title", "this is a test" )
         
