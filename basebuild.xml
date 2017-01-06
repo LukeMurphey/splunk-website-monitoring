@@ -348,9 +348,16 @@ If you want to use environment variables, you can assign the following confogura
 	</target>
 	
 	<!-- ===================================================================
-		  target: splunk.custom_root_endpoint
+		  target: splunk.enable_fips
 		 =================================================================== -->
-	<target name="splunk.custom_root_endpoint" description="Configure SplunkWeb for easier web development">
+	<target name="splunk.enable_fips" description="Configure SplunkWeb for easier web development">
+	  	<echo file="${value.deploy.splunk_home}/etc/splunk-launch.conf">SPLUNK_FIPS=1</echo> 	
+	</target>
+	
+	<!-- ===================================================================
+		  target: splunk.enable_custom_root_endpoint
+		 =================================================================== -->
+	<target name="splunk.enable_custom_root_endpoint" description="Configure SplunkWeb for easier web development">
 	    <mkdir dir="${value.deploy.splunk_home}/etc/system/local/"/>
 	    
 	  	<echo file="${value.deploy.splunk_home}/etc/system/local/web.conf">[settings]

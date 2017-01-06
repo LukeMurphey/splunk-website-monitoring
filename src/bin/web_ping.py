@@ -240,6 +240,19 @@ class WebPing(ModularInput):
             return (username, password)
         
     @classmethod
+    def is_fips_mode(cls):
+        """
+        Determine if the app is running in FIPS mode. This means that weaker hash algorithms need to be disabled. Attempting to use these weaker hash algorithms will cause OpenSSL to to crash, taking down the entire Python process.
+        """
+        
+        is_fips = os.environ.get('SPLUNK_FIPS', None)
+        
+        if is_fips is not None and is_fips.strip().lower() in ['1', 'true']:
+            return True
+        else:
+            return False
+        
+    @classmethod
     def ping(cls, url, username=None, password=None, timeout=30, proxy_type=None, proxy_server=None, proxy_port=None, proxy_user=None, proxy_password=None, client_certificate=None, client_certificate_key=None, user_agent=None, logger=None):
         """
         Perform a ping to a website. Returns a WebPing.Result instance.
@@ -333,8 +346,16 @@ class WebPing(ModularInput):
             # Determine the auth type
             auth_type = cls.determine_auth_type(url, proxies=proxies, timeout=timeout, cert=cert, logger=logger)
             
+            # Don't allow the use of NTLM on a host in FIPS mode since NTLM uses MD4 which is a weak algorithm
+            if auth_type == cls.HTTP_AUTH_NTLM and cls.is_fips_mode():
+                
+                if logger:
+                    logger.warn("Authentication type was automatically identified but will not be used since it uses a weak hash algorithm which is not allowed on this host since it is running in FIPS mode; auth_type=%s", auth_type)
+                
+                auth_type = cls.HTTP_AUTH_NONE
+            
             # The authentication type could not be determined. However, we know that authentication is required since a username and password was provided. Default to 
-            if auth_type == cls.HTTP_AUTH_NONE:
+            elif auth_type == cls.HTTP_AUTH_NONE:
                 auth_type = cls.HTTP_AUTH_BASIC
                 
                 if logger:
@@ -355,7 +376,9 @@ class WebPing(ModularInput):
                 http = requests.get(url.geturl(), proxies=proxies, timeout=timeout, cert=cert, verify=False, auth=auth, headers=headers)
                 
                 # Get the hash of the content
-                response_md5 = hashlib.md5(http.text).hexdigest()
+                if not cls.is_fips_mode():
+                    response_md5 = hashlib.md5(http.text).hexdigest()
+                
                 response_sha224 = hashlib.sha224(http.text).hexdigest()
                 
                 # Get the size of the content
@@ -447,14 +470,17 @@ class WebPing(ModularInput):
     @classmethod
     def get_file_path( cls, checkpoint_dir, stanza ):
         """
-        Get the path to the checkpoint file.
+        Get the path to the checkpoint file. Note that the checkpoint directory is using MD5 for legacy purposes (since old versions of the app used MD5). This isn't a significant issue since MD5 isn't be used for security purposes here.
         
         Arguments:
         checkpoint_dir -- The directory where checkpoints ought to be saved
         stanza -- The stanza of the input being used
         """
         
-        return os.path.join( checkpoint_dir, hashlib.md5(stanza).hexdigest() + ".json" )
+        if cls.is_fips_mode():
+            return os.path.join( checkpoint_dir, hashlib.sha224(stanza).hexdigest() + ".json" )
+        else:
+            return os.path.join( checkpoint_dir, hashlib.md5(stanza).hexdigest() + ".json" )
     
     def save_checkpoint(self, checkpoint_dir, stanza, last_run):
         """
