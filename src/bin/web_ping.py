@@ -396,7 +396,7 @@ class WebPing(ModularInput):
         except requests.exceptions.SSLError as e:
             
             if logger:
-                logger.error("An SSL exception was thrown when executing a web request: " + str(e))
+                logger.error("An SSL exception was thrown when executing a web request against url=%s: " + str(e), url.geturl())
             
         except requests.exceptions.ConnectionError as e:
             
@@ -404,16 +404,16 @@ class WebPing(ModularInput):
                 timed_out = True
                 
             elif logger:
-                logger.exception("A connection exception was thrown when executing a web request, this can happen if the domain name, IP address is invalid or if network connectivity is down or blocked by a firewall, see url=http://lukemurphey.net/projects/splunk-website-monitoring/wiki/Troubleshooting")
+                logger.exception("A connection exception was thrown when executing a web request against url=%s, this can happen if the domain name, IP address is invalid or if network connectivity is down or blocked by a firewall, see help_url=http://lukemurphey.net/projects/splunk-website-monitoring/wiki/Troubleshooting", url.geturl())
                 
         except socks.GeneralProxyError:
             # This may be thrown if the user configured the proxy settings incorrectly
             if logger:
-                logger.exception("An error occurred when attempting to communicate with the proxy")
+                logger.exception("An error occurred when attempting to communicate with the proxy for url=%s", url.geturl())
         
         except Exception as e:
             if logger:
-                logger.exception("A general exception was thrown when executing a web request")
+                logger.exception("A general exception was thrown when executing a web request for url=%s", url.geturl())
             
         # Finally, return the result
         return cls.Result(request_time, response_code, timed_out, url.geturl(), response_size, response_md5, response_sha224)
