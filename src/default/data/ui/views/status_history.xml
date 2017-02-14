@@ -22,7 +22,7 @@
           <earliest>$field1.earliest$</earliest>
           <latest>$field1.latest$</latest>
         </search>
-        <option name="afterLabel">ms</option>
+        <option name="unit">ms</option>
         <option name="underLabel">Average Response Time</option>
         <option name="colorBy">value</option>
         <option name="colorMode">block</option>
@@ -45,7 +45,7 @@
           <earliest>$field1.earliest$</earliest>
           <latest>$field1.latest$</latest>
         </search>
-        <option name="afterLabel">ms</option>
+        <option name="unit">ms</option>
         <option name="underLabel">Maximum Response Time</option>
         <option name="colorBy">value</option>
         <option name="colorMode">block</option>
@@ -71,7 +71,7 @@
 		  	    <earliest>$field1.earliest$</earliest>
           		<latest>$field1.latest$</latest>
 		  	</search>
-		  	<option name="height">200px</option>
+		  	<option name="height">200</option>
 		  	<option name="charting.chart">column</option>
 		  	<option name="charting.chart.stackMode">stacked</option>
 			<option name="charting.legend.labels">[response_time_over_threshold,response_time]</option>
@@ -88,7 +88,7 @@
           <earliest>$field1.earliest$</earliest>
           <latest>$field1.latest$</latest>
         </search>
-        <option name="afterLabel">%</option>
+        <option name="unit">%</option>
         <option name="underLabel">Availability</option>
         <option name="colorBy">value</option>
         <option name="colorMode">block</option>
@@ -137,7 +137,7 @@
 	        </search>
 			<title>Failures</title>
 			<option name="count">10</option>
-			<option name="displayRowNumbers">true</option>
+			<option name="rowNumbers">true</option>
 			<drilldown>
 				<link><![CDATA[/app/website_monitoring/flashtimeline/?q=search%20sourcetype%3Dweb_ping%20title%3D"$form.title$"%20%60filter_inoperable%60%20%7C%20%60format_events_raw%60&earliest=$earliest$&latest=$latest$]]></link>
 			</drilldown>
@@ -150,7 +150,7 @@
 		  	<searchString>
 		    	sourcetype=web_ping title="$title$" | timechart avg(connection_time) as connection_time avg(request_time) as request_time
 		  	</searchString>
-		  	<option name="height">200px</option>
+		  	<option name="height">200</option>
 		  	<option name="charting.chart">area</option>
 		  	<option name="charting.chart.stackMode">stacked</option>
 		  	<option name="charting.chart.nullValueMode">zero</option>

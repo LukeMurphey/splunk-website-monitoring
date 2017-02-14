@@ -32,8 +32,6 @@
         </search>
         <title>Logs by Severity (over time)</title>
         <option name="charting.chart">area</option>
-        <option name="count">10</option>
-        <option name="displayRowNumbers">true</option>
         <option name="charting.chart.stackMode">stacked</option>
         <option name="charting.legend.labels">[DEBUG,INFO,WARNING,ERROR,CRITICAL]</option>
         <option name="charting.seriesColors">[0xb2d16d,0x6ab7c8,0xfac61c,0xf8912c,0xd85d3d]</option>
