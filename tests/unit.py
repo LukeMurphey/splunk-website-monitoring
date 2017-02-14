@@ -189,6 +189,17 @@ class TestWebPing(WebsiteMonitoringAppTest, UnitTestWithWebServer):
         self.assertEquals(result.response_code, 200)
         self.assertGreater(result.request_time, 0)
         
+    def test_ping_super_long_url(self):
+        # https://answers.splunk.com/answers/488784/why-my-website-monitoring-only-check-1-time.html
+        
+        url_field = URLField( "test_ping", "title", "this is a test" )
+        
+        #result = WebPing.ping( url_field.to_python("http://127.0.0.1:" + str(self.web_server_port) + "/test_page?s=superloooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooong"), timeout=3 )
+        result = WebPing.ping( url_field.to_python("http://127.0.0.1:" + str(self.web_server_port) + "/test_page_superlooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooong"), timeout=3 )
+        
+        self.assertEquals(result.response_code, 200)
+        self.assertGreater(result.request_time, 0)
+        
     def test_ping_non_existent_domain(self):
         # https://answers.splunk.com/answers/337070/website-monitoring-app-setup.html#answer-338487
         

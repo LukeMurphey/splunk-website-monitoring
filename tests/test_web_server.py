@@ -39,7 +39,7 @@ class TestWebServerHandler(BaseHTTPRequestHandler):
             
             
         # Present the HTML page with no authentication
-        if self.path == "/test_page":
+        if self.path.startswith("/test_page"):
             self.do_HEAD()
             
             with open( os.path.join("web_files", "test_page.html"), "r") as webfile:
