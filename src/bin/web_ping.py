@@ -54,6 +54,7 @@ class WebsiteMonitoringConfig(SplunkAppObjModel):
     proxy_type     = ModelField()
     proxy_user     = ModelField()
     proxy_password = ModelField()
+    thread_limit   = ModelIntField()
 
 class WebPing(ModularInput):
     """
@@ -69,6 +70,9 @@ class WebPing(ModularInput):
     HTTP_AUTH_NONE = None
     
     DEFAULT_THREAD_LIMIT = 200
+
+    # This stores the default app config information
+    default_app_config = None
     
     class Result(object):
         """
@@ -494,6 +498,34 @@ class WebPing(ModularInput):
                 
         self.save_checkpoint_data(checkpoint_dir, stanza, { 'last_run' : last_run })
         
+    def get_app_config(self, session_key, stanza="default"):
+        """
+        Get the app configuration
+        
+        Arguments:
+        session_key -- The session key to use when connecting to the REST API
+        stanza -- The stanza to get the proxy information from (defaults to "default")
+        """
+        
+        # If the stanza is empty, then just use the default
+        if stanza is None or stanza.strip() == "":
+            stanza = "default"
+        
+        # Get the proxy configuration
+        try:
+            website_monitoring_config = WebsiteMonitoringConfig.get( WebsiteMonitoringConfig.build_id(stanza, "website_monitoring", "nobody"), sessionKey=session_key)
+            
+            self.logger.debug("App config information loaded, stanza=%s", stanza)
+            
+        except splunk.ResourceNotFound:
+            self.logger.error('Unable to find the app configuration for the specified configuration stanza=%s, error="not found"', stanza)
+            raise
+        except splunk.SplunkdConnectionException:
+            self.logger.error('Unable to find the app configuration for the specified configuration stanza=%s error="splunkd connection error", see url=http://lukemurphey.net/projects/splunk-website-monitoring/wiki/Troubleshooting', stanza)
+            raise
+        
+        return website_monitoring_config
+        
     def get_proxy_config(self, session_key, stanza="default"):
         """
         Get the proxy configuration
@@ -508,17 +540,7 @@ class WebPing(ModularInput):
             stanza = "default"
         
         # Get the proxy configuration
-        try:
-            website_monitoring_config = WebsiteMonitoringConfig.get( WebsiteMonitoringConfig.build_id( stanza, "website_monitoring", "nobody"), sessionKey=session_key )
-            
-            self.logger.debug("Proxy information loaded, stanza=%s", stanza)
-            
-        except splunk.ResourceNotFound:
-            self.logger.error('Unable to find the proxy configuration for the specified configuration stanza=%s, error="not found"', stanza)
-            raise
-        except splunk.SplunkdConnectionException:
-            self.logger.error('Unable to find the proxy configuration for the specified configuration stanza=%s error="splunkd connection error", see url=http://lukemurphey.net/projects/splunk-website-monitoring/wiki/Troubleshooting', stanza)
-            raise
+        website_monitoring_config = self.get_app_config(session_key, stanza)
         
         return website_monitoring_config.proxy_type, website_monitoring_config.proxy_server, website_monitoring_config.proxy_port, website_monitoring_config.proxy_user, website_monitoring_config.proxy_password
         
@@ -540,6 +562,25 @@ class WebPing(ModularInput):
         user_agent             = cleaned_params.get("user_agent", None)
         source                 = stanza
         
+        # Load the thread_limit if necessary
+        # This should only be necessary once in the processes lifetime
+        if self.default_app_config is None:
+            
+            # Get the default app config
+            self.default_app_config = self.get_app_config(input_config.session_key)
+
+            # Get the limit from the app config
+            loaded_thread_limit = self.default_app_config.thread_limit
+
+            # Ensure that the thread limit is valid
+            if loaded_thread_limit is not None and loaded_thread_limit > 0:
+                self.thread_limit = loaded_thread_limit
+                self.logger.info("Tthread limit successfully loaded, thread_limit=%r", loaded_thread_limit)
+
+            # Warn that the thread limit is invalid
+            else:
+                self.logger.warn("The thread limit is invalid and will be ignored, thread_limit=%r", loaded_thread_limit)
+
         # Clean up old threads
         for thread_stanza in self.threads.keys():
             
@@ -564,6 +605,7 @@ class WebPing(ModularInput):
         elif self.needs_another_run( input_config.checkpoint_dir, stanza, interval ):
             
             def run_ping():
+                
                 # Get the proxy configuration
                 try:
                     proxy_type, proxy_server, proxy_port, proxy_user, proxy_password = self.get_proxy_config(input_config.session_key, conf_stanza)
