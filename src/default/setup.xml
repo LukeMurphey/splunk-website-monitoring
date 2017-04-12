@@ -86,6 +86,20 @@
         <label>Enter the password</label>
         <type>password</type>
       </input>
+
+      <text>
+          <![CDATA[
+          
+          <legend>Advanced</legend>
+          
+          <label>These are advanced settings that you do not usually need to modify</label>
+          ]]>
+      </text>
+
+      <input field="thread_limit">
+        <label>Maximum number of concurrent threads</label>
+        <type>text</type>
+      </input>
       
       <text>
           <![CDATA[
