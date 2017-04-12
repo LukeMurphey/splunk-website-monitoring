@@ -680,7 +680,7 @@ class WebPing(ModularInput):
             # If the number of threads is at or above the limit, then wait until the number of
             # threads comes down
             elif len(self.threads) >= self.thread_limit:
-                self.logger.warn("Threat limit has been reached and thus this execution will be skipped for stanza=%s, thread_count=%i", stanza, len(self.threads))
+                self.logger.warn("Thread limit has been reached and thus this execution will be skipped for stanza=%s, thread_count=%i", stanza, len(self.threads))
 
             # Execute the input as a separate thread
             else:
