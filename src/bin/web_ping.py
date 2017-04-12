@@ -575,7 +575,7 @@ class WebPing(ModularInput):
             # Ensure that the thread limit is valid
             if loaded_thread_limit is not None and loaded_thread_limit > 0:
                 self.thread_limit = loaded_thread_limit
-                self.logger.info("Tthread limit successfully loaded, thread_limit=%r", loaded_thread_limit)
+                self.logger.debug("Thread limit successfully loaded, thread_limit=%r", loaded_thread_limit)
 
             # Warn that the thread limit is invalid
             else:
