@@ -160,5 +160,6 @@ Change History
 |         | Replaced deprecated SimpleXML attributes                                                                         |
 |---------|------------------------------------------------------------------------------------------------------------------|
 | 2.1     | Number of executing threads can now be customized                                                                |
+|         | Connection failure log messages now include the related URL                                                      |
 +---------+------------------------------------------------------------------------------------------------------------------+
 
