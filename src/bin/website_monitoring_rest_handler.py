@@ -1,13 +1,13 @@
+"""
+This REST handler faciltates access to the website_monitoring.conf file.
+"""
+
 import splunk.admin as admin
 import splunk.entity as entity
 import splunk
-import logging
-import logging.handlers
-import os
-import re
-import copy
 
-from website_monitoring_app.rest_handler import RestHandler, setup_logger, BooleanFieldValidator, IntegerFieldValidator, StandardFieldValidator, HostFieldValidator
+from website_monitoring_app.simple_rest_handler import RestHandler, BooleanFieldValidator, \
+IntegerFieldValidator, StandardFieldValidator, HostFieldValidator
 
 class ProxyTypeFieldValidator(StandardFieldValidator):
     """
@@ -26,9 +26,6 @@ class ProxyTypeFieldValidator(StandardFieldValidator):
             raise admin.ArgValidationException("The value of '%s' for the '%s' parameter is not a valid proxy type" % ( str(value), name))
 
         return t
-
-# Setup the handler
-logger = setup_logger(logging.DEBUG, "WebsiteMonitoringRestHandler", "website_monitoring_rest_handler.log")
 
 class WebsiteMonitoringRestHandler(RestHandler):
     """
@@ -60,7 +57,11 @@ class WebsiteMonitoringRestHandler(RestHandler):
     # General variables
     app_name = "website_monitoring"
 
+    # Logger info
+    logger_file_name = 'website_monitoring_rest_handler.log'
+    logger_name = 'WebsiteMonitoringRestHandler'
+    logger_level = logging.INFO
+
 # initialize the handler
 if __name__ == "__main__":
-    
     admin.init(WebsiteMonitoringRestHandler, admin.CONTEXT_NONE)

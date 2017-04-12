@@ -1,3 +1,71 @@
+"""
+This includes a helper class (named RestHandler) that makes implementing a custom REST handler in Splunk very easy.
+
+This is licensed under the Apache License Version 2.0
+See https://www.apache.org/licenses/LICENSE-2.0.html
+
+To use this, you will need to:
+
+1) Define a restmap.conf and declare the handler
+2) Define the Python code of the REST handler
+
+See below for examples.
+
+------------------------------------------------
+restmap.conf example
+------------------------------------------------
+Below is an example of the restmap.conf file (assumes your code is placed in
+bin/my_custom_rest_handler.py):
+
+[admin_external:my_custom_rest_handler]
+handlertype = python
+handlerfile = my_custom_rest_handler.py
+handleractions = list,edit,_reload
+
+
+------------------------------------------------
+Python REST handler example
+------------------------------------------------
+Below is an example of the REST handler Python code.
+
+
+from simple_rest_handler import RestHandler, IntegerFieldValidator, BooleanFieldValidator
+import logging
+import splunk.admin as admin
+
+class MyCustomRestHandler(RestHandler):
+
+    # Below is the name of the conf file (example.conf)
+    conf_file = 'example'
+
+    # Below are the list of parameters that are accepted
+    PARAM_DEBUG = 'debug'
+    PARAM_FOO = 'foo'
+    PARAM_SOME_INTEGER = 'some_integer'
+
+    # Below are the list of valid and required parameters
+    valid_params = [PARAM_DEBUG, PARAM_FOO, PARAM_SOME_INTEGER]
+    required_params = [PARAM_SOME_INTEGER]
+
+    # List of fields and how they will be validated
+    field_validators = {
+        PARAM_DEBUG : BooleanFieldValidator(),
+        PARAM_SOME_INTEGER : IntegerFieldValidator(0, 65535)
+    }
+
+    # General variables
+    app_name = "my_custom_app"
+
+    # Logger info
+    logger_file_name = 'my_custom_rest_handler.log'
+    logger_name = 'MyCustomRestHandler'
+    logger_level = logging.INFO
+
+# initialize the handler
+if __name__ == "__main__":
+    admin.init(MyCustomRestHandler, admin.CONTEXT_NONE)
+"""
+
 import splunk.admin as admin
 import splunk.entity as entity
 import splunk
@@ -179,11 +247,16 @@ def log_function_invocation(fx):
     """
 
     def wrapper(self, *args, **kwargs):
-        logger.debug( "Entering: " + fx.__name__ )
-        r = fx(self, *args, **kwargs)
-        logger.debug("Exited: " + fx.__name__)
 
-        return r
+        if hasattr(self, 'logger') and self.logger is not None:
+            self.logger.debug("Entering: " + fx.__name__)
+
+        return_value = fx(self, *args, **kwargs)
+
+        if hasattr(self, 'logger') and self.logger is not None:
+            self.logger.debug("Exited: " + fx.__name__)
+
+        return return_value
     return wrapper
 
 def setup_logger(level, name, file_name, use_rotating_handler=True):
@@ -214,9 +287,6 @@ def setup_logger(level, name, file_name, use_rotating_handler=True):
     logger.addHandler(file_handler)
 
     return logger
-
-# Setup the handler
-logger = setup_logger(logging.INFO, "RestHandler", "rest_handler.log")# CUSTOMIZE_LOGGING_INFO_HERE
 
 class IncorrectlyConfiguredException(Exception):
     """
@@ -252,8 +322,39 @@ class RestHandler(admin.MConfigHandler):
     # These are validators that work across several fields and need to occur on the cleaned set of fields
     general_validators = []
 
-    # General variables
+    # The app name variable
     app_name = None
+
+    # The logger configuration
+    logger_file_name = 'rest_handler.log'
+    logger_name = 'RestHandler'
+    logger_level = logging.INFO
+
+    # This is the internal reference to the logger class
+    _logger = None
+
+    @property
+    def logger(self):
+        """
+        Get the logger to use.
+        """
+
+        # Initialize the logger if necessary
+        if self._logger is None:
+
+            file_name = self.logger_file_name
+
+            # Add the file extension if necessary
+            if not file_name.endswith('.log'):
+                file_name = file_name + '.log'
+
+            self._logger = setup_logger(logging.INFO, self.logger_name, file_name)
+
+        return self._logger
+
+    @logger.setter
+    def logger(self, value):
+        self._logger = value
 
     def isProperlyInitialized(self):
         """
@@ -281,11 +382,18 @@ class RestHandler(admin.MConfigHandler):
         elif len(self.valid_params) == 0:
             raise IncorrectlyConfiguredException("The valid_params property must have at least one entry")
 
+        if self.logger_name is None:
+            raise IncorrectlyConfiguredException("The logger_name property must be defined")
 
     def setup(self):
         """
         Setup the required and optional arguments
         """
+
+        try:
+            self.checkIfProperlyInitialized()
+        except IncorrectlyConfiguredException as exception_raised:
+            self.logger.error('The REST handler is improperly configured: ' + str(exception_raised))
 
         if self.requestedAction == admin.ACTION_EDIT or self.requestedAction == admin.ACTION_CREATE:
 
@@ -313,7 +421,7 @@ class RestHandler(admin.MConfigHandler):
         m = self.multi_field_re.match(name)
 
         if m and m.groups()[0] in self.multi_fields:
-            logger.debug("removeMultiFieldSpecifier: " + name + " to " + m.groups()[0] + m.groups()[1])
+            self.logger.debug("removeMultiFieldSpecifier: " + name + " to " + m.groups()[0] + m.groups()[1])
             return m.groups()[0] + m.groups()[1]
         else:
             return name
@@ -453,7 +561,7 @@ class RestHandler(admin.MConfigHandler):
         except admin.NotFoundException, e:
             raise e
         except Exception, e:
-            logger.exception("Exception generated while performing edit")
+            self.logger.exception("Exception generated while performing edit")
 
             raise e
 
@@ -535,6 +643,3 @@ class RestHandler(admin.MConfigHandler):
         except ValueError:
             # Return none if the value could not be converted
             return default_value
-
-# initialize the handler
-#admin.init(RestHandler, admin.CONTEXT_NONE)
