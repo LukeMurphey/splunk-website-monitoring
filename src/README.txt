@@ -162,5 +162,7 @@ Change History
 | 2.1     | Number of executing threads can now be customized                                                                |
 |         | Connection failure log messages now include the related URL                                                      |
 |         | Status Overview now aggregates by source, not url                                                                |
+|---------|------------------------------------------------------------------------------------------------------------------|
+| 2.1.1   | Fixed btool error due to "thread_limit" not being defined                                                        |
 +---------+------------------------------------------------------------------------------------------------------------------+
 

@@ -29,3 +29,7 @@ proxy_password = <string>
 proxy_type = <string>
     * Defines the protocol used by the proxy server
     * Must be one of: socks4, socks5, http
+
+thread_limit = <int>
+    * Defines the maximum number of threads that the input will create
+    * Example: 200
