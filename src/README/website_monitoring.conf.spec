@@ -1,11 +1,7 @@
 # Copyright (C) 2013 Luke Murphey. All Rights Reserved.
 #
-# This file contains all possible options for an web_ping.conf file.  Use this file to  
+# This file contains all possible options for an website_monitoring.conf file.  Use this file to  
 # configure how the website_monitoring app functions.
-#
-# radius.conf needs to be placed in $SPLUNK_HOME/etc/apps/website_monitoring/local. 
-# Note that configuration parameters in $SPLUNK_HOME/etc/apps/website_monitoring/default
-# will be overridden by the values in the local directory.
 #
 # To learn more about configuration files (including precedence) please see the documentation 
 # located at http://docs.splunk.com/Documentation/latest/Admin/Aboutconfigurationfiles
