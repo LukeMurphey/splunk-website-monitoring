@@ -209,3 +209,10 @@
 .stopwatch-icon-50:before { content: '\e802'; } /* '' */
 .stopwatch-icon-75:before { content: '\e803'; } /* '' */
 .stopwatch-icon-100:before { content: '\e804'; } /* '' */
+
+/*
+ * Make background of the edit panel to match the background of the page.
+ */
+#panel2, #panel2 > .dashboard-panel{
+    background-color: inherit;
+}
