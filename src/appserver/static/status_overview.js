@@ -1,12 +1,13 @@
 require.config({
     paths: {
     	website_status_cell_renderer: '../app/website_monitoring/WebsiteStatusCellRenderer',
-    	info_message_view: '../app/website_monitoring/js/views/InfoMessageView'
+    	info_message_view: '../app/website_monitoring/js/views/InfoMessageView',
+		website_failure_view: '../app/website_monitoring/js/views/WebsiteFailureEditorView'
     }
 });
 
-require(['jquery','underscore','splunkjs/mvc', 'website_status_cell_renderer', 'info_message_view', 'splunkjs/mvc/searchmanager', 'splunkjs/mvc/simplexml/ready!'],
-	function($, _, mvc, WebsiteStatusCellRenderer, InfoMessageView, SearchManager){
+require(['jquery','underscore','splunkjs/mvc', 'website_status_cell_renderer', 'info_message_view', 'splunkjs/mvc/searchmanager', 'website_failure_view', 'splunkjs/mvc/simplexml/ready!'],
+	function($, _, mvc, WebsiteStatusCellRenderer, InfoMessageView, SearchManager, WebsiteFailureEditorView){
 	
 		// Setup the cell renderer
 	    var statusTable = mvc.Components.get('element1');
@@ -35,6 +36,12 @@ require(['jquery','underscore','splunkjs/mvc', 'website_status_cell_renderer', '
 	    	message: 'Create an input to monitor a website. <a target="_blank" href="../../manager/website_monitoring/adddata/selectsource?input_type=web_ping&modinput=1&input_mode=1">Create a website monitoring input now.</a>',
 	    	eval_function: function(searchResults){ return searchResults.rows[0][0] === "0" }
 	    });
+
+		var websiteFailureEditorView = new WebsiteFailureEditorView({
+			"el": "#notification-options"
+		});
+		
+		websiteFailureEditorView.render();
 	    
 	}
 );

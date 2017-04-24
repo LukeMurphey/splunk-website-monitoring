@@ -11,6 +11,8 @@
 		<input type="dropdown" token="only_enabled">
 		    <choice value=" ">Include all inputs</choice>
 		    <choice value="`filter_disabled`">Include only enabled inputs</choice>
+			<choice value="`filter_response_codes_and_response_times`">Include only failures</choice>
+			
 		    <label></label>
 		    <default> </default>
 		</input>
@@ -66,6 +68,11 @@
 				<link><![CDATA[/app/website_monitoring/status_history?form.title=$row.title$&earliest=$earliest$&latest=$latest$]]></link>
 			</drilldown>
 		</table>
+	</row>
+	<row>
+		<html>
+			<p id="notification-options" />
+		</html>
 	</row>
 	
 </form>
