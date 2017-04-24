@@ -149,7 +149,7 @@ define([
 
             // Modify the model
             macro_model.entry.content.set({
-                configured: true
+                definition: definition
             }, {
                 silent: true
             });
@@ -159,7 +159,7 @@ define([
 
             // Wire up a response to tell the user if this was a success
             if (saveResponse) {
-
+                /*
                 // If successful, show a success message
                 saveResponse.done(function(model, response, options){
                     console.info("Macro was successfully updated");
@@ -169,6 +169,9 @@ define([
                 .fail(function(response){
                     console.warn("Macro was not successfully updated");
                 }.bind(this));
+                */
+
+                return saveResponse;
             }
 
         },
@@ -361,7 +364,7 @@ define([
          */
         showSaving: function(isSaving){
         	
-        	if( typeof isSaving === 'undefined'){
+        	if(typeof isSaving === 'undefined'){
         		isSaving = true;
         	}
         	
@@ -401,6 +404,12 @@ define([
         	
         	this.showSaving();
             // TODO: save the input
+
+            //this.saveMacroModel(this.response_code_macro, );
+            $.when(this.saveMacroModel(this.response_time_macro, mvc.Components.getInstance("response-threshold-input").val())).done(function(){
+                this.showSaving(false);
+            }.bind(this));
+
         },
         
 
