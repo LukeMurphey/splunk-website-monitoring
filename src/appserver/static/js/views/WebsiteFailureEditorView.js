@@ -64,17 +64,46 @@ define([
             this.response_code_macro = null;
 
             // Start getting the macros
-            $.when(this.getMacro("response_time_threshold")).done(function(model){
-                 this.response_time_macro = model;
-                 mvc.Components.getInstance("response-threshold-input").val(this.response_time_macro.entry.content.attributes.definition);
-            }.bind(this));
+            this.loadMacros();
+        },
 
-            $.when(this.getMacro("response_codes_to_alert_on")).done(function(model){
-                 this.response_code_macro = model;
+        loadMacros: function(){
 
-                 mvc.Components.getInstance("response-code-input").val(this.response_code_macro.entry.content.attributes.definition);
-            }.bind(this));
+            // Get the threshold macro
+            if(this.response_time_macro === null){
+                $.when(this.getMacro("response_time_threshold")).done(function(model){
+                    this.response_time_macro = model;
 
+                    // Set the input if it is initialized
+                    if(mvc.Components.getInstance("response-threshold-input") !== null){
+                        mvc.Components.getInstance("response-threshold-input").val(this.response_time_macro.entry.content.attributes.definition);
+                    }
+
+                }.bind(this));
+            }
+            else{
+                // Set the input if it is initialized
+                if(mvc.Components.getInstance("response-threshold-input") !== null){
+                    mvc.Components.getInstance("response-threshold-input").val(this.response_time_macro.entry.content.attributes.definition);
+                }
+            }
+
+            if(this.response_code_macro === null){
+                $.when(this.getMacro("response_codes_to_alert_on")).done(function(model){
+                    this.response_code_macro = model;
+
+                    // Set the input if it is initialized
+                    if(mvc.Components.getInstance("response-code-input") !== null){
+                        mvc.Components.getInstance("response-code-input").val(this.response_code_macro.entry.content.attributes.definition);
+                    }
+                }.bind(this));
+            }
+            else{
+                // Set the input if it is initialized
+                if(mvc.Components.getInstance("response-code-input") !== null){
+                    mvc.Components.getInstance("response-code-input").val(this.response_code_macro.entry.content.attributes.definition);
+                }
+            }
         },
         
         /**
@@ -155,24 +184,7 @@ define([
             });
 
             // Kick off the request to edit the entry
-            var saveResponse = macro_model.save();
-
-            // Wire up a response to tell the user if this was a success
-            if (saveResponse) {
-                /*
-                // If successful, show a success message
-                saveResponse.done(function(model, response, options){
-                    console.info("Macro was successfully updated");
-                }.bind(this))
-
-                // Otherwise, show a failure message
-                .fail(function(response){
-                    console.warn("Macro was not successfully updated");
-                }.bind(this));
-                */
-
-                return saveResponse;
-            }
+            return macro_model.save();
 
         },
 
@@ -232,36 +244,13 @@ define([
                     '</div>' +
         			'<div style="margin-bottom: 32px">.</div>' +
         			'<div class="input" id="response-threshold-input">' +
-                		'<label>Response Time Threshold</label>' +
+                		'<label>Response Time Threshold (in milliseconds)</label>' +
                     '</div>' +
         			'<div style="margin-top: 32px" class="input" id="response-code-input">' +
                 		'<label>Response Codes Considered Failures</label>' +
                 	'</div>' + 
                 	'</span>';
         
-        },
-        
-        /**
-         * Determine if the provided parameters are valid.
-         */
-        areParametersValid: function(){
-        	
-        	// Validate the command
-        	if( !/^([0-9a-f])?[0-9a-f]$/gi.test(this.command)){
-        		return "Command is not valid";
-        	}
-        	
-        	// Validate the device
-        	else if( !/^([0-9a-f]{2,2}.){2,2}[0-9a-f]{2,2}$/gi.test(this.from_device) && !/^([0-9a-f]{2,2}.){2,2}[0-9a-f]{2,2}$/gi.test(this.to_device) ){
-        		return "Device is not valid";
-        	}
-        	
-        	// Validate the all-link group
-        	if( !/^[0-9a-f]+$/gi.test(this.all_link_group)){
-        		return "All-link group is not valid";
-        	}
-
-        	return true;
         },
 
         /**
@@ -270,6 +259,11 @@ define([
         validate: function(){
         	
         	var issues = 0;
+
+        	// Validate the threshold
+        	if( !/([0-9])+$/gi.test( mvc.Components.getInstance("response-threshold-input").val())){
+        		return "The threshold is not valid (must be a integer greater than zero)";
+        	}
         	
         	return issues === 0;
         },
@@ -296,14 +290,12 @@ define([
 	                "id": "response-threshold-input",
 	                "searchWhenChanged": false,
 	                "el": $('#response-threshold-input', this.$el)
-	            }, {tokens: true}).render();
+	            }, {tokens: false}).render();
 
-	        	/*
 	        	response_threshold_input.on("change", function(newValue) {
 	            	this.validate();
 	            }.bind(this));
-	            */
-
+                
                 // Make the response code widget
 	        	var response_code_input = new DropdownInput({
 	                "id": "response-code-input",
@@ -327,21 +319,24 @@ define([
                             'value': 'response_code>=300'
         		        }
                     ]
-	            }, {tokens: true}).render();
+	            }, {tokens: false}).render();
 
-	        	/*
-	        	response_code_input.on("change", function(newValue) {
-	            	this.validate();
-	            }.bind(this));
-	            */
+                // This prevents a JS error in Core Splunk
+                response_code_input.onInputReady = function(){}
+                response_threshold_input.onInputReady = function(){}
 	            
-	            
+                // Note that we rendered the page
 	        	this.already_rendered = true;
+
+                this.loadMacros();
         	}
         	
             return this;
         },
         
+        /**
+         * Handle the click to open the modal.
+         */
         clickOpenModal: function(){
             this.showModal(1000, 12);
         },
@@ -403,10 +398,10 @@ define([
         save: function() {
         	
         	this.showSaving();
-            // TODO: save the input
 
-            //this.saveMacroModel(this.response_code_macro, );
-            $.when(this.saveMacroModel(this.response_time_macro, mvc.Components.getInstance("response-threshold-input").val())).done(function(){
+            $.when(this.saveMacroModel(this.response_time_macro, mvc.Components.getInstance("response-threshold-input").val()))
+            .then(this.saveMacroModel(this.response_code_macro, mvc.Components.getInstance("response-code-input").val()))
+            .done(function(){
                 this.showSaving(false);
             }.bind(this));
 
