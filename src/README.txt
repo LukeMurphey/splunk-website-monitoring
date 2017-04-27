@@ -166,5 +166,6 @@ Change History
 | 2.1.1   | Fixed btool error due to "thread_limit" not being defined                                                        |
 |---------|------------------------------------------------------------------------------------------------------------------|
 | 2.2     | Added ability to modify what is considered a failure (response time threshold and response codes)                |
+|         | Fixed issue preventing message from didn't appearing on the Status Overview page noting no inputs exist          |
 +---------+------------------------------------------------------------------------------------------------------------------+
 
