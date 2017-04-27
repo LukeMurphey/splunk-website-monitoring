@@ -16,7 +16,6 @@ require(['jquery','underscore','splunkjs/mvc', 'website_status_cell_renderer', '
 	        tableView.table.addCellRenderer(new WebsiteStatusCellRenderer());
 	        tableView.table.render();
 	    });
-	    
 
 	    // Make the search that will determine if website monitoring inputs exist
 	    var hasInputSearch = new SearchManager({
