@@ -24,7 +24,7 @@ define([
 		 * Setup the defaults
 		 */
 		defaults: {
-			message_el: "#dashboard > .fieldset",
+			message_el: ".dashboard-form-globalfieldset:first",
 			search_manager: null,
 			message: null,
 			eval_function: null,
