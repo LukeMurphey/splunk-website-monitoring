@@ -2,4 +2,14 @@
 	
 	<import file="basebuild.xml"/>
 	
+    <!-- ================================= 
+          target: splunk.refresh
+         ================================= -->
+    <target name="splunk.refresh" description="Refresh Splunk" depends="verify_splunk_home">
+    	<reload_conf endpoint="savedsearch" />
+    	<reload_conf endpoint="nav" />
+    	<reload_conf endpoint="views" />
+		<reload_conf endpoint="macros" />
+    </target>
+
 </project>
