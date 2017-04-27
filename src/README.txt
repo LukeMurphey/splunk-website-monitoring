@@ -164,5 +164,7 @@ Change History
 |         | Status Overview now aggregates by source, not url                                                                |
 |---------|------------------------------------------------------------------------------------------------------------------|
 | 2.1.1   | Fixed btool error due to "thread_limit" not being defined                                                        |
+|---------|------------------------------------------------------------------------------------------------------------------|
+| 2.2     | Added ability to modify what is considered a failure (response time threshold and response codes)                |
 +---------+------------------------------------------------------------------------------------------------------------------+
 
