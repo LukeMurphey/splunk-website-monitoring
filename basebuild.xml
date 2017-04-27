@@ -168,7 +168,7 @@ You can also use ${value.version.number} to substitute your version number in ap
           <include name="*.jar" />
         </fileset>
     </path>
-	
+
     <!-- ================================= 
           target: download_git_ignore
          ================================= -->
@@ -274,8 +274,8 @@ You can customize the build process by placing properties in the default.propert
 			 verbose="true"
 			 skipexisting="true" />
 		
-		<get src="https://github.com/LukeMurphey/splunk-ant-build-script/releases/download/1.0.1/splunkdevtools-1.0.1.jar" 
-			 dest="${absolute_lib_path}/splunkdevtools-1.0.1.jar" 
+		<get src="https://github.com/LukeMurphey/splunk-ant-build-script/releases/download/1.1/splunkdevtools-1.1.jar" 
+			 dest="${absolute_lib_path}/splunkdevtools-1.1.jar" 
 			 verbose="true"
 			 skipexisting="true" />
 		
@@ -291,9 +291,9 @@ You can customize the build process by placing properties in the default.propert
 		     </classpath>
 		</taskdef>
 		
-		<taskdef name="splunkwebbump" classname="net.lukemurphey.splunkbuild.SplunkWebBump" classpath="${absolute_lib_path}/splunkdevtools-1.0.1.jar" />
-		<taskdef name="splunkrestart" classname="net.lukemurphey.splunkbuild.SplunkRestart" classpath="${absolute_lib_path}/splunkdevtools-1.0.1.jar" />
-		<taskdef name="splunkappinstall" classname="net.lukemurphey.splunkbuild.SplunkAppInstall" classpath="${absolute_lib_path}/splunkdevtools-1.0.1.jar" />
+		<taskdef name="splunkwebbump" classname="net.lukemurphey.splunkbuild.SplunkWebBump" classpath="${absolute_lib_path}/splunkdevtools-1.1.jar" />
+		<taskdef name="splunkrestart" classname="net.lukemurphey.splunkbuild.SplunkRestart" classpath="${absolute_lib_path}/splunkdevtools-1.1.jar" />
+		<taskdef name="splunkappinstall" classname="net.lukemurphey.splunkbuild.SplunkAppInstall" classpath="${absolute_lib_path}/splunkdevtools-1.1.jar" />
 	</target>
 	
     <!-- ================================= 
@@ -315,14 +315,14 @@ You can customize the build process by placing properties in the default.propert
     	<delete file="${absolute_lib_path}/ant-contrib-0.6.jar" />
     	<delete file="${absolute_lib_path}/yuicompressor-2.4.7.jar" />
     	<delete file="${absolute_lib_path}/yuicompressor-2.4.8.jar" />
-    	<delete file="${absolute_lib_path}/splunkdevtools-1.0.1.jar" />
+    	<delete file="${absolute_lib_path}/splunkdevtools-1.1.jar" />
         
     </target>
 	
     <!-- ================================= 
           target: get_build_number
          ================================= -->
-	<target name="get_build_number">
+	<target name="get_build_number" depends="initialize_libraries">
 		
 		<macrodef name="get_build_info">
 			<attribute name="path" default="${user.dir}" />
@@ -341,18 +341,43 @@ You can customize the build process by placing properties in the default.propert
 			
 		</macrodef>
 		
-   		<!-- Run git to get the revision number and date -->
-		<get_build_info outputproperty="value.build.number" />
-		<get_build_info format="cD" outputproperty="value.build.date" />
-		
+		<!-- Determine if this project is using Git and get the build info accordingly -->
+		<if>
+			<available file=".git" type="dir" />
+
+			<!-- Run git to get the revision number and date -->
+			<then>
+				
+				<get_build_info outputproperty="value.build.number" />
+				<get_build_info format="cD" outputproperty="value.build.date" />
+				
+				
+			</then>
+
+			<!-- Generate the revision number and date -->
+			<else>
+				<echo message=".git directory does not exist; build date will be set to the current date" />
+
+				<tstamp>
+					<!--  1492116038 (Thu, 13 Apr 2017 15:40:38 -0500) -->
+					<format property="value.build.date" pattern="E, d MMM YYYY HH:mm:ss Z" unit="hour" />
+				</tstamp>
+
+				  <script language="javascript">
+					<![CDATA[
+						property = project.setProperty("value.build.number",Math.floor((new Date()).getTime()/1000));
+					]]>
+			      </script>
+			</else>
+		</if>
+
 		<echo>Revision number is: ${value.build.number} (${value.build.date})</echo>
-		
 	</target>
     
     <!-- ================================= 
           target: clean.packages
          ================================= -->
-    <target name="clean.packages" description="Clean up the packages created by this build script" >
+    <target name="clean.packages" description="Clean up the packages created by this build script">
         <delete quiet="true" includeEmptyDirs="true">
             <fileset dir="tmp/packages" />
         </delete>
@@ -371,6 +396,28 @@ You can customize the build process by placing properties in the default.propert
         
     </target>
     
+	<patternset id="substituted_files">
+    	<include name="**/*.conf" />
+        <include name="**/*.txt" />
+        <include name="**/*.xml" />
+    </patternset>
+
+	<patternset id="exclude_substituted_files">
+    	<exclude name="**/*.conf" />
+        <exclude name="**/*.txt" />
+        <exclude name="**/*.xml" />
+    </patternset>
+
+	<patternset id="minified_files">
+    	<include name="**/*.js" />
+        <include name="**/*.css" />
+    </patternset>
+
+	<patternset id="exclude_minified_files">
+    	<exclude name="**/*.js" />
+        <exclude name="**/*.css" />
+    </patternset>
+	
     <!-- ================================= 
           target: populate_export_dir
          ================================= -->
@@ -389,9 +436,7 @@ You can customize the build process by placing properties in the default.propert
              applied to text files since Ant may corrupt binary files otherwise. -->
         <copy todir="${export_dir}/${value.build.appname}">
             <fileset dir="${value.src.directory}">
-                <include name="**/*.conf" />
-                <include name="**/*.txt" />
-                <include name="**/*.xml" />
+                <patternset refid="substituted_files" />
             </fileset>
             
             <!-- Perform the substitution of the build information -->
@@ -405,11 +450,8 @@ You can customize the build process by placing properties in the default.propert
         <!-- Copy the binary files over (excluding the javascript files which are to be minified) -->
         <copy todir="${export_dir}/${value.build.appname}">
             <fileset dir="${value.src.directory}">
-                <exclude name="**/*.conf" />
-                <exclude name="**/*.txt" />
-                <exclude name="**/*.xml" />
-            	<exclude name="**/*.js" />
-            	<exclude name="**/*.css" />
+				<patternset refid="exclude_substituted_files" />
+				<patternset refid="exclude_minified_files" />
             </fileset>
         </copy>
     	
@@ -444,8 +486,7 @@ You can customize the build process by placing properties in the default.propert
 			    	
 			    	<!-- Source of the files -->	
 			        <fileset dir="${basedir}/src">
-			    		<include name="**/*.js" />
-			        	<include name="**/*.css" />
+			    		<patternset refid="minified_files" />
 			        </fileset>
 			        <arg line="-jar" />
 			        <arg path="${yuicompressorlib}" />
@@ -459,8 +500,7 @@ You can customize the build process by placing properties in the default.propert
     	        <!-- Copy the unoptimized files over -->
     	        <copy todir="${export_dir}/${value.build.appname}">
     	            <fileset dir="${value.src.directory}">
-    	            	<include name="**/*.js" />
-    	            	<include name="**/*.css" />
+    	            	<patternset refid="minified_files" />
     	            </fileset>
     	        </copy>
     		</else>
