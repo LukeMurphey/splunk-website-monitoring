@@ -1,3 +1,11 @@
 []
 access = read : [ * ], write : [ admin ]
 export = system
+
+[macros/response_codes_to_alert_on]
+access = read : [ * ], write : [ admin,power ]
+export = system
+
+[macros/response_time_threshold]
+access = read : [ * ], write : [ admin,power ]
+export = system
