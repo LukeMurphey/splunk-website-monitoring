@@ -15,4 +15,5 @@
   	<view name="dashboards" />
   </collection>
   <a href='/manager/website_monitoring/apps/local/website_monitoring/setup?action=edit'>Configuration</a>
+  <a href='/app/website_monitoring/status_overview?tour=website_monitoring_new_features'>What's new in 2.2?</a>
 </nav>
