@@ -64,45 +64,22 @@ define([
             this.response_code_macro = null;
 
             // Start getting the macros
-            this.loadMacros();
+            //this.loadMacros(); // TODO
         },
 
-        loadMacros: function(){
+        /**
+         * Load the macros into the form
+         */
+        loadMacrosIntoForm: function(){
 
             // Get the threshold macro
-            if(this.response_time_macro === null){
-                $.when(this.getMacro("response_time_threshold")).done(function(model){
-                    this.response_time_macro = model;
-
-                    // Set the input if it is initialized
-                    if(mvc.Components.getInstance("response-threshold-input") !== null){
-                        mvc.Components.getInstance("response-threshold-input").val(this.response_time_macro.entry.content.attributes.definition);
-                    }
-
-                }.bind(this));
-            }
-            else{
-                // Set the input if it is initialized
-                if(mvc.Components.getInstance("response-threshold-input") !== null){
-                    mvc.Components.getInstance("response-threshold-input").val(this.response_time_macro.entry.content.attributes.definition);
-                }
+            if(mvc.Components.getInstance("response-threshold-input") !== null){
+                mvc.Components.getInstance("response-threshold-input").val(this.response_time_macro.entry.content.attributes.definition);
             }
 
-            if(this.response_code_macro === null){
-                $.when(this.getMacro("response_codes_to_alert_on")).done(function(model){
-                    this.response_code_macro = model;
-
-                    // Set the input if it is initialized
-                    if(mvc.Components.getInstance("response-code-input") !== null){
-                        mvc.Components.getInstance("response-code-input").val(this.response_code_macro.entry.content.attributes.definition);
-                    }
-                }.bind(this));
-            }
-            else{
-                // Set the input if it is initialized
-                if(mvc.Components.getInstance("response-code-input") !== null){
-                    mvc.Components.getInstance("response-code-input").val(this.response_code_macro.entry.content.attributes.definition);
-                }
+            // Get the response code macro
+            if(mvc.Components.getInstance("response-code-input") !== null){
+                mvc.Components.getInstance("response-code-input").val(this.response_code_macro.entry.content.attributes.definition);
             }
         },
         
@@ -236,17 +213,28 @@ define([
          */
         getInputTemplate: function(){
         	
-        	return  '<div id="message_dialog"></div>' + 
+        	return  '<div style="display:none" id="warning_message_dialog">' + 
+                        '<div class="alert alert-error">' +
+	                        '<i class="icon-alert"></i>' +
+	                        '<span id="warning_message"></span>' +
+	                    '</div>' +
+                    '</div>' + 
+                    '<div style="display:none" id="success_message_dialog">' + 
+                        '<div class="alert alert-info">' +
+	                        '<i class="icon-alert"></i>' +
+	                        '<span id="success_message"></span>' +
+	                    '</div>' +
+                    '</div>' + 
         			'<span id="settings_form">' + 
                     '<div>You define what you want to consider an outage below.' +
                     'These settings will also apply to the ' +
-                    '<a href="alert?s=%2FservicesNS%2Fnobody%2Fwebsite_monitoring%2Fsaved%2Fsearches%2FWebsite%2520Performance%2520Problem">alert search</a> that provides notifications of outages.' +
+                    '<a class="external" target="external" href="alert?s=%2FservicesNS%2Fnobody%2Fwebsite_monitoring%2Fsaved%2Fsearches%2FWebsite%2520Performance%2520Problem">alert search</a> that provides notifications of outages.' +
                     '</div>' +
-        			'<div style="margin-bottom: 32px">.</div>' +
+        			'<div style="margin-bottom: 16px">.</div>' +
         			'<div class="input" id="response-threshold-input">' +
                 		'<label>Response Time Threshold (in milliseconds)</label>' +
                     '</div>' +
-        			'<div style="margin-top: 32px" class="input" id="response-code-input">' +
+        			'<div style="margin-top: 24px" class="input" id="response-code-input">' +
                 		'<label>Response Codes Considered Failures</label>' +
                 	'</div>' + 
                 	'</span>';
@@ -254,9 +242,51 @@ define([
         },
 
         /**
+         * Show a success message.
+         */
+        showSuccessMessage: function(message){
+            this.hideMessage();
+        	$('#success_message_dialog', this.$el).show();
+        	$('#success_message', this.$el).text(message);
+        },
+
+        /**
+         * Show a failure message.
+         */
+        showFailureMessage: function(message){
+            this.hideMessage();
+        	$('#warning_message_dialog', this.$el).show();
+        	$('#warning_message', this.$el).text(message);
+        },
+        
+        /**
+         * Hide the message.
+         */
+        hideMessage: function(){
+        	$('#success_message_dialog', this.$el).hide();
+            $('#warning_message_dialog', this.$el).hide();
+        },
+
+        /**
          * Validate the inputs.
          */
         validate: function(){
+        	
+        	var message = this.getValidationMessage();
+
+            if(message === true){
+                // Everything looks good.
+                this.hideMessage();
+            }
+            else{
+                this.showFailureMessage(message);
+            }
+        },
+
+        /**
+         * Validate the inputs and retrieve a string describing the problems if any exist. 
+         */
+        getValidationMessage: function(){
         	
         	var issues = 0;
 
@@ -267,68 +297,99 @@ define([
         	
         	return issues === 0;
         },
-        
+
+        /**
+         * Start the process
+         */
+        startRendering: function(){
+
+            var deferreds = [this.getMacro("response_time_threshold"), this.getMacro("response_codes_to_alert_on")];
+
+            $.when.apply($, deferreds).done(function(response_time_macro, response_code_macro) {
+                this.response_code_macro = response_code_macro;
+                this.response_time_macro = response_time_macro;
+
+                this.completeRender();
+            }.bind(this));
+        },
+
+        render: function() {
+
+            // Start the process of rendering
+            this.startRendering();
+        },
 
         /**
          * Render the view
          */
-        render: function() {
+        completeRender: function() {
             
         	// Stop if the view was already rendered
         	if(!this.already_rendered){
 	        	
-	        	var html = '<a id="open-settings-modal" href="#">Edit failure definition</a>';
-	        	
-	        	// Render the modal version of the form
-	        	html = html + this.getModalTemplate("Failure Definition", this.getInputTemplate());
-	        	
-	        	// Set the HTML
-	        	this.$el.html(html);
-	        	
-	        	// Make the threshold widget
-	        	var response_threshold_input = new TextInput({
-	                "id": "response-threshold-input",
-	                "searchWhenChanged": false,
-	                "el": $('#response-threshold-input', this.$el)
-	            }, {tokens: false}).render();
+                if(this.response_time_macro.entry.acl.attributes.can_write && this.response_code_macro.entry.acl.attributes.can_write){
 
-	        	response_threshold_input.on("change", function(newValue) {
-	            	this.validate();
-	            }.bind(this));
-                
-                // Make the response code widget
-	        	var response_code_input = new DropdownInput({
-	                "id": "response-code-input",
-	                "searchWhenChanged": false,
-	                "el": $('#response-code-input', this.$el),
-                    "choices": [
-                        {
-                            'label': '400 and 500 response codes',
-                            'value': 'response_code>=400'
-        		        },
-                        {
-                            'label': '500 response codes',
-                            'value': 'response_code>=500'
-        		        },
-                        {
-                            'label': '400 and 500 response codes, but not 404',
-                            'value': '(response_code>=400 AND response_code!=404)'
-        		        },
-                        {
-                            'label': '300, 400 and 500 response codes',
-                            'value': 'response_code>=300'
-        		        }
-                    ]
-	            }, {tokens: false}).render();
+                    var html = '<a id="open-settings-modal" href="#">Modify the definition of a failure</a>';
+                    
+                    // Render the modal version of the form
+                    html = html + this.getModalTemplate("Failure Definition", this.getInputTemplate());
+                    
+                    // Set the HTML
+                    this.$el.html(html);
+                    
+                    // Make the threshold widget
+                    var response_threshold_input = new TextInput({
+                        "id": "response-threshold-input",
+                        "searchWhenChanged": false,
+                        "el": $('#response-threshold-input', this.$el)
+                    }, {tokens: false}).render();
 
-                // This prevents a JS error in Core Splunk
-                response_code_input.onInputReady = function(){}
-                response_threshold_input.onInputReady = function(){}
+                    response_threshold_input.on("change", function(newValue) {
+                        this.validate();
+                    }.bind(this));
+                    
+                    // Make the response code widget
+                    var response_code_input = new DropdownInput({
+                        "id": "response-code-input",
+                        "searchWhenChanged": false,
+                        "el": $('#response-code-input', this.$el),
+                        "choices": [
+                            {
+                                'label': '400 and 500 response codes',
+                                'value': 'response_code>=400'
+                            },
+                            {
+                                'label': '500 response codes',
+                                'value': 'response_code>=500'
+                            },
+                            {
+                                'label': '400 and 500 response codes, but not 404',
+                                'value': '(response_code>=400 AND response_code!=404)'
+                            },
+                            {
+                                'label': '300, 400 and 500 response codes',
+                                'value': 'response_code>=300'
+                            }
+                        ]
+                    }, {tokens: false}).render();
+
+                    // This prevents a JS error in Core Splunk
+                    response_code_input.onInputReady = function(){}
+                    response_threshold_input.onInputReady = function(){}
+
+                    // Koad the macro values into the widgets
+                    this.loadMacrosIntoForm();
+                }
+
+                // User doesn't have the ability to write to the macros
+                else{
+                    // Set the HTML
+                    this.$el.html("");
+                }
 	            
                 // Note that we rendered the page
 	        	this.already_rendered = true;
 
-                this.loadMacros();
         	}
         	
             return this;
@@ -338,19 +399,15 @@ define([
          * Handle the click to open the modal.
          */
         clickOpenModal: function(){
-            this.showModal(1000, 12);
+            this.showModal();
         },
 
         /**
          * Show the form as a dialog
          */
-        showModal: function(response_threshold, response_codes){
-        	this.response_threshold = response_threshold;
-        	this.response_codes = response_codes;
-        	
-        	this.show_modal = true;
-        	
+        showModal: function(){
         	this.render();
+            this.hideMessage();
         	$("#threshold-modal", this.$el).modal();
         },
         
@@ -363,32 +420,13 @@ define([
         		isSaving = true;
         	}
         	
-        	if( isSaving ){
+        	if(isSaving){
         		$('#save', this.$el).prop('disabled', false);
             	$('#save', this.$e).addClass('disabled');
         	}
         	else{
-        		$('#save', this.$el).prop('disabled', true);
+        		$('#save', this.$el).removeProp('disabled');
             	$('#save', this.$e).removeClass('disabled');
-        	}
-        },
-        
-        /**
-         * Change the UI to show that the dialog is loading.
-         */
-        showLoading: function(isLoading){
-        	
-        	if( typeof isLoading === 'undefined'){
-        		isLoading = true;
-        	}
-        	
-        	$('#save', this.$el).prop('disabled', isLoading);
-        	
-        	if( isLoading ){
-        		$('#save', this.$e).addClass('disabled');
-        	}
-        	else{
-        		$('#save', this.$e).removeClass('disabled');
         	}
         },
         
@@ -403,6 +441,11 @@ define([
             .then(this.saveMacroModel(this.response_code_macro, mvc.Components.getInstance("response-code-input").val()))
             .done(function(){
                 this.showSaving(false);
+                $("#threshold-modal", this.$el).modal('hide');
+            }.bind(this))
+            .fail(function(){
+                this.showSaving(false);
+                this.showFailureMessage("Configuration could not be changed");
             }.bind(this));
 
         },
