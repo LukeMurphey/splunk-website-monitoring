@@ -302,7 +302,7 @@ class TestWebPing(WebsiteMonitoringAppTest, UnitTestWithWebServer):
         """
         
         url_field = URLField( "test_ping", "title", "this is a test" )
-        result = WebPing.ping( url_field.to_python("https://www.penfolds.com"), timeout=3 )
+        result = WebPing.ping( url_field.to_python("https://lukemurphey.net"), timeout=3 )
         
         self.assertEquals(result.response_code, 200)
     
