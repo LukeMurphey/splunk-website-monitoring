@@ -16,38 +16,23 @@
 		    <label></label>
 		    <default> </default>
 		</input>
-		<!-- The checkbox only works on 6.1+  -->
-		<!--
-    	<input type="checkbox" token="only_enabled" searchWhenChanged="true">
-    		<label></label>
-      		<choice value="`filter_disabled`">Include only enabled inputs</choice>
-      		<default></default>
-      		<valuePrefix> </valuePrefix>
-    	</input>
-    	-->
 	</fieldset>
-	 
-	<!--
-	<row>		
-		<single>
-			<searchName>inoperable_sites_rangemap</searchName>
-			<option name="beforeLabel">Sites currently down: </option>
-		</single>
-		<single>
-			<searchName>slow_sites_rangemap</searchName>
-			<option name="beforeLabel">Sites with high current response time: </option>
-		</single>
-		<single>
-			<searchName>slow_sites_avg_rangemap</searchName>
-			<option name="beforeLabel">Sites with high average response time: </option>
-		</single>
-	</row>
-	 -->
 	<row>
 		<table>
 			<search>
-    			<query>
-    				sourcetype="web_ping" $only_enabled$ | fillnull response_code value="Connection failed" | eval response_code=if(response_code="", "Connection failed", response_code) | eval response_code=if(timed_out == "True", "Connection timed out", response_code) | stats sparkline(avg(total_time)) as sparkline_response_time avg(total_time) as avg_response_time max(total_time) as max_response_time latest(response_code) as response_code latest(_time) as last_checked latest(title) as title latest(url) as url latest(total_time) as response_time range(total_time) as range min(total_time) as min by source | eval response_time=round(response_time, 0)." ms" | eval average=round(avg_response_time, 0)." ms" | eval maximum=round(max_response_time, 0)." ms" | eval range=round(min, 0)." - ".round(min+range, 0)." ms" | table title url response_code last_checked response_time average range sparkline_response_time  | `timesince(last_checked,last_checked)` | sort -response_time
+    			<query> sourcetype="web_ping"
+| fillnull response_code value="Connection failed"
+| eval response_code=if(response_code="", "Connection failed", response_code)
+| eval response_code=if(timed_out == "True", "Connection timed out", response_code)
+| stats sparkline(avg(total_time)) as sparkline_response_time avg(total_time) as avg_response_time max(total_time) as max_response_time latest(response_code) as response_code latest(_time) as last_checked latest(title) as title latest(url) as url latest(total_time) as response_time range(total_time) as range min(total_time) as min by source
+| search $only_enabled$
+| eval response_time=round(response_time, 0)." ms"
+| eval average=round(avg_response_time, 0)." ms"
+| eval maximum=round(max_response_time, 0)." ms"
+| eval range=round(min, 0)." - ".round(min+range, 0)." ms"
+| table title url response_code last_checked response_time average range sparkline_response_time 
+| `timesince(last_checked,last_checked)`
+| sort -response_time
     			</query>
 			</search>
 			<option name="count">20</option>
