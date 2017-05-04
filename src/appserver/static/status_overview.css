@@ -13,6 +13,13 @@
 }
 
 /*
+ * Make sure that the icon is white (needed for Splunk 6.6)
+ */
+#statistics .icon-check{
+	color: white;
+}
+
+/*
  * The following improves the styling of the status overview dashboard by removing the white border and padding.
  */
 #element1{
