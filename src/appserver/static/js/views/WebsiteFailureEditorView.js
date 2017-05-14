@@ -62,9 +62,6 @@ define([
             // Keep the macros references around
             this.response_time_macro = null;
             this.response_code_macro = null;
-
-            // Start getting the macros
-            //this.loadMacros(); // TODO
         },
 
         /**
