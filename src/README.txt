@@ -10,7 +10,23 @@ This app provides a mechanism for detecting when web applications are no longer 
 Configuring Splunk
 ================================================
 
-This app exposes a new input type that can be configured in the Splunk Manager. To configure it, create a new "Website Availability Check" input in the Manager under Data inputs.
+Install this app into Splunk by doing the following:
+
+  1. Log in to Splunk Web and navigate to "Apps » Manage Apps" via the app dropdown at the top left of Splunk's user interface
+  2. Click the "install app from file" button
+  3. Upload the file by clicking "Choose file" and selecting the app
+  4. Click upload
+  5. Restart Splunk if a dialog asks you to
+
+Once the app is installed, you can use the app by configuring a new input:
+  1. Navigate to "Settings » Data Inputs" at the menu at the top of Splunk's user interface.
+  2. Click "Website Availability Check"
+  3. Click "New" to make a new instance of an input
+
+Alternatively, you can use the batch creation UI to make several inputs:
+  1. Open the "Website Monitoring" app from the main launcher.
+  2. Open the "Create Inputs" view from the app navigation
+  3. Enter the URLs you would like to monitor and press save to creates
 
 
 
@@ -167,6 +183,6 @@ Change History
 |---------|------------------------------------------------------------------------------------------------------------------|
 | 2.2     | Added ability to modify what is considered a failure (response time threshold and response codes)                |
 |         | Fixed issue preventing message from didn't appearing on the Status Overview page noting no inputs exist          |
-|         | Compatability with Splunk 6.6                                                                                    |
+|         | Improved compatibility with Splunk 6.6                                                                           |
 +---------+------------------------------------------------------------------------------------------------------------------+
 
