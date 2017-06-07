@@ -1,0 +1,11 @@
+<form hideEdit="true" script="setup.js">
+  <label>Configuration</label>
+  <description>Global configuration for Website Monitoring</description>
+	<row>
+	   <panel>
+	      <html>
+	         <div id="setupView"></div>
+	      </html>
+	   </panel>
+	</row>
+</form>
