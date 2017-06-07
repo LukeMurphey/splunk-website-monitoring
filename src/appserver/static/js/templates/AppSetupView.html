@@ -1,0 +1,54 @@
+<form>
+  <fieldset>
+    <legend>Proxy Server</legend>
+
+    <label>Server Address</label>
+    <input type="text" name="proxy_server" placeholder="e.g. proxy.example.com">
+    <span class="help-block">Enter the address of the proxy server to use (blank means no proxy will be used)</span>
+
+    <label>Server Port</label>
+    <input type="text" name="proxy_port" placeholder="e.g. 8080">
+    <span class="help-block">Enter the port of the proxy server to use</span>
+
+    <label>Server Type</label>
+    <select name="proxy_type">
+        <option value="">(no proxy used)</option>
+        <option value="http">HTTP</option>
+        <option value="socks4">SOCKS4</option>
+        <option value="socks5">SOCKS5</option>
+    </select>
+    <span class="help-block">Select the protocol that the proxy server uses</span>
+
+  </fieldset>
+
+  <fieldset>
+    <legend>Proxy Server Authentication</legend>
+
+    <label>Username</label>
+    <input type="text" name="proxy_user">
+    <span class="help-block">Enter the username to use when authenticating to the proxy server (blank means no username will be used)</span>
+
+    <label>Password</label>
+    <input type="password" name="proxy_password">
+    <span class="help-block">Enter the password of the proxy username</span>
+
+    <label>Password (Confirm)</label>
+    <input type="password" name="proxy_password_confirm">
+    
+  </fieldset>
+
+
+  <fieldset>
+    <legend>Advanced</legend>
+
+    <label>Thread Limit</label>
+    <input type="text" name="thread_limit" placeholder="e.g. 50">
+    <span class="help-block">Enter the maximum number of concurrent threads (default is 200)</span>
+
+    
+  </fieldset>
+
+
+  <a href="#" class="btn btn-primary" id="save-config">Save Configuration</a>
+  
+</form>
