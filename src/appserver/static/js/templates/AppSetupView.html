@@ -2,7 +2,7 @@
   <fieldset>
     <legend>Proxy Server</legend>
 
-    <div class="control-group">
+    <div class="control-group proxy-address">
         <label class="control-label">Server Address</label>
         <div class="controls">
             <input type="text" name="proxy_server" placeholder="e.g. proxy.example.com">
@@ -47,7 +47,7 @@
         </div>
     </div>
 
-    <div class="control-group">
+    <div class="control-group proxy-password">
         <label class="control-label">Password</label>
         <div class="controls">
             <input type="password" name="proxy_password">
@@ -56,10 +56,11 @@
         </div>
     </div>
 
-    <div class="control-group">    
+    <div class="control-group proxy-password-confirm">    
         <label class="control-label">Password (Confirm)</label>
         <div class="controls">
             <input type="password" name="proxy_password_confirm">
+            <span class="help-inline"></span>
         </div>
     </div>
     
@@ -69,10 +70,11 @@
   <fieldset>
     <legend>Advanced</legend>
 
-    <div class="control-group">
+    <div class="control-group thread-limit">
         <label class="control-label">Thread Limit</label>
         <div class="controls">
             <input type="text" name="thread_limit" placeholder="e.g. 50">
+            <span class="help-inline"></span>
             <span class="help-block">Enter the maximum number of concurrent threads (default is 200)</span>
         </div>
     </div>

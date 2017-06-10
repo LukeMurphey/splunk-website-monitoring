@@ -55,6 +55,9 @@ define([
             }
         },
 
+        /**
+         * Below is a list of accessors for the form fields.
+         */
         getProxyUser: function(){
             return $('.proxy-user input', this.$el).val();
         },
@@ -63,8 +66,53 @@ define([
             return $('.proxy-port input', this.$el).val();
         },
 
-        isInteger: function(value){
-            if(isNaN(parseInt(value, 10))){
+        getThreadLimit: function(){
+            return $('.thread-limit input', this.$el).val();
+        },
+
+        getProxyPassword: function(){
+            return $('.proxy-password input', this.$el).val();
+        },
+
+        getProxyPasswordConfirmation: function(){
+            return $('.proxy-password-confirm input', this.$el).val();
+        },
+
+        /**
+         * Below is a list of validators for the form fields.
+         */
+        isValidPort: function(value){
+            var port = parseInt(value, 10); 
+
+            if(isNaN(port)){
+                return false;
+            }
+            else if(port < 1 || port > 65535){
+                return false;
+            }
+            else{
+                return true;
+            }
+        },
+
+        isValidThreadLimit: function(value){
+            var threads = parseInt(value, 10); 
+
+            if(isNaN(threads)){
+                return false;
+            }
+            else if(threads < 1){
+                return false;
+            }
+            else{
+                return true;
+            }
+        },
+
+        matchesPassword: function(value){
+            var originalPassword = this.getProxyPassword();
+
+            if(originalPassword !== value){
                 return false;
             }
             else{
@@ -76,7 +124,9 @@ define([
          * Setup the validators so that we can detect bad input
          */
         setupValidators: function(){
-            this.addValidator('.proxy-port', this.getServerPort.bind(this), this.isInteger, "Port must be a valid integer");
+            this.addValidator('.proxy-port', this.getServerPort.bind(this), this.isValidPort, "Must be a valid port number");
+            this.addValidator('.thread-limit', this.getThreadLimit.bind(this), this.isValidThreadLimit, "Must be an integer greater than 0");
+            this.addValidator('.proxy-password-confirm', this.getProxyPasswordConfirmation.bind(this), this.matchesPassword.bind(this), "Must match the password");
         },
     });
 });
