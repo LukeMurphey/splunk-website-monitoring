@@ -65,6 +65,12 @@ define([
 });
  */
 
+require.config({
+    paths: {
+        "ValidationView": "../app/website_monitoring/js/views/ValidationView"
+    }
+});
+
 define([
     "underscore",
     "backbone",
@@ -72,7 +78,7 @@ define([
     "jquery",
     "models/SplunkDBase",
     "collections/SplunkDsBase",
-    "splunkjs/mvc/simplesplunkview",
+    "ValidationView",
     "util/splunkd_utils",
     "splunkjs/mvc/utils"
 ], function(
@@ -82,7 +88,7 @@ define([
     $,
     SplunkDBaseModel,
     SplunkDsBaseCollection,
-    SimpleSplunkView,
+    ValidationView,
     splunkd_utils,
     mvc_utils
 ){
@@ -107,7 +113,7 @@ define([
 	    }
 	});
 
-    return SimpleSplunkView.extend({
+    return ValidationView.extend({
         className: "SetupView",
         
         defaults: {
@@ -118,6 +124,7 @@ define([
 
             // Merge the provided options and the defaults
         	this.options = _.extend({}, this.defaults, this.options);
+            ValidationView.prototype.initialize.apply(this, [this.options]);
         	
         	// Get the app name
         	this.app_name = this.options.app_name;
