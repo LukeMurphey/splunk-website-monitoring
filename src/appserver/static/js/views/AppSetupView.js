@@ -32,12 +32,15 @@ define([
         },
 
         saveConfig: function(){
+
             if(!this.userHasAdminAllObjects()){
                 alert("You don't have permission to edit this app");
             }
             else if(this.validate()){
                 this.setConfigured();
             }
+
+            return false;
         },
         
         render: function () {
@@ -58,6 +61,10 @@ define([
         /**
          * Below is a list of accessors for the form fields.
          */
+        getProxyServer: function(){
+            return $('.proxy-address input', this.$el).val();
+        },
+
         getProxyUser: function(){
             return $('.proxy-user input', this.$el).val();
         },
@@ -84,7 +91,10 @@ define([
         isValidPort: function(value){
             var port = parseInt(value, 10); 
 
-            if(isNaN(port)){
+            if(value === ''){
+                return true;
+            }
+            else if(isNaN(port)){
                 return false;
             }
             else if(port < 1 || port > 65535){
@@ -120,10 +130,27 @@ define([
             }
         },
 
+        isValidServer: function(value){
+
+            var domainRegex = /^[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9](?:\.[a-zA-Z]{2,})+$/gm;
+            var ipRegex = /\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/g;
+
+            if(value === ''){
+                return true;
+            }
+            else if(domainRegex.exec(value) || ipRegex.exec(value)){
+                return true;
+            }
+            else{
+                return false;
+            }
+        },
+
         /**
          * Setup the validators so that we can detect bad input
          */
         setupValidators: function(){
+            this.addValidator('.proxy-address', this.getProxyServer.bind(this), this.isValidServer, "Must be a valid domain name or IP address");
             this.addValidator('.proxy-port', this.getServerPort.bind(this), this.isValidPort, "Must be a valid port number");
             this.addValidator('.thread-limit', this.getThreadLimit.bind(this), this.isValidThreadLimit, "Must be an integer greater than 0");
             this.addValidator('.proxy-password-confirm', this.getProxyPasswordConfirmation.bind(this), this.matchesPassword.bind(this), "Must match the password");
