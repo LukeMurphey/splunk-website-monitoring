@@ -120,6 +120,26 @@ define([
         	app_name: null
         },
 
+        /**
+         * Override this in order to have the class make setters and getters for you.
+         * 
+         * Consider this example:
+         * 
+         *    formProperties: {
+         *        'proxyServer' : '.proxy-address input'
+         *     }
+         * 
+         * This would cause two functions to be created:
+         * 
+         *     * setProxyServer(newValue)
+         *     * getProxyServer()
+         * 
+         * The functions will call $('.proxy-address input', this.$el).val() to set or get the value accordingly.
+         */
+        formProperties: {
+            // 'proxyServer' : '.proxy-address input'
+        },
+
         initialize: function() {
 
             // Merge the provided options and the defaults
@@ -143,6 +163,8 @@ define([
 
             // This stores a list of existing credentials
             this.credentials = null;
+
+            this.setupProperties();
         },
 
         /**
@@ -179,6 +201,40 @@ define([
             }
 
             return realm + ":" + username + ":";
+        },
+
+        capitolizeFirstLetter: function (string){
+            return string.charAt(0).toUpperCase() + string.slice(1);
+        },
+
+        /**
+         * Setup a property that allows the given attribute to be.
+         */
+        setupProperty: function(propertyName, selector){
+
+            var setterName = 'set' + this.capitolizeFirstLetter(propertyName);
+            var getterName = 'get' + this.capitolizeFirstLetter(propertyName);
+
+            if(this[setterName] === undefined){
+                this[setterName] = function(value){
+                    $(selector, this.$el).val(value);
+                };
+            }
+
+            if(this[getterName] === undefined){
+                this[getterName] = function(value){
+                    return $(selector, this.$el).val();
+                };
+            }
+        },
+
+        /**
+         * Register properties for all of the properties.
+         */
+        setupProperties: function(){
+            for(var name in this.formProperties){
+                this.setupProperty(name, this.formProperties[name]);
+            }
         },
 
         /**

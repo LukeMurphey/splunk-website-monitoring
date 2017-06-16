@@ -8,14 +8,25 @@ require.config({
 define([
     "underscore",
     "jquery",
+    "models/SplunkDBase",
     "setup_view",
+    "util/splunkd_utils",
     "text!../app/website_monitoring/js/templates/AppSetupView.html",
+    "css!../app/website_monitoring/css/AppSetupView.css"
 ], function(
     _,
     $,
+    SplunkDBaseModel,
     SetupView,
+    splunkd_utils,
     Template
 ){
+
+    var WebsiteMonitoringConfiguration = SplunkDBaseModel.extend({
+	    initialize: function() {
+	    	SplunkDBaseModel.prototype.initialize.apply(this, arguments);
+	    }
+	});
 
     return SetupView.extend({
         className: "AppSetupView",
@@ -24,11 +35,53 @@ define([
             "click #save-config" : "saveConfig"
         },
 
+        formProperties: {
+            'proxyServer' : '.proxy-address input',
+            'proxyUser' : '.proxy-user input',
+            'proxyServerPort' : '.proxy-port input',
+            'threadLimit' : '.thread-limit input',
+            'proxyPassword' : '.proxy-password input',
+            'proxyPasswordConfirmation' : '.proxy-password-confirm input',
+            'proxyType' : '.proxy-type select'
+        },
+
         initialize: function() {
         	this.options = _.extend({}, this.defaults, this.options);
             SetupView.prototype.initialize.apply(this, [this.options]);
 
             this.setupValidators();
+
+            this.website_monitoring_configuration = new WebsiteMonitoringConfiguration();
+
+            this.website_monitoring_configuration.fetch({
+                url: '/splunkd/services/admin/website_monitoring/default',
+                id: 'default',
+                success: function (model, response, options) {
+                    console.info("Successfully retrieved the default website_monitoring configuration");
+                    this.setProxyServer(model.entry.content.attributes.proxy_server);
+                    this.setProxyServerPort(model.entry.content.attributes.proxy_port);
+                    this.setProxyType(model.entry.content.attributes.proxy_type);
+
+                    this.setThreadLimit(model.entry.content.attributes.thread_limit);
+
+                    this.setProxyUser(model.entry.content.attributes.proxy_user);
+                    this.setProxyPassword(model.entry.content.attributes.proxy_password);
+                }.bind(this),
+                error: function () {
+                    console.warn("Unsuccessfully retrieved the default website_monitoring configuration");
+                }.bind(this)
+            });
+        },
+
+        updateModel: function(){
+            this.website_monitoring_configuration.entry.content.attributes.proxy_server = this.getProxyServer();
+            this.website_monitoring_configuration.entry.content.attributes.proxy_port = this.getProxyServerPort();
+            this.website_monitoring_configuration.entry.content.attributes.proxy_type = this.getProxyType();
+
+            this.website_monitoring_configuration.entry.content.attributes.proxy_user = this.getProxyUser();
+            this.website_monitoring_configuration.entry.content.attributes.proxy_password = this.getProxyPassword();
+
+            this.website_monitoring_configuration.entry.content.attributes.thread_limit = this.getThreadLimit();
         },
 
         saveConfig: function(){
@@ -37,6 +90,10 @@ define([
                 alert("You don't have permission to edit this app");
             }
             else if(this.validate()){
+                // Update the model
+                this.updateModel();
+                this.website_monitoring_configuration.save();
+
                 this.setConfigured();
             }
 
@@ -50,39 +107,10 @@ define([
                 this.$el.html(_.template(Template, {
                     'has_permission' : this.userHasAdminAllObjects()
                 }));
-
-                //this.$el.html('This is my custom setup page <br /><br /><a href="#" class="btn btn-primary" id="save-config">Save Configuration</a>');
             }
             else{
                 this.$el.html("Sorry, you don't have permission to perform setup");
             }
-        },
-
-        /**
-         * Below is a list of accessors for the form fields.
-         */
-        getProxyServer: function(){
-            return $('.proxy-address input', this.$el).val();
-        },
-
-        getProxyUser: function(){
-            return $('.proxy-user input', this.$el).val();
-        },
-
-        getServerPort: function(){
-            return $('.proxy-port input', this.$el).val();
-        },
-
-        getThreadLimit: function(){
-            return $('.thread-limit input', this.$el).val();
-        },
-
-        getProxyPassword: function(){
-            return $('.proxy-password input', this.$el).val();
-        },
-
-        getProxyPasswordConfirmation: function(){
-            return $('.proxy-password-confirm input', this.$el).val();
         },
 
         /**
@@ -150,8 +178,9 @@ define([
          * Setup the validators so that we can detect bad input
          */
         setupValidators: function(){
+            // Note: the getters are defined by the SetupView which creates the setters and getters from formProperties
             this.addValidator('.proxy-address', this.getProxyServer.bind(this), this.isValidServer, "Must be a valid domain name or IP address");
-            this.addValidator('.proxy-port', this.getServerPort.bind(this), this.isValidPort, "Must be a valid port number");
+            this.addValidator('.proxy-port', this.getProxyServerPort.bind(this), this.isValidPort, "Must be a valid port number");
             this.addValidator('.thread-limit', this.getThreadLimit.bind(this), this.isValidThreadLimit, "Must be an integer greater than 0");
             this.addValidator('.proxy-password-confirm', this.getProxyPasswordConfirmation.bind(this), this.matchesPassword.bind(this), "Must match the password");
         },
