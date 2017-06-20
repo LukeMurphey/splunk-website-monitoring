@@ -51,26 +51,7 @@ define([
 
             this.setupValidators();
 
-            this.website_monitoring_configuration = new WebsiteMonitoringConfiguration();
-
-            this.website_monitoring_configuration.fetch({
-                url: '/splunkd/services/admin/website_monitoring/default',
-                id: 'default',
-                success: function (model, response, options) {
-                    console.info("Successfully retrieved the default website_monitoring configuration");
-                    this.setProxyServer(model.entry.content.attributes.proxy_server);
-                    this.setProxyServerPort(model.entry.content.attributes.proxy_port);
-                    this.setProxyType(model.entry.content.attributes.proxy_type);
-
-                    this.setThreadLimit(model.entry.content.attributes.thread_limit);
-
-                    this.setProxyUser(model.entry.content.attributes.proxy_user);
-                    this.setProxyPassword(model.entry.content.attributes.proxy_password);
-                }.bind(this),
-                error: function () {
-                    console.warn("Unsuccessfully retrieved the default website_monitoring configuration");
-                }.bind(this)
-            });
+            this.website_monitoring_configuration = null;
         },
 
         updateModel: function(){
@@ -100,17 +81,63 @@ define([
             return false;
         },
         
+        setControlsEnabled: function(enabled){
+
+            if(enabled === undefined){
+                enabled = true;
+            }
+
+            $('input,select', this.el).prop('disabled', !enabled);
+
+        },
+
+        fetchAppConfiguration: function(){
+            this.website_monitoring_configuration = new WebsiteMonitoringConfiguration();
+
+            this.setControlsEnabled(false);
+
+            this.website_monitoring_configuration.fetch({
+                url: '/splunkd/services/admin/website_monitoring/default',
+                id: 'default',
+                success: function (model, response, options) {
+                    console.info("Successfully retrieved the default website_monitoring configuration");
+                    this.setProxyServer(model.entry.content.attributes.proxy_server);
+                    this.setProxyServerPort(model.entry.content.attributes.proxy_port);
+                    this.setProxyType(model.entry.content.attributes.proxy_type);
+
+                    this.setThreadLimit(model.entry.content.attributes.thread_limit);
+
+                    this.setProxyUser(model.entry.content.attributes.proxy_user);
+                    this.setProxyPassword(model.entry.content.attributes.proxy_password);
+
+                    this.setControlsEnabled(true);
+                }.bind(this),
+                error: function () {
+                    console.warn("Unsuccessfully retrieved the default website_monitoring configuration");
+                    this.setControlsEnabled(true);
+                }.bind(this)
+            });
+        },
+
         render: function () {
+
             if(this.userHasAdminAllObjects()){
 
                 // Render the view
                 this.$el.html(_.template(Template, {
                     'has_permission' : this.userHasAdminAllObjects()
                 }));
+
+                // Start the process of loading the app configurtion if necessary
+                if(this.website_monitoring_configuration === null){
+                    this.fetchAppConfiguration();
+                }
+
             }
             else{
                 this.$el.html("Sorry, you don't have permission to perform setup");
             }
+
         },
 
         /**
