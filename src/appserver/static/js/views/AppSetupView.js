@@ -73,8 +73,22 @@ define([
             else if(this.validate()){
                 // Update the model
                 this.updateModel();
-                this.website_monitoring_configuration.save();
+                var saveResponse = this.website_monitoring_configuration.save();
 
+                if(saveResponse){
+
+                    // If successful, show a success message
+                    saveResponse.done(function(model, response, options){
+                        this.showInfoMessage("Configuration successfully saved");
+                    }.bind(this))
+
+                    // Otherwise, show a failure message
+                    .fail(function(response){
+                        this.showWarningMessage("Configuration could not be saved");
+                    }.bind(this));
+
+                }
+                
                 this.setConfigured();
             }
 
