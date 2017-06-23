@@ -79,6 +79,12 @@
 	          <view name="create"/>
 	          <key name="exampleText">The password to use for authenticating (only HTTP authentication supported)</key>
 	        </element>
+
+					<element name="secure_password_storage_fix" type="secure_password_storage">
+						<view name="edit"/>
+	          <view name="create"/>
+						<key name="prefix">web_ping://</key>
+					</element>
 	      </elements>
 	  	</element>
 	  	
