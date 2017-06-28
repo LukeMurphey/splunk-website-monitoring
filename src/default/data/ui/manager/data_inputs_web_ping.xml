@@ -67,7 +67,7 @@
 	      <view name="edit"/>
 	      <view name="create"/>
 	      <elements>
-	      
+	      <!--
 	        <element name="username" type="textfield" label="Username">
 	          <view name="edit"/>
 	          <view name="create"/>
@@ -79,11 +79,13 @@
 	          <view name="create"/>
 	          <key name="exampleText">The password to use for authenticating (only HTTP authentication supported)</key>
 	        </element>
-
-					<element name="secure_password_storage_fix" type="secure_password_storage">
+					-->
+					<element name="secure_password_storage" type="secure_password_storage">
 						<view name="edit"/>
 	          <view name="create"/>
 						<key name="prefix">web_ping://</key>
+						<key name="passwordExampleText">The password to use for authenticating (only HTTP authentication supported)</key>
+						<key name="usernameExampleText">The username to use for authenticating (only HTTP authentication supported)</key>
 					</element>
 	      </elements>
 	  	</element>
