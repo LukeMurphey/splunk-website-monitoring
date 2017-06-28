@@ -593,6 +593,14 @@ class WebPing(ModularInput):
         user_agent = cleaned_params.get("user_agent", None)
         source = stanza
 
+        # Get the secure password if necessary
+        if username is not None:
+            secure_password = self.get_secure_password(stanza, input_config.session_key)
+
+            if secure_password is not None:
+                password = secure_password['content']['clear_password']
+                self.logger.debug("Successfully loaded the secure password for input=%s", stanza)
+
         # Load the thread_limit if necessary
         # This should only be necessary once in the processes lifetime
         if self.default_app_config is None:
