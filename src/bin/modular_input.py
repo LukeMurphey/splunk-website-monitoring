@@ -1,8 +1,121 @@
+"""
+This is a base class for making Python modular inputs for Splunk.
+
+To make a modular input based on this class, you should follow the steps defined below.
+
+Note that this example assumes you are making an input named "my_input_name".
+
+________________________________________________________
+1) Define the input in inputs.conf.spec
+
+You will need to define you input in a spec file within the following directory within your app:
+
+    README/inputs.conf.spec
+
+You should define your input in the inputs.conf.spec by declaring the fields your input accepts.
+This file should look something like this:
+
+    [my_input_name://default]
+    * Configure an input for do something
+
+    title = <value>
+    * The title of the input
+
+    url = <value>
+    * The URL to be checked
+________________________________________________________
+2) Include this module in your app
+
+Put this module within your app. You can put this within you bin directory or within a
+sub-directory of the bin directory. I generally recommend putting python modules under the bin
+directory with a directory that is specific to your app. Something like:
+
+    bin/my_app_name/modular_input.py
+
+________________________________________________________
+3) Define defaults for your inputs in inputs.conf
+
+You can define default values for your inputs within the inputs.conf file. This file would be:
+
+    default/inputs.conf
+
+The contents of the file would be something like this:
+
+    [my_input_name]
+    url = http://mydefaulturl.com
+
+
+________________________________________________________
+4) Create your modular input class
+
+Create your modular input class. This class must be named the same as your input name and it must
+be placed within the bin directory. In this example, the input should be in the following path
+since the input is named "my_input_name":
+
+    bin/my_input_name.py
+
+Below is an example of a modular input class. This class does the following:
+
+    1) Defines the scheme_args which provides some info about the modular input
+    2) Defines the parameters that the input accepts
+    3) Runs the modular input
+
+
+    import sys
+    from modular_input import Field, ModularInput, URLField
+
+    class MyInput(ModularInput):
+        def __init__(self, timeout=30):
+
+            scheme_args = {'title': "My input name",
+                           'description': "This input is an example",
+                           'use_external_validation': "true",
+                           'streaming_mode': "xml",
+                           'use_single_instance': "true"}
+
+            args = [
+                    Field("title", "Title", "A short description of the input", empty_allowed=False),
+                    URLField("url", "URL", "The URL to connect to", empty_allowed=False)
+            ]
+
+            ModularInput.__init__(self, scheme_args, args, logger_name='my_input_modular_input')
+
+        def run(self, stanza, cleaned_params, input_config):
+
+            interval = cleaned_params["interval"]
+            title = cleaned_params["title"]
+            host = cleaned_params.get("host", None)
+            index = cleaned_params.get("index", "default")
+            sourcetype = cleaned_params.get("sourcetype", "my_app_name")
+
+            url = cleaned_params["url"]
+
+            if self.needs_another_run(input_config.checkpoint_dir, stanza, interval):
+                self.logger.debug("Your input should do something here, stanza=%s", stanza)
+
+    if __name__ == '__main__':
+
+        my_input = None
+
+        try:
+            my_input = MyInput()
+            my_input.execute()
+            sys.exit(0)
+        except Exception as e:
+
+            # This logs general exceptions that would have been unhandled otherwise (such as coding
+            # errors)
+            if my_input is not None and my_input.logger is not None:
+                my_input.logger.exception("Unhandled exception was caught, this may be due to a defect in the script")
+            else:
+                raise e
+
+"""
+
 import logging
 from logging import handlers
-from xml.dom.minidom import Document
-import traceback
 import xml.dom
+from xml.dom.minidom import Document
 import sys
 import re
 import time
@@ -396,11 +509,11 @@ class DeprecatedField(Field):
         required_on_edit -- Is this field required when editing?
         """
 
-        return super(DeprecatedField, self).__init__(name, title, description,
-                                                     none_allowed=none_allowed,
-                                                     empty_allowed=empty_allowed,
-                                                     required_on_create=required_on_create,
-                                                     required_on_edit=required_on_edit)
+        super(DeprecatedField, self).__init__(name, title, description,
+                                              none_allowed=none_allowed,
+                                              empty_allowed=empty_allowed,
+                                              required_on_create=required_on_create,
+                                              required_on_edit=required_on_edit)
 
     def to_python(self, value):
         return None
@@ -518,12 +631,17 @@ class ModularInput():
         BooleanField("disabled", "Disabled", "Whether the modular input is disabled or not", empty_allowed=True)
     ]
 
+    title = 'No title was provided'
+    use_external_validation = True
+    description = ""
+    streaming_mode = 'true'
+
     def _is_valid_param(self, name, val):
         '''Raise an error if the parameter is None or empty.'''
         if val is None:
             raise ValueError("The {0} parameter cannot be none".format(name))
 
-        if len(val.strip()) == 0:
+        if len(str(val).strip()) == 0:
             raise ValueError("The {0} parameter cannot be empty".format(name))
 
         return val
@@ -1048,7 +1166,6 @@ class ModularInput():
             # Allow the interval argument since it is internal but allowed even if not explicitly
             # declared
             elif name == "interval" and self.use_single_instance == False:
-                self.logger.warn("use_single_instance=%r", self.use_single_instance)
                 pass
 
             # Throw an exception if the argument could not be found
@@ -1079,13 +1196,14 @@ class ModularInput():
 
         return ModularInputConfig.get_config_from_xml(config_str_xml)
 
-    def run(self, stanza, cleaned_params):
+    def run(self, stanza, cleaned_params, input_config):
         """
         Run the input using the arguments provided.
 
         Arguments:
         stanza -- The name of the stanza
         cleaned_params -- The arguments following validation and conversion to Python objects.
+        input_config -- A dictionary that provides configuration data like session keys
         """
 
         raise Exception("Run function was not implemented")
@@ -1291,6 +1409,10 @@ class ModularInput():
         # Run the modular import
         input_config = self.read_config(in_stream)
 
+        if input_config is None:
+            self.logger.error("Did not receive an input configuration stream from Splunk, input will not run")
+            return
+
         while True:
 
             # If Splunk is no longer the parent process, then it has shut down and this input
@@ -1307,14 +1429,19 @@ class ModularInput():
 
                 try:
                     cleaned_params = self.validate_parameters(stanza, conf)
-                    self.run(stanza,
-                             cleaned_params,
-                             input_config)
+                    self.run(stanza, cleaned_params, input_config)
+
                 except FieldValidationException as exception:
                     if log_exception_and_continue:
                         self.logger.error("The input stanza '%s' is invalid: %s" % (stanza, str(exception)))
                     else:
                         raise exception
+
+            # Stop if the input is not running in single instance mode and allow Splunk to manage
+            # scheduling this input
+            if not self.use_single_instance:
+                self.logger.info("Successfully executed all of the inputs")
+                break
 
             # Sleep for a bit
             try:
