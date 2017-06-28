@@ -127,6 +127,7 @@ from threading import RLock
 
 from splunk.appserver.mrsparkle.lib.util import make_splunkhome_path
 from splunk.util import normalizeBoolean as normBool
+import splunk.rest
 
 class FieldValidationException(Exception):
     pass
@@ -976,6 +977,28 @@ class ModularInput():
     @logger.setter
     def logger(self, logger):
         self._logger = logger
+
+    def get_secure_password(self, realm, session_key):
+        """
+        Get the secure password that matches the given realm.
+        """
+
+        # Get secure passwords
+        server_response, server_content = splunk.rest.simpleRequest('/services/storage/passwords?output_mode=json', sessionKey=session_key)
+
+        if server_response['status'] != '200':
+            raise Exception("Could not get the secure passwords")
+
+        passwords_content = json.loads(server_content)
+        passwords = passwords_content['entry']
+
+        # Filter down output to the ones matching the realm
+        matching_passwords = filter(lambda x: x['content']['realm'] == realm, passwords)
+
+        if len(matching_passwords) > 0:
+            return matching_passwords[0]
+        else:
+            return None
 
     def bool_to_str(self, bool_value):
         """
