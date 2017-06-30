@@ -203,6 +203,9 @@ define([
             return realm + ":" + username + ":";
         },
 
+        /**
+         * Capitolize the first letter of the string.
+         */
         capitolizeFirstLetter: function (string){
             return string.charAt(0).toUpperCase() + string.slice(1);
         },
