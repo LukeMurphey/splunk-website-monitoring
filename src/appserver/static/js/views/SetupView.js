@@ -108,6 +108,7 @@ define([
 
 	var EncryptedCredentials = SplunkDsBaseCollection.extend({
 	    url: "storage/passwords",
+        model: EncryptedCredential,
 	    initialize: function() {
 	      SplunkDsBaseCollection.prototype.initialize.apply(this, arguments);
 	    }
@@ -243,7 +244,11 @@ define([
         /**
          * Get the encrypted credential by realm.
          */
-        getEncryptedCredentialByRealm: function(realm){
+        getEncryptedCredentialByRealm: function(realm, returnAll){
+
+            if(typeof returnAll === "undefined"){
+                returnAll = false;
+            }
     
             // Get a promise ready
             var promise = jQuery.Deferred();
@@ -251,28 +256,33 @@ define([
             // Get the credentials
         	credentials = new EncryptedCredentials();
         	
-        	credentials.fetch({
-                success: function(credentials) {
-                  console.info("Successfully retrieved the list of credentials");
-                  
-                  // Find the credential
-                  credentialModel = null;
+            credentials.fetch({
+                success: function (credentials) {
+                    console.info("Successfully retrieved the list of credentials");
 
-                  for(var c = 0; c < credentials.models.length; c++){
-                      
-                      // Stop if we found the item with the given realm
-                      if(credentials.models[c].entry.content.attributes.realm === realm){
-                          credentialModel = credentials.models[c];
-                          break;
-                      }
-                  }
+                    // Find the credential(s) with the realm
+                    var credentialModels = credentials.models[c].filter(function (entry) {
+                        return credentials.models[c].entry.content.attributes.realm === realm;
+                    });
 
-                  // Resolve with the credential we found
-                  promise.resolve(credentialModel);
+                    // Return all of them if requested
+                    if (returnAll) {
+                        promise.resolve(credentialModels);
+                    }
+
+                    // Return the first if they only wanted one
+                    else if (credentialModels.length > 0) {
+                        promise.resolve(credentialModels[0]);
+                    }
+
+                    // We found none, return null
+                    else {
+                        promise.resolve(null);
+                    }
                 },
-                error: function() {
-                  console.error("Unable to fetch the credential");
-                  promise.reject();
+                error: function () {
+                    console.error("Unable to fetch the credential");
+                    promise.reject();
                 }
             });
 
@@ -282,7 +292,11 @@ define([
         /**
          * Get the encrypted credential.
          */
-        getEncryptedCredential: function(stanza){
+        getEncryptedCredential: function(stanza, ignoreNotFound){
+
+            if(typeof ignoreNotFound === "undefined"){
+                ignoreNotFound = false;
+            }
 
             // Get a promise ready
         	var promise = jQuery.Deferred();
@@ -298,8 +312,13 @@ define([
                     promise.resolve(model);
                 }.bind(this),
                 error: function () {
-                    console.warn("Unable to retrieve the encrypted credential");
-                    promise.reject();
+                    if(ignoreNotFound){
+                        promise.resolve(null);
+                    }
+                    else{
+                        console.warn("Unable to retrieve the encrypted credential");
+                        promise.reject();
+                    }
                 }.bind(this)
             });
 
@@ -353,22 +372,66 @@ define([
         },
 
         /**
-         * Save the encrypted crendential. This will create a new encrypted credential if it doesn't exist.
+         * Delete the encrypted credential. This will create a new encrypted credential if it doesn't exist.
+         * 
+         * If it does exist, it will modify the existing credential.
+         */
+        deleteEncryptedCredential: function(stanza, ignoreNotFound){
+
+            if(typeof ignoreNotFound === "undefined"){
+                ignoreNotFound = false;
+            }
+
+            // Get a promise ready
+            var promise = jQuery.Deferred();
+
+            // See if the credential already exists and delete.
+            $.when(this.getEncryptedCredential(stanza)).done(
+
+                // Delete the entry
+                function(credentialModel){
+                    credentialModel.destroy().done(function(){
+                        promise.resolve();
+                    }.bind(this));
+                }.bind(this)
+            )
+            .fail(
+                function(){
+                    if(ignoreNotFound){
+                        promise.resolve();
+                    }
+                    else{
+                        promise.reject();
+                    }
+                }.bind(this)
+            );
+
+            return promise;
+
+        },
+
+        /**
+         * Save the encrypted credential. This will create a new encrypted credential if it doesn't exist.
          * 
          * If it does exist, it will modify the existing credential.
          */
         saveEncryptedCredential: function(username, password, realm){
 
+            // Get a promise ready
+            var promise = jQuery.Deferred();
+
             // Verify the username
             if(this.isEmpty(username)){
                 alert("The username field cannot be empty");
-                return;
+                promise.reject("The username field cannot be empty");
+                return promise;
             }
 
             // Verify the password
             if(this.isEmpty(password, true)){
                 alert("The password field cannot be empty");
-                return;
+                promise.reject("The password field cannot be empty");
+                return promise;
             }
 
             // Create a reference to the stanza name so that we can find if a credential already exists
@@ -384,6 +447,7 @@ define([
                     $.when(this.postEncryptedCredential(credentialModel, username, password, realm)).done(function(){
                         // Run the function that happens when a credential was saved
                         this.credentialSuccessfullySaved(false);
+                        promise.resolve();
                     }.bind(this));
 
                     
@@ -402,10 +466,13 @@ define([
                     $.when(this.postEncryptedCredential(credentialModel, username, password, realm)).done(function(){
                         // Run the function that happens when a credential was saved
                         this.credentialSuccessfullySaved(true);
+                        promise.resolve();
                     }.bind(this));
     
                 }.bind(this)
             );
+
+            return promise;
 
         },
 

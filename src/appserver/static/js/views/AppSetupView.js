@@ -35,6 +35,11 @@ define([
             "click #save-config" : "saveConfig"
         },
 
+        defaults: {
+            "secure_storage_realm" : "website_monitoring_app_proxy",
+            "secure_storage_username" : "IN_CONF_FILE"
+        },
+
         formProperties: {
             'proxyServer' : '.proxy-address input',
             'proxyUser' : '.proxy-user input',
@@ -52,6 +57,7 @@ define([
             this.setupValidators();
 
             this.website_monitoring_configuration = null;
+            this.secure_storage_stanza = this.makeStorageEndpointStanza(this.options.secure_storage_username, this.options.secure_storage_realm);
         },
 
         updateModel: function(){
@@ -60,9 +66,21 @@ define([
             this.website_monitoring_configuration.entry.content.attributes.proxy_type = this.getProxyType();
 
             this.website_monitoring_configuration.entry.content.attributes.proxy_user = this.getProxyUser();
-            this.website_monitoring_configuration.entry.content.attributes.proxy_password = this.getProxyPassword();
+            this.website_monitoring_configuration.entry.content.attributes.proxy_password = ""; //This will be stored in secure storage; this.getProxyPassword();
 
             this.website_monitoring_configuration.entry.content.attributes.thread_limit = this.getThreadLimit();
+        },
+
+        savePassword: function(){
+            var password = this.getProxyPassword();
+
+            // Delete the secured password if the password was cleared
+            if(password.length === 0){
+                return this.deleteEncryptedCredential(this.secure_storage_stanza, true);
+            }
+            else{
+                return this.saveEncryptedCredential(this.options.secure_storage_username, password, this.options.secure_storage_realm);
+            }
         },
 
         saveConfig: function(){
@@ -71,30 +89,34 @@ define([
                 alert("You don't have permission to edit this app");
             }
             else if(this.validate()){
-                // Update the model
+                // Update the model with the latest info so that we can save it
                 this.updateModel();
-                var saveResponse = this.website_monitoring_configuration.save();
 
-                if(saveResponse){
-
-                    // If successful, show a success message
-                    saveResponse.done(function(model, response, options){
+                $.when(
+                    this.website_monitoring_configuration.save(),
+                    this.savePassword()
+                )
+                // If successful, show a success message
+                .then(
+                    function(){
                         this.showInfoMessage("Configuration successfully saved");
-                    }.bind(this))
-
-                    // Otherwise, show a failure message
-                    .fail(function(response){
-                        this.showWarningMessage("Configuration could not be saved");
-                    }.bind(this));
-
-                }
+                    }.bind(this)
+                )
+                // Otherwise, show a failure message
+                .fail(function (response) {
+                    this.showWarningMessage("Configuration could not be saved");
+                }.bind(this));
                 
+                // Set the app as configured
                 this.setConfigured();
             }
 
             return false;
         },
         
+        /**
+         * Sets the controls as enabled or disabled.
+         */
         setControlsEnabled: function(enabled){
 
             if(enabled === undefined){
@@ -105,12 +127,15 @@ define([
 
         },
 
+        /**
+         * Fetch the app configuration data.
+         */
         fetchAppConfiguration: function(){
             this.website_monitoring_configuration = new WebsiteMonitoringConfiguration();
 
             this.setControlsEnabled(false);
 
-            this.website_monitoring_configuration.fetch({
+            return this.website_monitoring_configuration.fetch({
                 url: '/splunkd/services/admin/website_monitoring/default',
                 id: 'default',
                 success: function (model, response, options) {
@@ -123,12 +148,10 @@ define([
 
                     this.setProxyUser(model.entry.content.attributes.proxy_user);
                     this.setProxyPassword(model.entry.content.attributes.proxy_password);
-
-                    this.setControlsEnabled(true);
+                    this.setProxyPasswordConfirmation(model.entry.content.attributes.proxy_password);
                 }.bind(this),
                 error: function () {
                     console.warn("Unsuccessfully retrieved the default website_monitoring configuration");
-                    this.setControlsEnabled(true);
                 }.bind(this)
             });
         },
@@ -144,7 +167,26 @@ define([
 
                 // Start the process of loading the app configurtion if necessary
                 if(this.website_monitoring_configuration === null){
-                    this.fetchAppConfiguration();
+
+                    this.setControlsEnabled(false);
+
+                    $.when(
+                        this.fetchAppConfiguration(),
+                        this.getEncryptedCredential(this.secure_storage_stanza, true)
+                    )
+                    // If successful, then load the 
+                    .then(
+                        function(a, credential){
+
+                            if(credential){
+                                this.setProxyPassword(credential.entry.content.attributes.clear_password);
+                                this.setProxyPasswordConfirmation(credential.entry.content.attributes.clear_password);
+                            }
+
+                            this.setControlsEnabled(true);
+                        }.bind(this)
+                    );
+
                 }
 
             }
