@@ -209,11 +209,10 @@ define([
                         '</div>';
 
             // Prepend the content if necessary
-            if($('#warning_message_dialog', this.$el).length === 0){
+            if($('#warning-message', this.$el).length === 0){
                 $(this.$el).prepend(html);
             }
-                
-            
+
         },
     });
 });
