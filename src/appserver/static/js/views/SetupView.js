@@ -193,6 +193,13 @@ define([
         },
 
         /**
+         * Escape the colons. This is necessary for secure password stanzas.
+         */
+        escapeColons: function(str){
+            return str.replace(":", "\\:");
+        },
+
+        /**
          * Make the stanza name for a entry in the storage/passwords endpoint from the username and realm.
          */
         makeStorageEndpointStanza: function(username, realm){
@@ -201,7 +208,7 @@ define([
                 realm = "";
             }
 
-            return realm + ":" + username + ":";
+            return this.escapeColons(realm) + ":" + this.escapeColons(username) + ":";
         },
 
         /**
