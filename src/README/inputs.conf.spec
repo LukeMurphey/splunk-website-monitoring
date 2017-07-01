@@ -23,6 +23,7 @@ username = <value>
 * Defines the username to use for authenticating (only HTTP authentication supported)
 
 password = <value>
+* DEPRECATED: the password should be stored in the secure password storage system
 * Defines the password to use for authenticating (only HTTP authentication supported)
 
 user_agent = <value>

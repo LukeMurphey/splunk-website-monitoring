@@ -19,11 +19,12 @@ proxy_port = <int>
     * Example: 8080
     
 proxy_user = <string>
-    * Defines the user account to use (leave blank to use no authentication)
+    * Defines the user account to use for the proxy (leave blank to use no authentication)
     * Examples: johndoe
     
 proxy_password = <string>
-    * Defines the user account to use (leave blank to use no authentication)
+    * DEPRECATED: the password should be stored in the secure password storage system
+    * Defines the proxy password to use (leave blank to use no authentication)
     * Examples: 0p3n_sesame
     
 proxy_type = <string>
