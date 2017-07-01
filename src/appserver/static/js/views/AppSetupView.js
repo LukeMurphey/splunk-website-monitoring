@@ -78,6 +78,7 @@ define([
             if(password.length === 0){
                 return this.deleteEncryptedCredential(this.secure_storage_stanza, true);
             }
+            // Otherwise, update it
             else{
                 return this.saveEncryptedCredential(this.options.secure_storage_username, password, this.options.secure_storage_realm);
             }
@@ -109,6 +110,8 @@ define([
                 
                 // Set the app as configured
                 this.setConfigured();
+
+                this.redirectIfNecessary("status_overview");
             }
 
             return false;

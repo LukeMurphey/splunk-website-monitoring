@@ -532,6 +532,17 @@ define([
         },
 
         /**
+         * Redirect users to the given view if the user was redirected to setup. This is useful for
+         * cases where the user was directed to perform setup because the app was not yet
+         * configured. This reproduces the same behavior as the original setup page does.
+         */
+        redirectIfNecessary: function(viewToRedirectTo){
+            if(Splunk.util.getParameter("redirect_to_custom_setup") === "1"){
+                document.location = viewToRedirectTo;
+            }
+        },
+
+        /**
          * Save the app config to note that it is now configured.
          */
         setConfigured: function(){
