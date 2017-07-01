@@ -652,15 +652,15 @@ class WebPing(ModularInput):
         # Determines if the input needs another run
         elif self.needs_another_run(input_config.checkpoint_dir, stanza, interval):
 
+            # Get the secure password if necessary
+            if username is not None:
+                secure_password = self.get_secure_password(realm=stanza, session_key=input_config.session_key)
+
+                if secure_password is not None:
+                    password = secure_password['content']['clear_password']
+                    self.logger.debug("Successfully loaded the secure password for input=%s", stanza)
+
             def run_ping():
-
-                # Get the secure password if necessary
-                if username is not None:
-                    secure_password = self.get_secure_password(realm=stanza, session_key=input_config.session_key)
-
-                    if secure_password is not None:
-                        password = secure_password['content']['clear_password']
-                        self.logger.debug("Successfully loaded the secure password for input=%s", stanza)
 
                 # Get the proxy configuration
                 try:

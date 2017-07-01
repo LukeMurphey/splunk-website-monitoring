@@ -1003,7 +1003,10 @@ class ModularInput():
 
         # Get secure password
         stanza = self.get_secure_password_stanza(username, realm)
-        server_response, server_content = splunk.rest.simpleRequest('/services/storage/passwords/' + stanza + '?output_mode=json', sessionKey=session_key)
+        try:
+            server_response, server_content = splunk.rest.simpleRequest('/services/storage/passwords/' + stanza + '?output_mode=json', sessionKey=session_key)
+        except splunk.ResourceNotFound:
+            return None
 
         if server_response['status'] == '404':
             return None
