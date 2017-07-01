@@ -93,6 +93,8 @@ define([
                 // Update the model with the latest info so that we can save it
                 this.updateModel();
 
+                this.showFormInProgress(true);
+
                 $.when(
                     this.website_monitoring_configuration.save(),
                     this.savePassword()
@@ -101,17 +103,21 @@ define([
                 .then(
                     function(){
                         this.showInfoMessage("Configuration successfully saved");
+
+                        this.showFormInProgress(false);
+                        this.redirectIfNecessary("status_overview");
+                        
                     }.bind(this)
                 )
                 // Otherwise, show a failure message
                 .fail(function (response) {
+                    this.showFormInProgress(false);
                     this.showWarningMessage("Configuration could not be saved");
                 }.bind(this));
                 
                 // Set the app as configured
                 this.setConfigured();
 
-                this.redirectIfNecessary("status_overview");
             }
 
             return false;
@@ -128,6 +134,21 @@ define([
 
             $('input,select', this.el).prop('disabled', !enabled);
 
+        },
+
+        /**
+         * Make the form as in progress.
+         */
+        showFormInProgress: function(inProgress){
+            $('.btn-primary').prop('disabled', inProgress);
+            this.setControlsEnabled(!inProgress);
+
+            if(inProgress){
+                $('.btn-primary').text("Saving Configuration...");
+            }
+            else{
+                $('.btn-primary').text("Save Configuration");
+            }
         },
 
         /**
