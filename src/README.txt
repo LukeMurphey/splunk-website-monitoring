@@ -184,5 +184,8 @@ Change History
 | 2.2     | Added ability to modify what is considered a failure (response time threshold and response codes)                |
 |         | Fixed issue preventing message from didn't appearing on the Status Overview page noting no inputs exist          |
 |         | Improved compatibility with Splunk 6.6                                                                           |
+|---------|------------------------------------------------------------------------------------------------------------------|
+| 2.3     | Added new simple XML setup page                                                                                  |
+|         | Passwords are now stored using Splunk's secure storage                                                           |
 +---------+------------------------------------------------------------------------------------------------------------------+
 
