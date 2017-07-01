@@ -177,9 +177,6 @@
 		  <view name="create"/>
 	      <view name="edit"/>
 		</element>
-	    <element name="password_copy_fix" type="password_copy_fix">
-	      <view name="edit"/>
-		</element>
 	    <element name="advanced" type="fieldset" class="spl-mgr-advanced-options">
 	      <view name="edit"/>
 	      <view name="create"/>
