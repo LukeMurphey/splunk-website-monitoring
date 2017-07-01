@@ -978,7 +978,44 @@ class ModularInput():
     def logger(self, logger):
         self._logger = logger
 
-    def get_secure_password(self, realm, session_key):
+    def escape_colons(self, string_to_escape):
+        """
+        Escape the colons. This is necessary for secure password stanzas.
+        """
+        return string_to_escape.replace(":", "\\:")
+
+    def get_secure_password_stanza(self, username, realm=""):
+        """
+        Make the stanza name for a entry in the storage/passwords endpoint from the username and
+        realm.
+        """
+        return self.escape_colons(realm) + ":" + self.escape_colons(username) + ":"
+
+    def get_secure_password(self, realm, username=None, session_key=None):
+        """
+        Get the secure password that matches the given realm and username. If no username is
+        provided, the first entry with the given realm will be returned.
+        """
+
+        # Look up the entry by realm only if no username is provided.
+        if username is None or len(username) == 0:
+            return self.get_secure_password_by_realm(realm, session_key)
+
+        # Get secure password
+        stanza = self.get_secure_password_stanza(username, realm)
+        server_response, server_content = splunk.rest.simpleRequest('/services/storage/passwords/' + stanza + '?output_mode=json', sessionKey=session_key)
+
+        if server_response['status'] == '404':
+            return None
+        elif server_response['status'] != '200':
+            raise Exception("Could not get the secure passwords")
+
+        passwords_content = json.loads(server_content)
+        password = passwords_content['entry']
+
+        return password[0]
+
+    def get_secure_password_by_realm(self, realm, session_key):
         """
         Get the secure password that matches the given realm.
         """

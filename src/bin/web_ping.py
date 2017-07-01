@@ -80,6 +80,10 @@ class WebPing(ModularInput):
 
     DEFAULT_THREAD_LIMIT = 200
 
+    # The following define which secure password entry to use for the proxy
+    PROXY_PASSWORD_REALM = 'website_monitoring_app_proxy'
+    PROXY_PASSWORD_USERNAME = 'IN_CONF_FILE'
+
     # This stores the default app config information
     default_app_config = None
 
@@ -571,9 +575,20 @@ class WebPing(ModularInput):
         # Get the proxy configuration
         website_monitoring_config = self.get_app_config(session_key, stanza)
 
+        # Get the proxy password from secure storage (if it exists)
+        secure_password = self.get_secure_password(realm=WebPing.PROXY_PASSWORD_REALM,
+                                                   username=WebPing.PROXY_PASSWORD_USERNAME,
+                                                   session_key=session_key)
+
+        if secure_password is not None:
+            proxy_password = secure_password['content']['clear_password']
+            self.logger.debug("Loaded the proxy password from secure storage")
+        else:
+            proxy_password = website_monitoring_config.proxy_password
+
         return website_monitoring_config.proxy_type, website_monitoring_config.proxy_server, \
                website_monitoring_config.proxy_port, website_monitoring_config.proxy_user, \
-               website_monitoring_config.proxy_password
+               proxy_password
 
     def run(self, stanza, cleaned_params, input_config):
 
@@ -592,14 +607,6 @@ class WebPing(ModularInput):
         conf_stanza = cleaned_params.get("configuration", None)
         user_agent = cleaned_params.get("user_agent", None)
         source = stanza
-
-        # Get the secure password if necessary
-        if username is not None:
-            secure_password = self.get_secure_password(stanza, input_config.session_key)
-
-            if secure_password is not None:
-                password = secure_password['content']['clear_password']
-                self.logger.debug("Successfully loaded the secure password for input=%s", stanza)
 
         # Load the thread_limit if necessary
         # This should only be necessary once in the processes lifetime
@@ -643,9 +650,17 @@ class WebPing(ModularInput):
             self.logger.debug("No need to execute this stanza since a thread already running for stanza=%s", stanza)
 
         # Determines if the input needs another run
-        elif self.needs_another_run( input_config.checkpoint_dir, stanza, interval ):
+        elif self.needs_another_run(input_config.checkpoint_dir, stanza, interval):
 
             def run_ping():
+
+                # Get the secure password if necessary
+                if username is not None:
+                    secure_password = self.get_secure_password(realm=stanza, session_key=input_config.session_key)
+
+                    if secure_password is not None:
+                        password = secure_password['content']['clear_password']
+                        self.logger.debug("Successfully loaded the secure password for input=%s", stanza)
 
                 # Get the proxy configuration
                 try:
