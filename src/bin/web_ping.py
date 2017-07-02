@@ -696,8 +696,12 @@ class WebPing(ModularInput):
                     self.save_checkpoint(input_config.checkpoint_dir, stanza,
                                          self.get_non_deviated_last_run(last_ran, interval, stanza))
 
+            # Don't scan the URL if the URL is unencrypted and the host is on Cloud
+            if self.is_on_cloud(input_config.session_key) and not url.scheme == "https":
+                self.logger.warn("The URL will not be scanned because the host is running on Splunk Cloud and the URL isn't using encryption, url=%s", url.geturl()) 
+
             # If this is not running in multi-threading mode, then run it now in the main thread
-            if self.thread_limit <= 1:
+            elif self.thread_limit <= 1:
                 run_ping()
 
             # If the number of threads is at or above the limit, then wait until the number of

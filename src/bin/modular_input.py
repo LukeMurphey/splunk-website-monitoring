@@ -913,6 +913,9 @@ class ModularInput():
 
         self.logger_name = logger_name
 
+        # Keep an instance of the server-info around to prevent unnecessary REST calls
+        self.server_info = None
+
     def addArg(self, arg):
         """
         Add a given argument to the list of arguments.
@@ -1039,6 +1042,32 @@ class ModularInput():
             return matching_passwords[0]
         else:
             return None
+
+    def get_server_info(self, session_key, force_refresh=False):
+        """
+        Get the server information object.
+        """
+
+        # Use the cached server information if possible
+        if not force_refresh and self.server_info is not None:
+            return self.server_info
+
+        # Get the server info
+        server_response, server_content = splunk.rest.simpleRequest('/services/server/info/server-info?output_mode=json', sessionKey=session_key)
+
+        info_content = json.loads(server_content)
+        self.server_info = info_content['entry'][0]
+
+        return self.server_info
+
+    def is_on_cloud(self, session_key):
+        """
+        Determine if the host is running on cloud.
+        """
+
+        server_info = self.get_server_info(session_key)
+
+        return (server_info['content'].get('instance_type', None) == 'cloud')
 
     def bool_to_str(self, bool_value):
         """
@@ -1584,14 +1613,14 @@ class ModularInput():
         """
 
         try:
-            self.logger.debug("Execute called")
+            self.logger.debug("Modular input started (execute called)")
 
             if len(sys.argv) > 1:
                 if sys.argv[1] == "--scheme":
                     self.do_scheme(out_stream)
 
                 elif sys.argv[1] == "--validate-arguments":
-                    self.logger.debug("Modular input: validate arguments called")
+                    self.logger.debug("Validate arguments called: input verifying arguments")
 
                     # Exit with a code of -1 if validation failed
                     if self.do_validation() == False:
