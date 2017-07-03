@@ -586,7 +586,8 @@ define([
 				// Render the view
 				this.$el.html(_.template(Template, {
 					'has_permission' : capabilities_missing.length === 0,
-					'capabilities_missing' : capabilities_missing
+					'capabilities_missing' : capabilities_missing,
+					'is_on_cloud' : this.is_on_cloud
 				}));
 				
 				// Render the URL as tags

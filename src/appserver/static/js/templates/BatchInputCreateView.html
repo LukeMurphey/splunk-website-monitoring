@@ -45,7 +45,7 @@
     <label class="control-label" for="urls">URLs</label>
     <div class="controls">
       <input type="text" id="urls" placeholder="e.g. https://splunk.com">
-      <span class="help-block ">Enter a list of URLs and press enter or a comma to add another</span>
+      <span class="help-block ">Enter a list of URLs and press enter or a comma to add another<%if(is_on_cloud) {%>; these must use HTTPS since Splunk Cloud requires encryption<%}%></span>
     </div>
   </div>
 
