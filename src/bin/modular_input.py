@@ -201,13 +201,14 @@ class Field(object):
         self.required_on_create = required_on_create
         self.required_on_edit = required_on_edit
 
-    def to_python(self, value):
+    def to_python(self, value, session_key=None):
         """
         Convert the field to a Python object. Should throw a FieldValidationException if the data
         is invalid.
 
         Arguments:
         value -- The value to convert
+        session_key- The session key to access Splunk (if needed)
         """
 
         if not self.none_allowed and value is None:
@@ -235,7 +236,7 @@ class BooleanField(Field):
     A validator that converts string versions of boolean to a real boolean.
     """
 
-    def to_python(self, value):
+    def to_python(self, value, session_key=None):
         Field.to_python(self, value)
 
         if value in [True, False]:
@@ -267,7 +268,7 @@ class ListField(Field):
     A validator that converts a comma seperated string to an array.
     """
 
-    def to_python(self, value):
+    def to_python(self, value, session_key=None):
 
         Field.to_python(self, value)
 
@@ -288,7 +289,7 @@ class RegexField(Field):
     A validator that validates input matches a regular expression.
     """
 
-    def to_python(self, value):
+    def to_python(self, value, session_key=None):
 
         Field.to_python(self, value)
 
@@ -312,7 +313,7 @@ class IntegerField(Field):
     A validator that converts string input to an integer.
     """
 
-    def to_python(self, value):
+    def to_python(self, value, session_key=None):
 
         Field.to_python(self, value)
 
@@ -339,7 +340,7 @@ class FloatField(Field):
     A validator that converts string input to a float.
     """
 
-    def to_python(self, value):
+    def to_python(self, value, session_key=None):
 
         Field.to_python(self, value)
 
@@ -374,7 +375,7 @@ class RangeField(Field):
         self.low = low
         self.high = high
 
-    def to_python(self, value):
+    def to_python(self, value, session_key=None):
 
         Field.to_python(self, value)
 
@@ -402,6 +403,16 @@ class URLField(Field):
     Represents a URL. The URL is converted to a Python object that was created via urlparse.
     """
 
+    require_https_on_cloud = False
+
+    def __init__(self, name, title, description, none_allowed=False, empty_allowed=True,
+                 required_on_create=None, required_on_edit=None, require_https_on_cloud=False):
+
+        super(URLField, self).__init__(name, title, description, none_allowed,
+                                       empty_allowed, required_on_create, required_on_edit)
+
+        self.require_https_on_cloud = require_https_on_cloud
+
     @classmethod
     def parse_url(cls, value, name):
         """
@@ -419,10 +430,15 @@ class URLField(Field):
 
         return parsed_value
 
-    def to_python(self, value):
+    def to_python(self, value, session_key=None):
         Field.to_python(self, value)
 
-        return URLField.parse_url(value.strip(), self.name)
+        parsed_value = URLField.parse_url(value.strip(), self.name)
+
+        if self.require_https_on_cloud and parsed_value.scheme == "http" and session_key is not None and True and ModularInput.is_on_cloud(session_key):
+            raise FieldValidationException("The value of '%s' for the '%s' parameter must use encryption (be HTTPS not HTTP)" % (str(value), self.name))
+
+        return parsed_value
 
     def to_string(self, value):
         return value.geturl()
@@ -455,7 +471,7 @@ class DurationField(Field):
         's' : 1
     }
 
-    def to_python(self, value):
+    def to_python(self, value, session_key=None):
         Field.to_python(self, value)
 
         # Parse the duration
@@ -516,7 +532,7 @@ class DeprecatedField(Field):
                                               required_on_create=required_on_create,
                                               required_on_edit=required_on_edit)
 
-    def to_python(self, value):
+    def to_python(self, value, session_key=None):
         return None
 
     def to_string(self, value):
@@ -636,6 +652,8 @@ class ModularInput():
     use_external_validation = True
     description = ""
     streaming_mode = 'true'
+
+    server_info = None
 
     def _is_valid_param(self, name, val):
         '''Raise an error if the parameter is None or empty.'''
@@ -1043,29 +1061,31 @@ class ModularInput():
         else:
             return None
 
-    def get_server_info(self, session_key, force_refresh=False):
+    @classmethod
+    def get_server_info(cls, session_key, force_refresh=False):
         """
         Get the server information object.
         """
 
         # Use the cached server information if possible
-        if not force_refresh and self.server_info is not None:
-            return self.server_info
+        if not force_refresh and cls.server_info is not None:
+            return cls.server_info
 
         # Get the server info
-        server_response, server_content = splunk.rest.simpleRequest('/services/server/info/server-info?output_mode=json', sessionKey=session_key)
+        _, server_content = splunk.rest.simpleRequest('/services/server/info/server-info?output_mode=json', sessionKey=session_key)
 
         info_content = json.loads(server_content)
-        self.server_info = info_content['entry'][0]
+        cls.server_info = info_content['entry'][0]
 
-        return self.server_info
+        return cls.server_info
 
-    def is_on_cloud(self, session_key):
+    @classmethod
+    def is_on_cloud(cls, session_key):
         """
         Determine if the host is running on cloud.
         """
 
-        server_info = self.get_server_info(session_key)
+        server_info = cls.get_server_info(session_key)
 
         return (server_info['content'].get('instance_type', None) == 'cloud')
 
@@ -1205,36 +1225,39 @@ class ModularInput():
         in_stream -- The stream to get the input from (defaults to standard input)
         """
 
-        data = self.get_validation_data()
+        data, session_key = self.get_validation_data()
 
         try:
-            self.validate_parameters(None, data)
+            self.validate_parameters(None, data, session_key)
             return True
         except FieldValidationException as e:
             self.print_error(str(e))
             return False
 
-    def validate(self, arguments):
+    def validate(self, arguments, session_key=None):
         """
         Validate the argument dictionary where each key is a stanza.
 
         Arguments:
         arguments -- The arguments as an dictionary where the key is the stanza and the value is a
                      dictionary of the values.
+        session_key -- The session key for accessing Splunkd
         """
 
         # Check each stanza
         for stanza, parameters in arguments.items():
-            self.validate_parameters(stanza, parameters)
+            self.validate_parameters(stanza, parameters, session_key)
+
         return True
 
-    def validate_parameters(self, stanza, parameters):
+    def validate_parameters(self, stanza, parameters, session_key=None):
         """
         Validate the parameter set for a stanza and returns a dictionary of cleaned parameters.
 
         Arguments:
         stanza -- The stanza name
         parameters -- The list of parameters
+        session_key -- The session key for accessing Splunkd
         """
 
         cleaned_params = {}
@@ -1242,18 +1265,18 @@ class ModularInput():
         # Append the arguments list such that the standard fields that Splunk provides are included
         all_args = {}
 
-        for a in self.standard_args:
-            all_args[a.name] = a
+        for argument_validator in self.standard_args:
+            all_args[argument_validator.name] = argument_validator
 
-        for a in self.args:
-            all_args[a.name] = a
+        for argument_validator in self.args:
+            all_args[argument_validator.name] = argument_validator
 
         # Convert and check the parameters
         for name, value in parameters.items():
 
             # If the argument was found, then validate and convert it
             if name in all_args:
-                cleaned_params[name] = all_args[name].to_python(value)
+                cleaned_params[name] = all_args[name].to_python(value, session_key=session_key)
 
             # Allow the interval argument since it is internal but allowed even if not explicitly
             # declared
@@ -1560,6 +1583,15 @@ class ModularInput():
         doc = xml.dom.minidom.parseString(val_str)
         root = doc.documentElement
 
+        # Parse the session key
+        session_key_node = root.getElementsByTagName("session_key")[0]
+
+        if session_key_node.firstChild and session_key_node.firstChild.nodeType == session_key_node.firstChild.TEXT_NODE:
+            session_key = session_key_node.firstChild.data
+        else:
+            session_key = None
+
+        # Parse the parameters 
         item_node = root.getElementsByTagName("item")[0]
         if item_node:
 
@@ -1574,7 +1606,7 @@ class ModularInput():
                 if name and param.firstChild and param.firstChild.nodeType == param.firstChild.TEXT_NODE:
                     val_data[name] = param.firstChild.data
 
-        return val_data
+        return val_data, session_key
 
     def validate_parameters_from_cli(self, argument_array=None):
         """
@@ -1622,9 +1654,9 @@ class ModularInput():
                 elif sys.argv[1] == "--validate-arguments":
                     self.logger.debug("Validate arguments called: input verifying arguments")
 
-                    # Exit with a code of -1 if validation failed
+                    # Exit with an code if validation failed
                     if self.do_validation() == False:
-                        sys.exit(-1)
+                        sys.exit(1)
 
                 else:
                     self.usage(out_stream)
