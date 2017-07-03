@@ -18,6 +18,7 @@ define([
     "util/splunkd_utils",
     "jquery",
     "splunkjs/mvc/simplesplunkview",
+	"models/services/server/ServerInfo",
     'text!../app/website_monitoring/js/templates/BatchInputCreateView.html',
     "bootstrap-tags-input",
     "splunk.util",
@@ -30,6 +31,7 @@ define([
     splunkd_utils,
     $,
     SimpleSplunkView,
+	ServerInfo,
     Template
 ){
     // Define the custom view class
@@ -61,6 +63,7 @@ define([
         	this.capabilities = null;
         	this.inputs = null;
         	this.existing_input_names = [];
+			this.is_on_cloud = null;
         	
         	this.getExistingInputs();
         },
@@ -252,8 +255,10 @@ define([
         	// Stop if we are done
         	if(this.processing_queue.length === 0){
         		
-        		// Show a message noting that we are done
-        		this.showInfoMessage("Done creating the inputs (" + this.processed_queue.length + " created)");
+				if(this.processed_queue.length > 0){
+					// Show a message noting that we are done
+					this.showInfoMessage("Done creating the inputs (" + this.processed_queue.length + " created)");
+				}
         		
         		var extra_message = "";
         		
@@ -290,8 +295,15 @@ define([
         			console.info("Skipping creation of an input that already existed for " + url);
         			this.createNextInput();
         		}
+
+				// Don't allow creation of non-HTTPS inputs on Splunk cloud
+				else if(this.is_on_cloud && url.startsWith("http://")){
+					this.unprocessed_queue.push(url);
+        			console.info("Skipping creation of an input that doesn't use HTTPS " + url);
+        			this.createNextInput();
+				}
         		
-        		// 
+        		// Create the input
         		else{
                 	// Process the next input
                     $.when(this.createInput(url, this.interval, this.index)).done(function(){
@@ -359,11 +371,22 @@ define([
         	if(event.item.indexOf("http://") !== 0 && event.item.indexOf("https://") !== 0){
         		
         		// Add the protocol since the user just left that part out
-        		$("#urls").tagsinput('add', "http://" + event.item);
-        		
+				if(this.is_on_cloud){
+					$("#urls").tagsinput('add', "https://" + event.item);
+				}
+        		else{
+					$("#urls").tagsinput('add', "http://" + event.item);
+				}
+
         		event.cancel = true;
         		
         	}
+
+			// Don't allow a non-HTTPS site to be entered on Splunk cloud
+			else if(event.item.indexOf("http://") === 0 && this.is_on_cloud){
+				this.showWarningMessage("Websites must use encryption (HTTPS) to be monitored on Splunk Cloud");
+				event.cancel = true;
+			}
         },
         
         /**
@@ -534,29 +557,43 @@ define([
          */
         render: function () {
         	
-        	// Below is the list of capabilities required
-        	var capabilities_required = ['edit_modinput_web_ping', 'edit_tcp', 'list_inputs'];
-        	
-        	// Find out which capabilities are missing
-        	var capabilities_missing = [];
-        	
-        	// Check each one
-        	for(var c = 0; c < capabilities_required.length; c++){
-        		if(!this.hasCapability(capabilities_required[c])){
-        			capabilities_missing.push(capabilities_required[c]);
-        		}
-        	}
+			if(this.is_on_cloud === null){
+				this.server_info = new ServerInfo();
+			}
+			
+			new ServerInfo().fetch().done(function(model){
 
-        	// Render the view
-        	this.$el.html(_.template(Template, {
-        		'has_permission' : capabilities_missing.length === 0,
-        		'capabilities_missing' : capabilities_missing
-        	}));
-        	
-        	// Render the URL as tags
-        	$("#urls").tagsinput('items');
-        	
-        	$("#urls").on('beforeItemAdd', this.validateURL.bind(this));
+				if(model.entry[0].content.instance_type){
+					this.is_on_cloud = model.entry[0].content.instance_type === 'cloud';
+				}
+				else{
+					this.is_on_cloud = false;
+				}
+
+				// Below is the list of capabilities required
+				var capabilities_required = ['edit_modinput_web_ping', 'edit_tcp', 'list_inputs'];
+				
+				// Find out which capabilities are missing
+				var capabilities_missing = [];
+				
+				// Check each one
+				for(var c = 0; c < capabilities_required.length; c++){
+					if(!this.hasCapability(capabilities_required[c])){
+						capabilities_missing.push(capabilities_required[c]);
+					}
+				}
+
+				// Render the view
+				this.$el.html(_.template(Template, {
+					'has_permission' : capabilities_missing.length === 0,
+					'capabilities_missing' : capabilities_missing
+				}));
+				
+				// Render the URL as tags
+				$("#urls").tagsinput('items');
+				
+				$("#urls").on('beforeItemAdd', this.validateURL.bind(this));
+			}.bind(this));
         }
     });
     
