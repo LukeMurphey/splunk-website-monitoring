@@ -8,7 +8,7 @@ from splunk.models.field import Field as ModelField
 from splunk.models.field import IntField as ModelIntField
 import splunk
 
-import re
+import re   
 import hashlib
 import sys
 import time
@@ -435,7 +435,7 @@ class WebPing(ModularInput):
                 timed_out = True
 
             elif logger:
-                logger.exception("A connection exception was thrown when executing a web request against url=%s, this can happen if the domain name, IP address is invalid or if network connectivity is down or blocked by a firewall, see help_url=http://lukemurphey.net/projects/splunk-website-monitoring/wiki/Troubleshooting", url.geturl())
+                logger.warn("A connection exception was thrown when executing a web request against url=%s, this can happen if the domain name, IP address is invalid or if network connectivity is down or blocked by a firewall, see help_url=http://lukemurphey.net/projects/splunk-website-monitoring/wiki/Troubleshooting", url.geturl())
 
         except socks.GeneralProxyError:
             # This may be thrown if the user configured the proxy settings incorrectly
