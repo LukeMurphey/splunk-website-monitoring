@@ -435,7 +435,7 @@ class URLField(Field):
 
         parsed_value = URLField.parse_url(value.strip(), self.name)
 
-        if self.require_https_on_cloud and parsed_value.scheme == "http" and session_key is not None and True and ModularInput.is_on_cloud(session_key):
+        if self.require_https_on_cloud and parsed_value.scheme == "http" and session_key is not None and ModularInput.is_on_cloud(session_key):
             raise FieldValidationException("The value of '%s' for the '%s' parameter must use encryption (be HTTPS not HTTP)" % (str(value), self.name))
 
         return parsed_value
