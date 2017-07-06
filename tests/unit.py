@@ -178,7 +178,7 @@ class TestWebPing(WebsiteMonitoringAppTest, UnitTestWithWebServer):
         shutil.rmtree(self.tmp_dir)
 
     def test_get_file_path(self):
-        self.assertEquals( WebPing.get_file_path("/Users/lmurphey/Applications/splunk/var/lib/splunk/modinputs/web_ping", "web_ping://TextCritical.com"), "/Users/lmurphey/Applications/splunk/var/lib/splunk/modinputs/web_ping/35163af7282b92013f810b2b4822d7df.json")
+        self.assertEquals( WebPing.get_file_path("/Users/lmurphey/Applications/splunk/var/lib/splunk/modinputs/web_ping", "web_ping://TextCritical.com"), "/Users/lmurphey/Applications/splunk/var/lib/splunk/modinputs/web_ping" + os.sep + "35163af7282b92013f810b2b4822d7df.json")
 
     def test_ping(self):
 
