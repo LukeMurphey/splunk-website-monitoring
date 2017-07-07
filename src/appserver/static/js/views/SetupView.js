@@ -313,7 +313,7 @@ define([
 
             // Fetch it
             this.encrypted_credential.fetch({
-                url: splunkd_utils.fullpath('/services/storage/passwords/' + stanza),
+                url: splunkd_utils.fullpath('/services/storage/passwords/' + encodeURIComponent(stanza)),
                 success: function (model, response, options) {
                     console.info("Successfully retrieved the encrypted credential");
                     promise.resolve(model);
