@@ -197,6 +197,8 @@ Change History
 |         | Passwords are now stored using Splunk's secure storage                                                           |
 |---------|------------------------------------------------------------------------------------------------------------------|
 | 2.4     | Updating dependencies to newer versions                                                                          |
-|         | Added restrictions necessary to gain cloud certification                                                         |
+|         | Added restrictions necessary to gain Cloud certification                                                         |
+|---------|------------------------------------------------------------------------------------------------------------------|
+| 2.4.1   | Disabled the use of a proxy on Splunk Cloud since this is unnecessary on Cloud                                   |
 +---------+------------------------------------------------------------------------------------------------------------------+
 
