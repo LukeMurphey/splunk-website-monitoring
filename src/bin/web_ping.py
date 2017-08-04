@@ -568,6 +568,13 @@ class WebPing(ModularInput):
         stanza -- The stanza to get the proxy information from (defaults to "default")
         """
 
+        # Don't allow the use of a proxy server on Splunk Cloud since this could
+        # allow unencrypted communication. Cloud shouldn't need the use of a proxy anyways.
+        # Some do use the app to test proxies but they should use an on-prem forwarder
+        # instead.
+        if self.is_on_cloud(session_key):
+            return "http", None, None, None, None
+
         # If the stanza is empty, then just use the default
         if stanza is None or stanza.strip() == "":
             stanza = "default"
