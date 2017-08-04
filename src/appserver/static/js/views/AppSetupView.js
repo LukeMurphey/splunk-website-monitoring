@@ -11,6 +11,7 @@ define([
     "models/SplunkDBase",
     "setup_view",
     "util/splunkd_utils",
+	"models/services/server/ServerInfo",
     "text!../app/website_monitoring/js/templates/AppSetupView.html",
     "css!../app/website_monitoring/css/AppSetupView.css"
 ], function(
@@ -19,6 +20,7 @@ define([
     SplunkDBaseModel,
     SetupView,
     splunkd_utils,
+	ServerInfo,
     Template
 ){
 
@@ -58,15 +60,29 @@ define([
 
             this.website_monitoring_configuration = null;
             this.secure_storage_stanza = this.makeStorageEndpointStanza(this.options.secure_storage_username, this.options.secure_storage_realm);
+
+            this.is_on_cloud = null;
+            this.server_info = null;
         },
 
         updateModel: function(){
-            this.website_monitoring_configuration.entry.content.attributes.proxy_server = this.getProxyServer();
-            this.website_monitoring_configuration.entry.content.attributes.proxy_port = this.getProxyServerPort();
-            this.website_monitoring_configuration.entry.content.attributes.proxy_type = this.getProxyType();
 
-            this.website_monitoring_configuration.entry.content.attributes.proxy_user = this.getProxyUser();
-            this.website_monitoring_configuration.entry.content.attributes.proxy_password = ""; //This will be stored in secure storage; this.getProxyPassword();
+            if(this.is_on_cloud){
+                this.website_monitoring_configuration.entry.content.attributes.proxy_server = "";
+                this.website_monitoring_configuration.entry.content.attributes.proxy_port = "";
+                this.website_monitoring_configuration.entry.content.attributes.proxy_type = "http";
+
+                this.website_monitoring_configuration.entry.content.attributes.proxy_user = "";
+                this.website_monitoring_configuration.entry.content.attributes.proxy_password = "";
+            }
+            else{
+                this.website_monitoring_configuration.entry.content.attributes.proxy_server = this.getProxyServer();
+                this.website_monitoring_configuration.entry.content.attributes.proxy_port = this.getProxyServerPort();
+                this.website_monitoring_configuration.entry.content.attributes.proxy_type = this.getProxyType();
+
+                this.website_monitoring_configuration.entry.content.attributes.proxy_user = this.getProxyUser();
+                this.website_monitoring_configuration.entry.content.attributes.proxy_password = ""; //This will be stored in secure storage; this.getProxyPassword();
+            }
 
             this.website_monitoring_configuration.entry.content.attributes.thread_limit = this.getThreadLimit();
         },
@@ -182,42 +198,56 @@ define([
 
         render: function () {
 
-            if(this.userHasAdminAllObjects()){
+			if(this.is_on_cloud === null){
+				this.server_info = new ServerInfo();
+			}
 
-                // Render the view
-                this.$el.html(_.template(Template, {
-                    'has_permission' : this.userHasAdminAllObjects()
-                }));
+            new ServerInfo().fetch().done(function(model){
 
-                // Start the process of loading the app configurtion if necessary
-                if(this.website_monitoring_configuration === null){
+				if(model.entry[0].content.instance_type){
+					this.is_on_cloud = model.entry[0].content.instance_type === 'cloud';
+				}
+				else{
+					this.is_on_cloud = false;
+				}
 
-                    this.setControlsEnabled(false);
+                if(this.userHasAdminAllObjects()){
 
-                    $.when(
-                        this.fetchAppConfiguration(),
-                        this.getEncryptedCredential(this.secure_storage_stanza, true)
-                    )
-                    // If successful, then load the 
-                    .then(
-                        function(a, credential){
+                    // Render the view
+                    this.$el.html(_.template(Template, {
+                        'has_permission' : this.userHasAdminAllObjects(),
+                        'is_on_cloud' : this.is_on_cloud
+                    }));
 
-                            if(credential){
-                                this.setProxyPassword(credential.entry.content.attributes.clear_password);
-                                this.setProxyPasswordConfirmation(credential.entry.content.attributes.clear_password);
-                            }
+                    // Start the process of loading the app configurtion if necessary
+                    if(this.website_monitoring_configuration === null){
 
-                            this.setControlsEnabled(true);
-                        }.bind(this)
-                    );
+                        this.setControlsEnabled(false);
+
+                        $.when(
+                            this.fetchAppConfiguration(),
+                            this.getEncryptedCredential(this.secure_storage_stanza, true)
+                        )
+                        // If successful, then load the credential
+                        .then(
+                            function(a, credential){
+
+                                if(credential){
+                                    this.setProxyPassword(credential.entry.content.attributes.clear_password);
+                                    this.setProxyPasswordConfirmation(credential.entry.content.attributes.clear_password);
+                                }
+
+                                this.setControlsEnabled(true);
+                            }.bind(this)
+                        );
+
+                    }
 
                 }
-
-            }
-            else{
-                this.$el.html("Sorry, you don't have permission to perform setup");
-            }
-
+                else{
+                    this.$el.html("Sorry, you don't have permission to perform setup");
+                }
+            }.bind(this));
         },
 
         /**

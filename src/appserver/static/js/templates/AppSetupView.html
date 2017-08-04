@@ -13,7 +13,7 @@
 </div>
 -->
 <form class="form-horizontal">
-  <fieldset>
+  <fieldset <% if(is_on_cloud){%>style="display:none"<%}%>>
     <legend>Proxy Server</legend>
 
     <div class="control-group proxy-address">
@@ -48,7 +48,7 @@
 
   </fieldset>
 
-  <fieldset>
+  <fieldset <% if(is_on_cloud){%>style="display:none"<%}%>>
     <legend>Proxy Server Authentication</legend>
 
     <div class="control-group proxy-user">
@@ -78,7 +78,6 @@
     </div>
     
   </fieldset>
-
 
   <fieldset>
     <legend>Advanced</legend>
