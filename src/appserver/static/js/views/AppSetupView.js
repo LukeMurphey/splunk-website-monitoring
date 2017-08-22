@@ -198,25 +198,17 @@ define([
 
         render: function () {
 
-			if(this.is_on_cloud === null){
-				this.server_info = new ServerInfo();
-			}
-
-            new ServerInfo().fetch().done(function(model){
-
-				if(model.entry[0].content.instance_type){
-					this.is_on_cloud = model.entry[0].content.instance_type === 'cloud';
-				}
-				else{
-					this.is_on_cloud = false;
-				}
+            $.when(
+                this.isOnCloud()
+            )
+            .then(function(is_on_cloud){
 
                 if(this.userHasAdminAllObjects()){
 
                     // Render the view
                     this.$el.html(_.template(Template, {
                         'has_permission' : this.userHasAdminAllObjects(),
-                        'is_on_cloud' : this.is_on_cloud
+                        'is_on_cloud' : is_on_cloud
                     }));
 
                     // Start the process of loading the app configurtion if necessary
