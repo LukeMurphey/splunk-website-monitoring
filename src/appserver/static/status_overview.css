@@ -56,13 +56,13 @@
 /*
  * The following sets the color of the row indicating if the response was a failure or not.
  */
-.table-chrome.table-striped > tbody > tr > td.response_code.success{
+.table-chrome.table-striped > tbody > tr > td.response.success{
 	background-color: #65A636; /* #3677a6 */
     color: white;
     font-weight: bold;
 }
 
-.table-chrome.table-striped > tbody > tr > td.response_code.success.highlighted{
+.table-chrome.table-striped > tbody > tr > td.response.success.highlighted{
 	background-color: #74b744 !important;
 }
 
@@ -78,7 +78,7 @@
 	background-color: #e66146 !important;
 }
 
-.table-chrome.table-striped > tbody > tr > td.response_code.failure{
+.table-chrome.table-striped > tbody > tr > td.response.failure{
 	/* http://bit.ly/2feBevo */
 	background:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAYAAAAGCAYAAADgzO9IAAAANElEQVQYV2NcpszxnwENGBibMDCiS4AEL5w9gyoBEwQZANeBLAiXQBcES1wLs/kPMhMdAACG5Bp+pY2rpgAAAABJRU5ErkJggg==);
     color: white;

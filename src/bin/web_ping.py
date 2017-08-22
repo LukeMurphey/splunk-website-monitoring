@@ -93,7 +93,7 @@ class WebPing(ModularInput):
         """
 
         def __init__(self, request_time, response_code, timed_out, url, response_size=None,
-                     response_md5=None, response_sha224=None):
+                     response_md5=None, response_sha224=None, has_expected_string=None):
 
             self.request_time = request_time
             self.response_code = response_code
@@ -102,6 +102,7 @@ class WebPing(ModularInput):
             self.response_size = response_size
             self.response_md5 = response_md5
             self.response_sha224 = response_sha224
+            self.has_expected_string = has_expected_string
 
     def __init__(self, timeout=30, thread_limit=None):
 
@@ -120,7 +121,8 @@ class WebPing(ModularInput):
                 Field("client_certificate_key", "Client Certificate Key Path", "Defines the path to the client certificate key (necessary of the key is in a separate file from the certificate)", none_allowed=True, empty_allowed=True),
                 Field("username", "Username", "The username to use for authenticating (only HTTP authentication supported)", none_allowed=True, empty_allowed=True, required_on_create=False, required_on_edit=False),
                 Field("password", "Password", "The password to use for authenticating (only HTTP authentication supported)", none_allowed=True, empty_allowed=True, required_on_create=False, required_on_edit=False),
-                Field("user_agent", "User Agent", "The user-agent to use when communicating with the server", none_allowed=True, empty_allowed=True, required_on_create=False, required_on_edit=False)
+                Field("user_agent", "User Agent", "The user-agent to use when communicating with the server", none_allowed=True, empty_allowed=True, required_on_create=False, required_on_edit=False),
+                Field("should_contain_string", "String match", "A string that should be present in the content", none_allowed=True, empty_allowed=True, required_on_create=False, required_on_edit=False)
         ]
 
         ModularInput.__init__(self, scheme_args, args, logger_name='web_availability_modular_input', logger_level=logging.DEBUG)
@@ -280,7 +282,7 @@ class WebPing(ModularInput):
     def ping(cls, url, username=None, password=None, timeout=30, proxy_type=None,
              proxy_server=None, proxy_port=None, proxy_user=None, proxy_password=None,
              client_certificate=None, client_certificate_key=None, user_agent=None,
-             logger=None):
+             logger=None, should_contain_string=None):
         """
         Perform a ping to a website. Returns a WebPing.Result instance.
 
@@ -298,6 +300,7 @@ class WebPing(ModularInput):
         client_certificate_key -- The path to the client key to use.
         user_agent -- The string to use for the user-agent
         logger -- The logger object to use for logging
+        should_contain_string -- A string that is expected in the response
         """
 
         if logger:
@@ -305,6 +308,11 @@ class WebPing(ModularInput):
 
         # Determine which type of proxy is to be used (if any)
         resolved_proxy_type = cls.resolve_proxy_type(proxy_type, logger=logger)
+
+        # Set should_contain_string to none if it is blank since this means it really doesn't have
+        # a value
+        if should_contain_string is not None and len(should_contain_string.strip()) == 0:
+            should_contain_string = None
 
         # Make sure that a timeout is not None since that is infinite
         if timeout is None:
@@ -354,6 +362,7 @@ class WebPing(ModularInput):
         response_sha224 = None
         timed_out = False
         response_size = None
+        has_expected_string = None
 
         # Setup the headers as necessary
         headers = {}
@@ -412,6 +421,10 @@ class WebPing(ModularInput):
 
                 response_sha224 = hashlib.sha224(http.text).hexdigest()
 
+                # Determine if the expected string is in the content
+                if should_contain_string is not None:
+                    has_expected_string = should_contain_string in http.text
+
                 # Get the size of the content
                 response_size = len(http.text)
 
@@ -447,7 +460,7 @@ class WebPing(ModularInput):
                 logger.exception("A general exception was thrown when executing a web request for url=%s", url.geturl())
 
         # Finally, return the result
-        return cls.Result(request_time, response_code, timed_out, url.geturl(), response_size, response_md5, response_sha224)
+        return cls.Result(request_time, response_code, timed_out, url.geturl(), response_size, response_md5, response_sha224, has_expected_string)
 
     def output_result(self, result, stanza, title, index=None, source=None, sourcetype=None,
                       host=None,unbroken=True, close=True, proxy_server=None, proxy_port=None,
@@ -497,6 +510,10 @@ class WebPing(ModularInput):
         # Add the MD5 of the response of available
         if result.response_size is not None:
             data['content_size'] = result.response_size
+
+        # Add the variable noting if the expected string was present
+        if result.has_expected_string is not None:
+            data['has_expected_string'] = str(result.has_expected_string).lower()
 
         return self.output_event(data, stanza, index=index, host=host, source=source,
                                  sourcetype=sourcetype, unbroken=unbroken, close=close, out=out)
@@ -613,6 +630,7 @@ class WebPing(ModularInput):
         index = cleaned_params.get("index", "default")
         conf_stanza = cleaned_params.get("configuration", None)
         user_agent = cleaned_params.get("user_agent", None)
+        should_contain_string = cleaned_params.get("should_contain_string", None)
         source = stanza
 
         # Load the thread_limit if necessary
@@ -685,7 +703,7 @@ class WebPing(ModularInput):
                     result = WebPing.ping(url, username, password, timeout, proxy_type,
                                           proxy_server, proxy_port, proxy_user, proxy_password,
                                           client_certificate, client_certificate_key, user_agent,
-                                          logger=self.logger)
+                                          logger=self.logger, should_contain_string=should_contain_string)
                 except NTLMAuthenticationValueException as e:
                     self.logger.warn('NTLM authentication failed due to configuration issue stanza=%s, message="%i"', stanza, str(e))
 

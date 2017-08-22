@@ -2,7 +2,7 @@ define(['jquery', 'underscore', 'splunkjs/mvc', 'views/shared/results_table/rend
     
     var WebsiteStatusCellRenderer = BaseCellRenderer.extend({
     	 canRender: function(cell) {
-    		 return ($.inArray(cell.field, ["title", "response_code", "response_time", "average"]) >= 0); // Add "url" to this list to render the favicon
+    		 return ($.inArray(cell.field, ["title", "response", "response_time", "average"]) >= 0); // Add "url" to this list to render the favicon
 		 },
 		 
 		 render: function($td, cell) {
@@ -12,16 +12,39 @@ define(['jquery', 'underscore', 'splunkjs/mvc', 'views/shared/results_table/rend
 			 
 			 var icon = null;
 			 
-			 // Handle the response_code
-			 if( cell.field == "response_code" ){
+			 // Handle the response
+			 if(cell.field == "response"){
 				 
-				 var int_value = parseInt(cell.value, 10);
+			 	// Parse out the response code and whether the content matches from the response
+				parsed_values = /([0-9]+)([ ](.*))?/i.exec(cell.value);
+			 
+				response = parsed_values[1];
+				has_expected_string = parsed_values[3];
+
+				// Reformat the cell value
+				cell.value = response;
+
+				if(has_expected_string === "true"){
+					cell.value += " (content matches)";
+					$td.addClass("contentmatch");
+				}
+				else if(has_expected_string === "false"){
+					cell.value += " (content doesn't match)";
+					$td.addClass("contentnonmatch");
+				}
+
+				// Assign the classes based on the response code
+				var int_value = parseInt(response, 10);
 				 
-				 if( int_value >= 400 ){
+				if(int_value >= 400){
 					 $td.addClass("failure");
 					 icon = 'alert';
-				 }
-				 else if( int_value >= 100 ){
+				}
+				else if(has_expected_string === "false"){
+					$td.addClass("failure");
+					icon = 'alert';
+				}
+				 else if(int_value >= 100){
 					 $td.addClass("success");
 					 icon = 'check';
 				 }
@@ -33,7 +56,7 @@ define(['jquery', 'underscore', 'splunkjs/mvc', 'views/shared/results_table/rend
 			 }
 			 
 			 // Handle the response_time and average fields
-			 else if( cell.field == "response_time" || cell.field == "average" ){
+			 else if(cell.field == "response_time" || cell.field == "average"){
 				 
 				 var float_value = parseFloat(cell.value, 10);
 				 
@@ -64,7 +87,7 @@ define(['jquery', 'underscore', 'splunkjs/mvc', 'views/shared/results_table/rend
 						 percent = null;
 					 }
 					 
-					 if( percent !== null){
+					 if(percent !== null){
 						 /*
 					     $td.html(_.template('<img class="performance_icon" height="12" width="12" src="/static/app/website_monitoring/img/<%- percent %>.png" /> <%- value %>', {
 				            	value: cell.value,
@@ -110,7 +133,7 @@ define(['jquery', 'underscore', 'splunkjs/mvc', 'views/shared/results_table/rend
 		         }));
 			 }
 			 else{
-				 $td.html( cell.value );
+				 $td.html(cell.value);
 			 }
 		 }
 	});

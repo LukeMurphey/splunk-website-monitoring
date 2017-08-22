@@ -28,3 +28,7 @@ password = <value>
 
 user_agent = <value>
 * Defines the user-agent string used by the HTTP client
+
+should_contain_string = <value>
+* Defines a string that ought to be included in the response content
+* If the content isn't included then the content will be considered wrong

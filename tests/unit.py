@@ -440,6 +440,32 @@ class TestWebPing(WebsiteMonitoringAppTest, UnitTestWithWebServer):
         result = WebPing.ping(url_field.to_python("http://127.0.0.1:" + str(self.web_server_port) + "/user_agent_check"), user_agent="USER_AGENT_CHECK", timeout=3)
         self.assertEquals(result.response_code, 201)
 
+    @skipIfNoServer
+    def test_should_contain_string(self):
+
+        url_field = URLField("test_ping", "title", "this is a test")
+
+        result = WebPing.ping(url_field.to_python("http://127.0.0.1:" + str(self.web_server_port) + "/test_page"), timeout=3, should_contain_string="<h1>My First Heading</h1>")
+
+        self.assertEquals(result.response_code, 200)
+
+        self.assertEquals(result.response_md5, '1f6c14189070f50c4c06ada640c14850') # This is 1f6c14189070f50c4c06ada640c14850 on disk
+        self.assertEquals(result.response_sha224, 'deaf4c0062539c98b4e957712efcee6d42832fed2d803c2bbf984b23')
+        self.assertEquals(result.has_expected_string, 'true')
+
+    @skipIfNoServer
+    def test_should_contain_string_no_match(self):
+
+        url_field = URLField("test_ping", "title", "this is a test")
+
+        result = WebPing.ping(url_field.to_python("http://127.0.0.1:" + str(self.web_server_port) + "/test_page"), timeout=3, should_contain_string="<h1>Should not Match!</h1>")
+
+        self.assertEquals(result.response_code, 200)
+
+        self.assertEquals(result.response_md5, '1f6c14189070f50c4c06ada640c14850') # This is 1f6c14189070f50c4c06ada640c14850 on disk
+        self.assertEquals(result.response_sha224, 'deaf4c0062539c98b4e957712efcee6d42832fed2d803c2bbf984b23')
+        self.assertEquals(result.has_expected_string, 'false')
+
 if __name__ == '__main__':
     try:
         unittest.main(testRunner= unittest.TextTestRunner(verbosity=2))
