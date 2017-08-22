@@ -200,5 +200,7 @@ Change History
 |         | Added restrictions necessary to gain Cloud certification                                                         |
 |---------|------------------------------------------------------------------------------------------------------------------|
 | 2.4.1   | Disabled the use of a proxy on Splunk Cloud since this is unnecessary on Cloud                                   |
+|---------|------------------------------------------------------------------------------------------------------------------|
+| 2.5     | Added the ability to alert when the response of a web-page doesn't include particular content                    |
 +---------+------------------------------------------------------------------------------------------------------------------+
 
