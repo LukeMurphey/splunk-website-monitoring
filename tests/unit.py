@@ -451,7 +451,7 @@ class TestWebPing(WebsiteMonitoringAppTest, UnitTestWithWebServer):
 
         self.assertEquals(result.response_md5, '1f6c14189070f50c4c06ada640c14850') # This is 1f6c14189070f50c4c06ada640c14850 on disk
         self.assertEquals(result.response_sha224, 'deaf4c0062539c98b4e957712efcee6d42832fed2d803c2bbf984b23')
-        self.assertEquals(result.has_expected_string, 'true')
+        self.assertEquals(result.has_expected_string, True)
 
     @skipIfNoServer
     def test_should_contain_string_no_match(self):
@@ -464,7 +464,7 @@ class TestWebPing(WebsiteMonitoringAppTest, UnitTestWithWebServer):
 
         self.assertEquals(result.response_md5, '1f6c14189070f50c4c06ada640c14850') # This is 1f6c14189070f50c4c06ada640c14850 on disk
         self.assertEquals(result.response_sha224, 'deaf4c0062539c98b4e957712efcee6d42832fed2d803c2bbf984b23')
-        self.assertEquals(result.has_expected_string, 'false')
+        self.assertEquals(result.has_expected_string, False)
 
 if __name__ == '__main__':
     try:
