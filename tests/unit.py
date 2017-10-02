@@ -125,16 +125,16 @@ class TestURLField(unittest.TestCase):
     def test_url_field_valid(self):
         url_field = URLField("test_url_field_valid", "title", "this is a test")
 
-        self.assertEqual( url_field.to_python("http://google.com").geturl(), "http://google.com")
-        self.assertEqual( url_field.to_python("http://google.com/with/path").geturl(), "http://google.com/with/path")
-        self.assertEqual( url_field.to_python("http://google.com:8080/with/port").geturl(), "http://google.com:8080/with/port")
+        self.assertEqual(url_field.to_python("http://google.com").geturl(), "http://google.com")
+        self.assertEqual(url_field.to_python("http://google.com/with/path").geturl(), "http://google.com/with/path")
+        self.assertEqual(url_field.to_python("http://google.com:8080/with/port").geturl(), "http://google.com:8080/with/port")
 
     def test_url_field_invalid(self):
         url_field = URLField("test_url_field_invalid", "title", "this is a test")
 
-        self.assertRaises( FieldValidationException, lambda: url_field.to_python("hxxp://google.com"))
-        self.assertRaises( FieldValidationException, lambda: url_field.to_python("http://"))
-        self.assertRaises( FieldValidationException, lambda: url_field.to_python("google.com"))
+        self.assertRaises(FieldValidationException, lambda: url_field.to_python("hxxp://google.com"))
+        self.assertRaises(FieldValidationException, lambda: url_field.to_python("http://"))
+        self.assertRaises(FieldValidationException, lambda: url_field.to_python("google.com"))
 
 class TestDurationField(unittest.TestCase):
 
@@ -152,8 +152,8 @@ class TestDurationField(unittest.TestCase):
     def test_url_field_invalid(self):
         duration_field = DurationField("test_url_field_invalid", "title", "this is a test")
 
-        self.assertRaises( FieldValidationException, lambda: duration_field.to_python("1 treefrog"))
-        self.assertRaises( FieldValidationException, lambda: duration_field.to_python("minute"))
+        self.assertRaises(FieldValidationException, lambda: duration_field.to_python("1 treefrog"))
+        self.assertRaises(FieldValidationException, lambda: duration_field.to_python("minute"))
 
 def skipIfNoServer(func):
     def _decorator(self, *args, **kwargs):
@@ -178,13 +178,13 @@ class TestWebPing(WebsiteMonitoringAppTest, UnitTestWithWebServer):
         shutil.rmtree(self.tmp_dir)
 
     def test_get_file_path(self):
-        self.assertEquals( WebPing.get_file_path("/Users/lmurphey/Applications/splunk/var/lib/splunk/modinputs/web_ping", "web_ping://TextCritical.com"), "/Users/lmurphey/Applications/splunk/var/lib/splunk/modinputs/web_ping" + os.sep + "35163af7282b92013f810b2b4822d7df.json")
+        self.assertEquals(WebPing.get_file_path("/Users/lmurphey/Applications/splunk/var/lib/splunk/modinputs/web_ping", "web_ping://TextCritical.com"), "/Users/lmurphey/Applications/splunk/var/lib/splunk/modinputs/web_ping" + os.sep + "35163af7282b92013f810b2b4822d7df.json")
 
     def test_ping(self):
 
         url_field = URLField("test_ping", "title", "this is a test")
 
-        result = WebPing.ping( url_field.to_python("https://www.google.com/"), timeout=3)
+        result = WebPing.ping(url_field.to_python("http://127.0.0.1:" + str(self.web_server_port) + "/test_page"), timeout=3)
 
         self.assertEquals(result.response_code, 200)
         self.assertGreater(result.request_time, 0)
@@ -194,8 +194,8 @@ class TestWebPing(WebsiteMonitoringAppTest, UnitTestWithWebServer):
 
         url_field = URLField("test_ping", "title", "this is a test")
 
-        #result = WebPing.ping( url_field.to_python("http://127.0.0.1:" + str(self.web_server_port) + "/test_page?s=superloooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooong"), timeout=3)
-        result = WebPing.ping( url_field.to_python("http://127.0.0.1:" + str(self.web_server_port) + "/test_page_superlooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooong"), timeout=3)
+        #result = WebPing.ping(url_field.to_python("http://127.0.0.1:" + str(self.web_server_port) + "/test_page?s=superloooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooong"), timeout=3)
+        result = WebPing.ping(url_field.to_python("http://127.0.0.1:" + str(self.web_server_port) + "/test_page_superlooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooong"), timeout=3)
 
         self.assertEquals(result.response_code, 200)
         self.assertGreater(result.request_time, 0)
@@ -232,22 +232,22 @@ class TestWebPing(WebsiteMonitoringAppTest, UnitTestWithWebServer):
     def test_needs_another_run(self):
 
         # Test case where file does not exist
-        self.assertTrue( WebPing.needs_another_run("/Users/lmurphey/Applications/splunk/var/lib/splunk/modinputs/web_ping", "web_ping://DoesNotExist", 60))
+        self.assertTrue(WebPing.needs_another_run("/Users/lmurphey/Applications/splunk/var/lib/splunk/modinputs/web_ping", "web_ping://DoesNotExist", 60))
 
         # Test an interval right at the earlier edge
-        self.assertFalse( WebPing.needs_another_run(os.path.join( self.get_test_dir(), "configs"), "web_ping://TextCritical.com", 60, 1365486765))
+        self.assertFalse(WebPing.needs_another_run(os.path.join(self.get_test_dir(), "configs"), "web_ping://TextCritical.com", 60, 1365486765))
 
         # Test an interval at the later edge
-        self.assertFalse( WebPing.needs_another_run(os.path.join( self.get_test_dir(), "configs"), "web_ping://TextCritical.com", 10, 1365486775))
+        self.assertFalse(WebPing.needs_another_run(os.path.join(self.get_test_dir(), "configs"), "web_ping://TextCritical.com", 10, 1365486775))
 
         # Test interval beyond later edge
-        self.assertTrue( WebPing.needs_another_run(os.path.join( self.get_test_dir(), "configs"), "web_ping://TextCritical.com", 10, 1365486776))
+        self.assertTrue(WebPing.needs_another_run(os.path.join(self.get_test_dir(), "configs"), "web_ping://TextCritical.com", 10, 1365486776))
         
     def test_output_result(self):
         web_ping = WebPing(timeout=3)
 
         url_field = URLField("test_ping", "title", "this is a test")
-        result = WebPing.ping(url_field.to_python("https://www.google.com/"), timeout=3)
+        result = WebPing.ping(url_field.to_python("http://127.0.0.1:" + str(self.web_server_port) + "/test_page"), timeout=3)
 
         out = StringIO()
 
@@ -273,10 +273,10 @@ class TestWebPing(WebsiteMonitoringAppTest, UnitTestWithWebServer):
 
         # Make sure the call does return the expected error (is attempting to load the data data)
         with self.assertRaises(ValueError):
-            web_ping.get_checkpoint_data(os.path.join( self.get_test_dir(), "configs"), throw_errors=True)
+            web_ping.get_checkpoint_data(os.path.join(self.get_test_dir(), "configs"), throw_errors=True)
         
         # Make sure the test returns None
-        data = web_ping.get_checkpoint_data(os.path.join( self.get_test_dir(), "configs", "web_ping://TextCritical.net"))
+        data = web_ping.get_checkpoint_data(os.path.join(self.get_test_dir(), "configs", "web_ping://TextCritical.net"))
 
         self.assertEqual(data, None)
 
@@ -285,7 +285,7 @@ class TestWebPing(WebsiteMonitoringAppTest, UnitTestWithWebServer):
 
         url_field = URLField("test_ping", "title", "this is a test")
 
-        result = WebPing.ping( url_field.to_python("http://127.0.0.1:" + str(self.web_server_port) + "/test_page"), timeout=3)
+        result = WebPing.ping(url_field.to_python("http://127.0.0.1:" + str(self.web_server_port) + "/test_page"), timeout=3)
 
         self.assertEquals(result.response_code, 200)
 
@@ -302,7 +302,7 @@ class TestWebPing(WebsiteMonitoringAppTest, UnitTestWithWebServer):
         """
 
         url_field = URLField("test_ping", "title", "this is a test")
-        result = WebPing.ping( url_field.to_python("https://lukemurphey.net"), timeout=3)
+        result = WebPing.ping(url_field.to_python("https://lukemurphey.net"), timeout=3)
 
         self.assertEquals(result.response_code, 200)
 
@@ -310,7 +310,7 @@ class TestWebPing(WebsiteMonitoringAppTest, UnitTestWithWebServer):
     def test_ping_over_proxy(self):
 
         url_field = URLField("test_ping", "title", "this is a test")
-        result = WebPing.ping( url_field.to_python("http://textcritical.com"), timeout=3, proxy_type=self.proxy_type, proxy_server=self.proxy_address, proxy_port=self.proxy_port)
+        result = WebPing.ping(url_field.to_python("http://textcritical.com"), timeout=3, proxy_type=self.proxy_type, proxy_server=self.proxy_address, proxy_port=self.proxy_port)
 
         self.assertEquals(result.response_code, 200)
 
@@ -319,7 +319,7 @@ class TestWebPing(WebsiteMonitoringAppTest, UnitTestWithWebServer):
 
         # Try with valid authentication
         url_field = URLField("test_ping", "title", "this is a test")
-        result = WebPing.ping( url_field.to_python("http://127.0.0.1:" + str(self.web_server_port)), timeout=3, username="admin", password="changeme")
+        result = WebPing.ping(url_field.to_python("http://127.0.0.1:" + str(self.web_server_port)), timeout=3, username="admin", password="changeme")
 
         self.assertEquals(result.response_code, 200)
 
@@ -327,7 +327,7 @@ class TestWebPing(WebsiteMonitoringAppTest, UnitTestWithWebServer):
         self.assertEquals(result.response_sha224, 'deaf4c0062539c98b4e957712efcee6d42832fed2d803c2bbf984b23')
 
         # Verify that bad authentication fails
-        result = WebPing.ping( url_field.to_python("http://127.0.0.1:" + str(self.web_server_port)), timeout=3, username="admin", password="wrongpassword")
+        result = WebPing.ping(url_field.to_python("http://127.0.0.1:" + str(self.web_server_port)), timeout=3, username="admin", password="wrongpassword")
 
         self.assertEquals(result.response_code, 401)
         self.assertGreater(result.request_time, 0)
