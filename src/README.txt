@@ -202,5 +202,8 @@ Change History
 | 2.4.1   | Disabled the use of a proxy on Splunk Cloud since this is unnecessary on Cloud                                   |
 |---------|------------------------------------------------------------------------------------------------------------------|
 | 2.5     | Added the ability to alert when the response of a web-page doesn't include particular content                    |
+|---------|------------------------------------------------------------------------------------------------------------------|
+| 2.5.1   | Fixed issue where the macro for a definition of a failure wouldn't match the friendly name in UI                 |
+|         | Made REST calls more resilient to transient Splunkd connection errors                                            |
 +---------+------------------------------------------------------------------------------------------------------------------+
 
