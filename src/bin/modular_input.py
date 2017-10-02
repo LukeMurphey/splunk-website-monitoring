@@ -125,9 +125,22 @@ import json
 from urlparse import urlparse
 from threading import RLock
 
-from splunk.appserver.mrsparkle.lib.util import make_splunkhome_path
-from splunk.util import normalizeBoolean as normBool
-import splunk.rest
+# Try to load Splunk's libraries. An inability to do so likely means we are running on a universal
+# forwarder (since it doesn't include Python). We will proceed but will be unable to access
+# Splunk's endpoints via simple request which means we will not able to load secure credentials.
+try:
+    from splunk.appserver.mrsparkle.lib.util import make_splunkhome_path
+    from splunk.util import normalizeBoolean as normBool
+    import splunk.rest
+    uf_mode = False
+except:
+    def normBool(value):
+        if str(value).strip().lower() in ['1', 'true']:
+            return True
+        else:
+            return False
+
+    uf_mode = True
 
 class FieldValidationException(Exception):
     pass
@@ -230,14 +243,13 @@ class Field(object):
 
         return str(value)
 
-
 class BooleanField(Field):
     """
     A validator that converts string versions of boolean to a real boolean.
     """
 
     def to_python(self, value, session_key=None):
-        Field.to_python(self, value)
+        Field.to_python(self, value, session_key)
 
         if value in [True, False]:
             return value
@@ -270,7 +282,7 @@ class ListField(Field):
 
     def to_python(self, value, session_key=None):
 
-        Field.to_python(self, value)
+        Field.to_python(self, value, session_key)
 
         if value is not None:
             return value.split(",")
@@ -284,6 +296,38 @@ class ListField(Field):
 
         return ""
 
+class StaticListField(Field):
+    """
+    This allows you to specify a list of field values that are allowed.
+    All other values will be rejected.
+    """
+
+    _valid_values = None
+    
+    def __init__(self, name, title, description, none_allowed=False, empty_allowed=True, required_on_create=None, required_on_edit=None, valid_values=None):
+        super(StaticListField,self).__init__(name, title, description, none_allowed, empty_allowed, required_on_create, required_on_edit)
+        
+        self.valid_values = valid_values
+
+    @property
+    def valid_values(self):
+        return self._valid_values
+
+    @valid_values.setter
+    def valid_values(self, values):
+        self._valid_values = values
+
+    def to_python(self, value, session_key=None):
+
+        Field.to_python(self, value, session_key)
+
+        if value is None:
+            return None
+        elif value not in self.valid_values:
+            raise FieldValidationException('The value of the "' + self.name + '" field is invalid, it must be one of:' + ','.join(self.valid_values))
+        else:
+            return value
+
 class RegexField(Field):
     """
     A validator that validates input matches a regular expression.
@@ -291,7 +335,7 @@ class RegexField(Field):
 
     def to_python(self, value, session_key=None):
 
-        Field.to_python(self, value)
+        Field.to_python(self, value, session_key)
 
         if value is not None:
             try:
@@ -315,7 +359,7 @@ class IntegerField(Field):
 
     def to_python(self, value, session_key=None):
 
-        Field.to_python(self, value)
+        Field.to_python(self, value, session_key)
 
         if value is not None:
             try:
@@ -342,7 +386,7 @@ class FloatField(Field):
 
     def to_python(self, value, session_key=None):
 
-        Field.to_python(self, value)
+        Field.to_python(self, value, session_key)
 
         if value is not None:
             try:
@@ -377,7 +421,7 @@ class RangeField(Field):
 
     def to_python(self, value, session_key=None):
 
-        Field.to_python(self, value)
+        Field.to_python(self, value, session_key)
 
         if value is not None:
             try:
@@ -431,7 +475,7 @@ class URLField(Field):
         return parsed_value
 
     def to_python(self, value, session_key=None):
-        Field.to_python(self, value)
+        Field.to_python(self, value, session_key)
 
         parsed_value = URLField.parse_url(value.strip(), self.name)
 
@@ -472,7 +516,7 @@ class DurationField(Field):
     }
 
     def to_python(self, value, session_key=None):
-        Field.to_python(self, value)
+        Field.to_python(self, value, session_key)
 
         # Parse the duration
         duration_match = DurationField.DURATION_RE.match(value)
@@ -631,6 +675,38 @@ class ModularInputConfig():
 
         return ModularInputConfig(server_host, server_uri, session_key, checkpoint_dir,
                                   configuration)
+
+def forgive_splunkd_outages(function):
+    """
+    Try the given function and swallow Splunkd connection exceptions until the limit is reached or
+    the function works.
+
+    Arguments:
+    function -- The function to call
+    """
+    def wrapper(*args, **kwargs):
+        """
+        This wrapper will provide the swallowing of the exception for the provided function call.
+        """
+        attempts = 6
+        attempt_delay = 5
+
+        attempts_tried = 0
+
+        while attempts_tried < attempts:
+            try:
+                return function(*args, **kwargs)
+            except splunk.SplunkdConnectionException:
+
+                # Sleep for a bit in order to let Splunk recover in case this is a temporary issue
+                time.sleep(attempt_delay)
+                attempts_tried += 1
+
+                # If we hit the limit of the attempts, then throw the exception
+                if attempts_tried >= attempts:
+                    raise
+
+    return wrapper
 
 class ModularInput():
     """
@@ -986,7 +1062,11 @@ class ModularInput():
         logger.propagate = False
         logger.setLevel(self.logger_level)
 
-        file_handler = handlers.RotatingFileHandler(make_splunkhome_path(['var', 'log', 'splunk', self.logger_name + '.log']), maxBytes=25000000, backupCount=5)
+        if uf_mode:
+            file_handler = handlers.RotatingFileHandler(os.path.join(os.environ['SPLUNK_HOME'], 'var', 'log', self.logger_name + '.log'), maxBytes=25000000, backupCount=5)
+        else:
+            file_handler = handlers.RotatingFileHandler(make_splunkhome_path(['var', 'log', 'splunk', self.logger_name + '.log']), maxBytes=25000000, backupCount=5)
+
         formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
         file_handler.setFormatter(formatter)
 
@@ -1017,6 +1097,12 @@ class ModularInput():
         Get the secure password that matches the given realm and username. If no username is
         provided, the first entry with the given realm will be returned.
         """
+
+        if uf_mode:
+            self.logger.warn("Unable to retrieve the secure credential since the input appears " + 
+                             "to be running in a Univeral Forwarder")
+            # Cannot get the secure password in universal forwarder mode since we don't Splunk libraries
+            return None
 
         # Look up the entry by realm only if no username is provided.
         if username is None or len(username) == 0:

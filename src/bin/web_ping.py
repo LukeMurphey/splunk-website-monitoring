@@ -3,12 +3,12 @@ This module defines the Website Monitoring web_ping modular input.
 """
 
 from splunk.models.base import SplunkAppObjModel
-from modular_input import Field, ModularInput, URLField, DurationField
+from modular_input import Field, ModularInput, URLField, DurationField, forgive_splunkd_outages
 from splunk.models.field import Field as ModelField
 from splunk.models.field import IntField as ModelIntField
 import splunk
 
-import re   
+import re
 import hashlib
 import sys
 import time
@@ -548,9 +548,10 @@ class WebPing(ModularInput):
 
         self.save_checkpoint_data(checkpoint_dir, stanza, {'last_run' : last_run})
 
+    @forgive_splunkd_outages
     def get_app_config(self, session_key, stanza="default"):
         """
-        Get the app configuration
+        Get the app configuration.
 
         Arguments:
         session_key -- The session key to use when connecting to the REST API
@@ -576,6 +577,7 @@ class WebPing(ModularInput):
 
         return website_monitoring_config
 
+    @forgive_splunkd_outages
     def get_proxy_config(self, session_key, stanza="default"):
         """
         Get the proxy configuration
