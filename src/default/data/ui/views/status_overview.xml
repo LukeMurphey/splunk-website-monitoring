@@ -20,7 +20,7 @@
 	<row>
 		<table>
 			<search>
-    			<query> sourcetype="web_ping"
+    			<query> sourcetype="web_ping" `web_ping_search_index`
 | fillnull response_code value="Connection failed"
 | eval response_code=if(response_code="", "Connection failed", response_code)
 | eval response_code=if(timed_out == "True", "Connection timed out", response_code)

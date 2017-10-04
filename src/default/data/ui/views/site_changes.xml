@@ -16,15 +16,12 @@
 		<table>
 			<search>
     			<query>
-    				sourcetype="web_ping" title="$title$" | eval content_hash=if(isnotnull(content_md5),content_md5,content_sha224) | stats count, min(_time) as changed, max(_time) as last_observed by url, content_hash, title | sort -changed | `timesince(changed,since_last_changed)` | convert ctime(changed) | convert ctime(last_observed) | fields title url changed since_last_changed last_observed count
+    				sourcetype="web_ping" `web_ping_search_index` title="$title$" | eval content_hash=if(isnotnull(content_md5),content_md5,content_sha224) | stats count, min(_time) as changed, max(_time) as last_observed by url, content_hash, title | sort -changed | `timesince(changed,since_last_changed)` | convert ctime(changed) | convert ctime(last_observed) | fields title url changed since_last_changed last_observed count
 				</query>
 			</search>
 			<title>Change History</title>
 			<option name="count">10</option>
 			<option name="rowNumbers">true</option>
-			<drilldown>
-				<link><![CDATA[/app/website_monitoring/flashtimeline/?q=search%20sourcetype%3Dweb_ping%20title%3D"$form.title$"%20%7C%20%60format_events_raw%60&earliest=$earliest$&latest=$latest$]]></link>
-			</drilldown>
 		</table>
 	</row>
 </form>
