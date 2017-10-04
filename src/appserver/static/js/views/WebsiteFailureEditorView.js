@@ -223,7 +223,7 @@ define([
 	                    '</div>' +
                     '</div>' + 
         			'<span id="settings_form">' + 
-                    '<div>You define what you want to consider an outage below.' +
+                    '<div>You define what you want to consider an outage below. ' +
                     'These settings will also apply to the ' +
                     '<a class="external" target="external" href="alert?s=%2FservicesNS%2Fnobody%2Fwebsite_monitoring%2Fsaved%2Fsearches%2FWebsite%2520Performance%2520Problem">alert search</a> that provides notifications of outages.' +
                     '</div>' +
