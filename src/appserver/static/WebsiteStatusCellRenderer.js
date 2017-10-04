@@ -18,40 +18,49 @@ define(['jquery', 'underscore', 'splunkjs/mvc', 'views/shared/results_table/rend
 			 	// Parse out the response code and whether the content matches from the response
 				parsed_values = /([0-9]+)([ ](.*))?/i.exec(cell.value);
 			 
-				response = parsed_values[1];
-				has_expected_string = parsed_values[3];
+				// Handle the response code if it was an integer that could be parsed
+				if(parsed_values !== null){
+					response = parsed_values[1];
+					has_expected_string = parsed_values[3];
 
-				// Reformat the cell value
-				cell.value = response;
+					// Reformat the cell value
+					cell.value = response;
 
-				if(has_expected_string === "true"){
-					cell.value += " (content matches)";
-					$td.addClass("contentmatch");
-				}
-				else if(has_expected_string === "false"){
-					cell.value += " (content doesn't match)";
-					$td.addClass("contentnonmatch");
-				}
+					if(has_expected_string === "true"){
+						cell.value += " (content matches)";
+						$td.addClass("contentmatch");
+					}
+					else if(has_expected_string === "false"){
+						cell.value += " (content doesn't match)";
+						$td.addClass("contentnonmatch");
+					}
 
-				// Assign the classes based on the response code
-				var int_value = parseInt(response, 10);
-				 
-				if(int_value >= 400){
-					 $td.addClass("failure");
-					 icon = 'alert';
+					// Assign the classes based on the response code
+					var int_value = parseInt(response, 10);
+					
+					if(int_value >= 400){
+						$td.addClass("failure");
+						icon = 'alert';
+					}
+					else if(has_expected_string === "false"){
+						$td.addClass("failure");
+						icon = 'alert';
+					}
+					else if(int_value >= 100){
+						$td.addClass("success");
+						icon = 'check';
+					}
+					else{
+						$td.addClass("failure");
+						icon = 'alert';
+					}
 				}
-				else if(has_expected_string === "false"){
+				// Otherwise, handle this as a string that represents an error state
+				// e.g. "Connection timed out"
+				else{
 					$td.addClass("failure");
 					icon = 'alert';
 				}
-				 else if(int_value >= 100){
-					 $td.addClass("success");
-					 icon = 'check';
-				 }
-				 else{
-					 $td.addClass("failure");
-					 icon = 'alert';
-				 }
 				
 			 }
 			 
