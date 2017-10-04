@@ -203,7 +203,8 @@ Change History
 |---------|------------------------------------------------------------------------------------------------------------------|
 | 2.5     | Added the ability to alert when the response of a web-page doesn't include particular content                    |
 |---------|------------------------------------------------------------------------------------------------------------------|
-| 2.5.1   | Fixed issue where the macro for a definition of a failure wouldn't match the friendly name in UI                 |
+| 2.6     | Fixed issue where the macro for a definition of a failure wouldn't match the friendly name in UI                 |
 |         | Made REST calls more resilient to transient Splunkd connection errors                                            |
+|         | Added the ability to define the indexes to search by default (see the macro name web_ping_search_index)          |
 +---------+------------------------------------------------------------------------------------------------------------------+
 
