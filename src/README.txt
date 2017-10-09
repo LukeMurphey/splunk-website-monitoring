@@ -206,5 +206,7 @@ Change History
 | 2.6     | Fixed issue where the macro for a definition of a failure wouldn't match the friendly name in UI                 |
 |         | Made REST calls more resilient to transient Splunkd connection errors                                            |
 |         | Added the ability to define the indexes to search by default (see the macro "website_monitoring_search_index")   |
+|---------|------------------------------------------------------------------------------------------------------------------|
+| 2.6.1   | Fixed issue where the alert search didn't provide information on some outages                                    |
 +---------+------------------------------------------------------------------------------------------------------------------+
 
