@@ -208,5 +208,6 @@ Change History
 |         | Added the ability to define the indexes to search by default (see the macro "website_monitoring_search_index")   |
 |---------|------------------------------------------------------------------------------------------------------------------|
 | 2.6.1   | Fixed issue where the alert search didn't provide information on some outages                                    |
+|         | Fixed Status Overview dashboard which didn't include all errors when "Include only failures" was selected        |
 +---------+------------------------------------------------------------------------------------------------------------------+
 
