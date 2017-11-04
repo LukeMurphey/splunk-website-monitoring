@@ -1,5 +1,11 @@
-<!-- 
-This Ant build script contains operations that are useful for building Splunk apps whose source-code is in git (such as github).
+<!--
+This Ant build script contains operations that are useful for building Splunk apps from source-code.
+
+See the following page for some more documentation: https://github.com/LukeMurphey/splunk-ant-build-script/blob/master/README.md
+
+This is licensed under the Apache License Version 2.0
+See https://www.apache.org/licenses/LICENSE-2.0.html
+
 To use it with you app, do the following:
 
 1) Run the start_project build target like this:
@@ -100,22 +106,8 @@ You can also use ${value.version.number} to substitute your version number in ap
 -->
 	
 <project default="start_project" name="basebuild">
-
-	<!--
-	Properties will be loaded in the following order with the first one taking precedence:
 	
-	* local.properties
-	* Environment variables
-	* default.properties
-	-->
-	
-    <!--
-    Load the properties files, local is loaded first since properties are immutable (cannot be changed
-    by later property files) and we want the local properties to override the default properties
-    -->
-    <property file="local.properties" />
-	
-	<!-- Import some parameters from environment variables -->
+	<!-- Define some things so that we can import things from environment variables -->
 	<property environment="env" />
 	
 	<macrodef name="import_environment_var">
@@ -127,52 +119,11 @@ You can also use ${value.version.number} to substitute your version number in ap
 			</condition>
 		</sequential>
 	</macrodef>
-	
-	<import_environment_var property="value.deploy.splunk_home" variable="SPLUNK_HOME" />
-	<import_environment_var property="value.deploy.splunkweb_url" variable="SPLUNKWEB_URL" />
-	<import_environment_var property="value.deploy.splunkd_url" variable="SPLUNKD_URL" />
-	<import_environment_var property="value.deploy.splunk_username" variable="SPLUNK_USERNAME" />
-	<import_environment_var property="value.deploy.splunk_password" variable="SPLUNK_PASSWORD" />
-	<import_environment_var property="value.build.packageoutput.directory" variable="OUTPUT_DIRECTORY" />
-	<import_environment_var property="value.build.minimize" variable="BUILD_MINIMIZED" />
-	<import_environment_var property="value.deploy.minimize" variable="DEPLOY_MINIMIZED" />
-	<import_environment_var property="value.build.package.file" variable="PACKAGE_FILE" />
-	<import_environment_var property="value.build.package.username" variable="PACKAGE_USERNAME" />
-	<import_environment_var property="value.build.package.password" variable="PACKAGE_PASSWORD" />
-	<import_environment_var property="value.build.test.directory" variable="TEST_DIRECTORY" />
-	
-	<!-- Import the default properties -->
-    <property file="default.properties" />
-	
-	<!-- Set some default values in case they were not set in the default.properties file -->
-	<property name="value.build.packageoutput.directory" value="tmp/packages" />
-	<property name="value.build.optimize" value="true" />
-	<property name="value.deploy.splunkweb_url" value="http://127.0.0.1:8000" />
-	<property name="value.deploy.splunkd_url" value="https://127.0.0.1:8089" />
-	<property name="value.deploy.splunk_username" value="admin" />
-	<property name="value.deploy.splunk_password" value="changeme" />
-	<property name="value.build.test.directory" value="tests" />
-	
-    <!-- Set up some basic properties that are internal to this build script -->
-    <property name="value.src.directory" value="src" />
-	<property name="absolute_src_path" location="${value.src.directory}"/> <!-- This is an absolute version of the file path for error messages -->
-    <property name="value.temp.directory" value="${java.io.tmpdir}/${user.name}" />
-    <property name="value.build.appname" value="${ant.project.name}" />
-	<property name="value.build.libraries" value="${basedir}/lib" />
-	<property name="absolute_lib_path" location="${value.build.libraries}"/>
-	<property name="value.build.package.file" value="${value.build.packageoutput.directory}/${value.build.appname}.tar.gz"/>
-    
-    <!-- Set up the ant classpath -->
-    <path id="ant.classpath">
-        <fileset dir="ant">
-          <include name="*.jar" />
-        </fileset>
-    </path>
 
     <!-- ================================= 
           target: download_git_ignore
          ================================= -->
-	<target name="download_git_ignore" description="Download a default gitignore tailored for Splunk apps">
+	<target name="download_git_ignore" depends="initialize_properties" description="Download a default gitignore tailored for Splunk apps">
 		
 		<get src="https://gist.githubusercontent.com/LukeMurphey/410031b0a1e9df33853e3b605fd0e46d/raw/.gitignore" 
 		    dest="${basedir}/.gitignore" 
@@ -184,7 +135,7 @@ You can also use ${value.version.number} to substitute your version number in ap
     <!-- ================================= 
           target: start_project
          ================================= -->
-	<target name="start_project" description="Start a new Splunk app project; initialize a build script, download dependencies, etc.">
+	<target name="start_project" depends="initialize" description="Start a new Splunk app project; initialize a build script, download dependencies, etc.">
 		
 		<!-- Make sure that the build script doesn't already exist -->
     	<fail message="A build script already seems to exist">
@@ -254,7 +205,7 @@ You can customize the build process by placing properties in the default.propert
     <!-- ================================= 
           target: download_libraries
          ================================= -->
-	<target name="download_libraries">
+	<target name="download_libraries" depends="initialize_properties">
 		
 		<!-- Make sure the directory to store the library files exists -->
 		<mkdir dir="${absolute_lib_path}" />
@@ -295,11 +246,109 @@ You can customize the build process by placing properties in the default.propert
 		<taskdef name="splunkrestart" classname="net.lukemurphey.splunkbuild.SplunkRestart" classpath="${absolute_lib_path}/splunkdevtools-1.1.jar" />
 		<taskdef name="splunkappinstall" classname="net.lukemurphey.splunkbuild.SplunkAppInstall" classpath="${absolute_lib_path}/splunkdevtools-1.1.jar" />
 	</target>
+
+    <!-- ================================= 
+          target: initialize
+         ================================= -->
+	<target name="initialize" depends="initialize_properties,download_libraries,initialize_libraries" />
+
+    <!-- ================================= 
+          target: make_package_name
+         ================================= -->
+	<target name="make_package_name">
+		<property name="value.build.package.file" value="${value.build.packageoutput.directory}/${value.build.appname}.tar.gz" />
+	</target>
+
+    <!-- ================================= 
+          target: initialize_local_properties
+         ================================= -->
+	<target name="initialize_local_properties">
+
+		<!--
+		Load the properties files, local is loaded first since properties are immutable (cannot be changed
+		by later property files) and we want the local properties to override the default properties
+		-->
+		<property file="local.properties" />
+
+	</target>
+
+    <!-- ================================= 
+          target: initialize_environment_properties
+         ================================= -->
+	<target name="initialize_environment_properties">
+
+		<!-- Import some parameters from environment variables -->
+		<import_environment_var property="value.deploy.splunk_home" variable="SPLUNK_HOME" />
+		<import_environment_var property="value.deploy.splunkweb_url" variable="SPLUNKWEB_URL" />
+		<import_environment_var property="value.deploy.splunkd_url" variable="SPLUNKD_URL" />
+		<import_environment_var property="value.deploy.splunk_username" variable="SPLUNK_USERNAME" />
+		<import_environment_var property="value.deploy.splunk_password" variable="SPLUNK_PASSWORD" />
+		<import_environment_var property="value.build.packageoutput.directory" variable="OUTPUT_DIRECTORY" />
+		<import_environment_var property="value.build.minimize" variable="BUILD_MINIMIZED" />
+		<import_environment_var property="value.deploy.minimize" variable="DEPLOY_MINIMIZED" />
+		<import_environment_var property="value.build.package.file" variable="PACKAGE_FILE" />
+		<import_environment_var property="value.build.package.username" variable="PACKAGE_USERNAME" />
+		<import_environment_var property="value.build.package.password" variable="PACKAGE_PASSWORD" />
+		<import_environment_var property="value.build.test.directory" variable="TEST_DIRECTORY" />
+
+	</target>
+
+    <!-- ================================= 
+          target: initialize_default_properties
+         ================================= -->
+	<target name="initialize_default_properties">
+		<property file="default.properties" />
+	</target>
+
+    <!-- ================================= 
+          target: initialize_property_defaults
+         ================================= -->
+	<target name="initialize_property_defaults">
+		
+		<!-- Set some default values in case they were not set in the default.properties file -->
+		<property name="value.build.packageoutput.directory" value="tmp/packages" />
+		<property name="value.build.optimize" value="true" />
+		<property name="value.deploy.splunkweb_url" value="http://127.0.0.1:8000" />
+		<property name="value.deploy.splunkd_url" value="https://127.0.0.1:8089" />
+		<property name="value.deploy.splunk_username" value="admin" />
+		<property name="value.deploy.splunk_password" value="changeme" />
+		<property name="value.build.test.directory" value="tests" />
+		
+		<!-- Set up some basic properties that are internal to this build script -->
+		<property name="value.src.directory" value="src" />
+		<property name="absolute_src_path" location="${value.src.directory}"/> <!-- This is an absolute version of the file path for error messages -->
+		<property name="value.temp.directory" value="${java.io.tmpdir}/${user.name}" />
+		<property name="value.build.appname" value="${ant.project.name}" />
+		<property name="value.build.libraries" value="${basedir}/lib" />
+		<property name="absolute_lib_path" location="${value.build.libraries}"/>
+
+	</target>
+
+    <!-- ================================= 
+          target: initialize_properties
+         ================================= -->
+	<target name="initialize_properties" depends="initialize_local_properties,initialize_environment_properties,initialize_default_properties,initialize_property_defaults,make_package_name">
+
+		<!--
+		Properties will be loaded in the following order with the first one taking precedence:
+		
+		* local.properties
+		* Environment variables
+		* default.properties
+		-->
+
+		<!-- Set up the ant classpath -->
+		<path id="ant.classpath">
+			<fileset dir="ant">
+			<include name="*.jar" />
+			</fileset>
+		</path>
+	</target>
 	
     <!-- ================================= 
           target: clean
          ================================= -->
-    <target name="clean" description="Clean up temporary files and directories created by this build script" >
+    <target name="clean" depends="initialize_properties" description="Clean up temporary files and directories created by this build script" >
         
         <!-- Delete the temporary directory -->
         <delete quiet="true" includeEmptyDirs="true">
@@ -322,7 +371,7 @@ You can customize the build process by placing properties in the default.propert
     <!-- ================================= 
           target: get_build_number
          ================================= -->
-	<target name="get_build_number" depends="initialize_libraries">
+	<target name="get_build_number" depends="initialize">
 		
 		<macrodef name="get_build_info">
 			<attribute name="path" default="${user.dir}" />
@@ -347,11 +396,8 @@ You can customize the build process by placing properties in the default.propert
 
 			<!-- Run git to get the revision number and date -->
 			<then>
-				
 				<get_build_info outputproperty="value.build.number" />
 				<get_build_info format="cD" outputproperty="value.build.date" />
-				
-				
 			</then>
 
 			<!-- Generate the revision number and date -->
@@ -377,7 +423,7 @@ You can customize the build process by placing properties in the default.propert
     <!-- ================================= 
           target: clean.packages
          ================================= -->
-    <target name="clean.packages" description="Clean up the packages created by this build script">
+    <target name="clean.packages" depends="initialize_properties" description="Clean up the packages created by this build script">
         <delete quiet="true" includeEmptyDirs="true">
             <fileset dir="tmp/packages" />
         </delete>
@@ -386,7 +432,7 @@ You can customize the build process by placing properties in the default.propert
     <!-- ================================= 
           target: setup_tmp_directory_for_export
          ================================= -->
-    <target name="setup_tmp_directory_for_export">
+    <target name="setup_tmp_directory_for_export" depends="initialize_properties">
         
         <!-- Create a temporary directory to send the files to -->
         <property name="export_dir" value="${value.temp.directory}/package" />
@@ -421,7 +467,7 @@ You can customize the build process by placing properties in the default.propert
     <!-- ================================= 
           target: populate_export_dir
          ================================= -->
-    <target name="populate_export_dir" depends="get_build_number,initialize_libraries">
+    <target name="populate_export_dir" depends="initialize,get_build_number">
     	
     	<!-- Make sure that the source directory exists -->
     	<fail message="The directory where the source-code is supposed to be doesn't exist ('${absolute_src_path}')">
@@ -511,14 +557,14 @@ You can customize the build process by placing properties in the default.propert
     <!-- ================================= 
           target: set_minimize_for_package
          ================================= -->
-	<target name="set_minimize_for_package">
+	<target name="set_minimize_for_package" depends="initialize_properties">
 		<property name="minimize" value="${value.build.minimize}"/>
 	</target>
 	
     <!-- ================================= 
           target: package
          ================================= -->
-    <target name="package" depends="setup_tmp_directory_for_export,set_minimize_for_package,populate_export_dir" description="Create the Splunk package of the app">
+    <target name="package" depends="initialize_properties,setup_tmp_directory_for_export,set_minimize_for_package,populate_export_dir" description="Create the Splunk package of the app">
         
         <!-- Make the directory where we will store the files -->
         <mkdir dir="${value.build.packageoutput.directory}" />
@@ -551,7 +597,7 @@ You can customize the build process by placing properties in the default.propert
     <!-- ================================= 
           target: setup_tmp_directory_for_deployment
          ================================= -->
-    <target name="setup_tmp_directory_for_deployment">
+    <target name="setup_tmp_directory_for_deployment" depends="initialize_properties">
         
         <!-- Create a reference to the directory to send the files to -->
         <property name="export_dir" value="${value.deploy.splunk_home}/etc/apps" />
@@ -571,14 +617,14 @@ You can customize the build process by placing properties in the default.propert
     <!-- =================================
           target: set_minimize_for_deploy
          ================================= -->
-	<target name="set_minimize_for_deploy">
+	<target name="set_minimize_for_deploy" depends="initialize_properties">
 		<property name="minimize" value="${value.deploy.minimize}"/>
 	</target>
 	
 	<!-- =================================
 	          target: verify_splunk_home
 	     ================================= -->
-	<target name="verify_splunk_home">
+	<target name="verify_splunk_home" depends="initialize_properties">
 		
 		<fail unless="value.deploy.splunk_home">
 "value.deploy.splunk_home" has not been defined
@@ -595,7 +641,7 @@ Below is an example of the entry in the file:
     <!-- ================================= 
           target: deploy
          ================================= -->
-    <target name="deploy" depends="verify_splunk_home,splunk.bump_if_necessary,setup_tmp_directory_for_deployment,set_minimize_for_deploy,populate_export_dir" description="Deploys the app to an instance of Splunk" >
+    <target name="deploy" depends="initialize_properties,verify_splunk_home,splunk.bump_if_necessary,setup_tmp_directory_for_deployment,set_minimize_for_deploy,populate_export_dir" description="Deploys the app to an instance of Splunk" >
         
     	<!-- Set the permissions for *nix hosts -->
     	<chmod perm="755">
@@ -610,7 +656,7 @@ Below is an example of the entry in the file:
     <!-- ================================= 
           target: splunk.stop
          ================================= -->
-    <target name="splunk.stop" description="Stop Splunk" depends="verify_splunk_home">
+    <target name="splunk.stop" description="Stop Splunk" depends="initialize_properties,verify_splunk_home">
         <exec executable="${value.deploy.splunk_home}/bin/splunk">
             <arg line="stop" />
             <arg line="--accept-license" />
@@ -620,7 +666,7 @@ Below is an example of the entry in the file:
 	<!-- ===================================================================
 		  target: splunk.web_conf
 		 =================================================================== -->
-	<target name="splunk.web_conf" description="Configure SplunkWeb for easier web development"  depends="verify_splunk_home">
+	<target name="splunk.web_conf" description="Configure SplunkWeb for easier web development"  depends="initialize_properties,verify_splunk_home">
 	    <mkdir dir="${value.deploy.splunk_home}/etc/system/local/"/>
 	    
 	  	<echo file="${value.deploy.splunk_home}/etc/system/local/web.conf">[settings]
@@ -636,14 +682,14 @@ Below is an example of the entry in the file:
 	<!-- ===================================================================
 		  target: splunk.enable_fips
 		 =================================================================== -->
-	<target name="splunk.enable_fips" description="Configure SplunkWeb for easier web development" depends="verify_splunk_home">
+	<target name="splunk.enable_fips" description="Configure SplunkWeb for easier web development" depends="initialize_properties,verify_splunk_home">
 	  	<echo file="${value.deploy.splunk_home}/etc/splunk-launch.conf">SPLUNK_FIPS=1</echo> 	
 	</target>
 	
 	<!-- ===================================================================
 		  target: splunk.enable_custom_root_endpoint
 		 =================================================================== -->
-	<target name="splunk.enable_custom_root_endpoint" description="Configure SplunkWeb for easier web development" depends="verify_splunk_home">
+	<target name="splunk.enable_custom_root_endpoint" description="Configure SplunkWeb for easier web development" depends="initialize_properties,verify_splunk_home">
 	    <mkdir dir="${value.deploy.splunk_home}/etc/system/local/"/>
 	    
 	  	<echo file="${value.deploy.splunk_home}/etc/system/local/web.conf">[settings]
@@ -654,7 +700,7 @@ Below is an example of the entry in the file:
 	<!-- ================================= 
       	 target: does_appserver_exist	
      	 ================================= -->
-	<target name="does_appserver_exist" depends="verify_splunk_home">
+	<target name="does_appserver_exist" depends="initialize_properties,verify_splunk_home">
     	<condition property="appserver_dir_exists">
       		<available file="${basedir}/${value.src.directory}/appserver/" type="dir"/>
     	</condition>
@@ -663,7 +709,7 @@ Below is an example of the entry in the file:
 	<!-- ================================= 
          target: is_appserver_up_to_date
          ================================= -->
-	<target name="is_appserver_up_to_date" description="Determine if the code in the appserver directory of the Splunk install is outdated" depends="does_appserver_exist" if="appserver_dir_exists">
+	<target name="is_appserver_up_to_date" description="Determine if the code in the appserver directory of the Splunk install is outdated" depends="initialize_properties,does_appserver_exist" if="appserver_dir_exists">
     	
     	<uptodate property="appserver_up_to_date">
     		
@@ -679,7 +725,7 @@ Below is an example of the entry in the file:
     <!-- ================================= 
           target: splunk.bump_if_necessary
          ================================= -->
-    <target name="splunk.bump_if_necessary" unless="appserver_up_to_date" if="appserver_dir_exists" depends="initialize_libraries,does_appserver_exist,is_appserver_up_to_date">
+    <target name="splunk.bump_if_necessary" unless="appserver_up_to_date" if="appserver_dir_exists" depends="initialize,does_appserver_exist,is_appserver_up_to_date">
     	<if>
     		<bool>
     			<not>
@@ -702,7 +748,7 @@ Below is an example of the entry in the file:
     <!-- ================================= 
           target: splunk.start
          ================================= -->
-    <target name="splunk.start" description="Start Splunk" depends="verify_splunk_home">
+    <target name="splunk.start" description="Start Splunk" depends="initialize_properties,verify_splunk_home">
         <exec executable="${value.deploy.splunk_home}/bin/splunk">
             <arg line="start" />
             <arg line="--accept-license" />
@@ -712,7 +758,7 @@ Below is an example of the entry in the file:
 	<!-- =================================
 	          target: verify_splunkd_url
 	     ================================= -->
-	<target name="verify_splunkd_url">
+	<target name="verify_splunkd_url" depends="initialize_properties">
 		
 		<fail unless="value.deploy.splunkd_url">
 "splunkd_url" has not been defined
@@ -729,7 +775,7 @@ Below is an example of the entry in the file:
 	<!-- =================================
 	          target: verify_splunkweb_url
 	     ================================= -->
-	<target name="verify_splunkweb_url">
+	<target name="verify_splunkweb_url" depends="initialize_properties">
 		
 		<fail unless="value.deploy.splunkweb_url">
 "splunkweb_url" has not been defined
@@ -746,7 +792,7 @@ Below is an example of the entry in the file:
     <!-- ================================= 
           target: splunk.restart
          ================================= -->
-    <target name="splunk.restart" description="Restart Splunk" depends="initialize_libraries">
+    <target name="splunk.restart" description="Restart Splunk" depends="initialize">
 
 		<if>
 			<not>
@@ -777,7 +823,7 @@ Below is an example of the entry in the file:
     <!-- ================================= 
           target: splunk.restart_cli
          ================================= -->
-    <target name="splunk.restart_cli" description="Restart Splunk using a CLI call" depends="verify_splunk_home,initialize_libraries">
+    <target name="splunk.restart_cli" description="Restart Splunk using a CLI call" depends="initialize_properties,verify_splunk_home">
 
         <exec executable="${value.deploy.splunk_home}/bin/splunk">
             <arg line="restart" />
@@ -789,7 +835,7 @@ Below is an example of the entry in the file:
     <!-- ================================= 
           target: splunk.restart_web
          ================================= -->
-    <target name="splunk.restart_web" description="Restart Splunk" depends="verify_splunk_home">
+    <target name="splunk.restart_web" description="Restart Splunk" depends="initialize_properties,verify_splunk_home">
         <exec executable="${value.deploy.splunk_home}/bin/splunk">
 		    <arg line="restart" />
 		    <arg line="splunkweb" />
@@ -817,7 +863,7 @@ Below is an example of the entry in the file:
     <!-- ================================= 
           target: splunk.install
          ================================= -->
-	<target name="splunk.install" description="Installs the package into Splunk" depends="initialize_libraries">
+	<target name="splunk.install" description="Installs the package into Splunk" depends="initialize">
 
 		<if>
 			<not>
@@ -836,7 +882,7 @@ Below is an example of the entry in the file:
     <!-- ================================= 
           target: splunk.install_cli
          ================================= -->
-	<target name="splunk.install_cli" description="Installs the package into Splunk" depends="verify_splunk_home,resolve_package_file,initialize_libraries">
+	<target name="splunk.install_cli" description="Installs the package into Splunk" depends="initialize_properties,verify_splunk_home,resolve_package_file">
 
 		<exec failonerror="true" executable="${value.deploy.splunk_home}/bin/splunk" dir="${basedir}">
         	<arg line="install" />
@@ -853,7 +899,7 @@ Below is an example of the entry in the file:
     <!-- ================================= 
           target: resolve_package_file
          ================================= -->
-	<target name="resolve_package_file" description="Resolve the package file name; downloads the package file necessary" depends="initialize_libraries">
+	<target name="resolve_package_file" description="Resolve the package file name; downloads the package file necessary" depends="initialize">
 
 		<!-- See if the package is a URL and download the package if it is -->
 		<if>
@@ -920,34 +966,40 @@ Below is an example of the entry in the file:
     <!-- ================================= 
           target: splunk.install_api
          ================================= -->
-	<target name="splunk.install_api" description="Installs the package into Splunk using the REST API" depends="verify_splunkd_url,initialize_libraries,resolve_package_file">
+	<target name="splunk.install_api" description="Installs the package into Splunk using the REST API" depends="initialize_libraries,verify_splunkd_url,resolve_package_file">
 		<splunkappinstall name="${absolute_package_file}" url="${value.deploy.splunkd_url}" username="${value.deploy.splunk_username}" password="${value.deploy.splunk_password}"/>
 	</target>
 
 	<!-- ================================= 
           target: splunk.install_and_restart
          ================================= -->
-	<target name="splunk.install_and_restart" description="Builds the package, installs it, and restarts Splunk" depends="splunk.install,splunk.restart"/>
+	<target name="splunk.install_and_restart" description="Builds the package, installs it, and restarts Splunk" depends="initialize_properties,splunk.install,splunk.restart"/>
 
-    <!-- Define a macro that can be used for refreshing Splunk endpoints -->
-    <macrodef name="reload_conf">
-    	<attribute name="endpoint"/>
-    	<sequential>
-    		<exec failonerror="true" executable="${value.deploy.splunk_home}/bin/splunk"> <!-- Fail on error is set to true -->
-    			<arg value="_internal"/>
-    			<arg value="call"/>
-    			<arg value="/admin/@{endpoint}/_reload"/>
-    			<arg value="-auth"/>
-    			<arg value="${value.deploy.splunk_username}:${value.deploy.splunk_password}"/>
-    			<arg value="--accept-license"/>
-    		</exec>
-    	</sequential>
-    </macrodef>
+	<!-- ================================= 
+          target: define_reload_conf_macro
+         ================================= -->
+	<target name="define_reload_conf_macro" depends="initialize_properties">
+
+		<!-- Define a macro that can be used for refreshing Splunk endpoints -->
+		<macrodef name="reload_conf">
+			<attribute name="endpoint"/>
+			<sequential>
+				<exec failonerror="true" executable="${value.deploy.splunk_home}/bin/splunk"> <!-- Fail on error is set to true -->
+					<arg value="_internal"/>
+					<arg value="call"/>
+					<arg value="/admin/@{endpoint}/_reload"/>
+					<arg value="-auth"/>
+					<arg value="${value.deploy.splunk_username}:${value.deploy.splunk_password}"/>
+					<arg value="--accept-license"/>
+				</exec>
+			</sequential>
+		</macrodef>
+	</target>
 
     <!-- ================================= 
           target: splunk.refresh
          ================================= -->
-    <target name="splunk.refresh" description="Refresh Splunk" depends="verify_splunk_home">
+    <target name="splunk.refresh" description="Refresh Splunk" depends="define_reload_conf_macro,verify_splunk_home">
     	<reload_conf endpoint="savedsearch" />
     	<reload_conf endpoint="nav" />
     	<reload_conf endpoint="views" />
@@ -961,7 +1013,7 @@ Below is an example of the entry in the file:
     <!-- ================================= 
           target: test.run
          ================================= -->
-    <target name="test.run" description="Run tests" depends="verify_splunk_home">
+    <target name="test.run" description="Run tests" depends="initialize_properties,verify_splunk_home">
         <exec failonerror="true" executable="${value.deploy.splunk_home}/bin/splunk">
         	<arg line="cmd" />
         	<arg line="python" />
@@ -977,16 +1029,45 @@ Below is an example of the entry in the file:
     <!-- ================================= 
           target: test.deploy_and_run_unit
          ================================= -->
-    <target name="test.deploy_and_run_unit" description="Deploys the application and runs tests" depends="skip_bump,deploy,test.run_unit" />
+    <target name="test.deploy_and_run_unit" description="Deploys the application and runs the unit tests" depends="skip_bump,deploy,test.run_unit" />
+	
+    <!-- ================================= 
+          target: test.deploy_and_test
+         ================================= -->
+    <target name="test.deploy_and_test" description="Deploys the application and runs the entire test suite" depends="skip_bump,deploy,test" />
 	
     <!-- ================================= 
           target: test.run_unit
          ================================= -->
-    <target name="test.run_unit" description="Run unit tests">
+    <target name="test.run_unit" description="Run unit tests" depends="initialize_properties">
+
+		<!-- Define a default value for the tests to run. Otherwise, arguments passed from the CLI will be used (e.g. ant test.run_unit -Dtest=TestPingParser) -->
+		<property name="test" value="" />
+
         <exec failonerror="true" executable="${value.deploy.splunk_home}/bin/splunk" dir="${value.build.test.directory}">
         	<arg line="cmd" />
         	<arg line="python" />
         	<arg line="unit.py" />
+			<arg line="${test}" />
+        </exec>
+    </target>
+
+    <!-- ================================= 
+          target: test
+         ================================= -->
+    <target name="test" description="Run the entire test suite" depends="test.run_unit,btool">
+    </target>
+
+    <!-- ================================= 
+          target: btool
+         ================================= -->
+    <target name="btool" description="Check the app configuration with btool" depends="initialize_properties">
+
+        <exec failonerror="true" executable="${value.deploy.splunk_home}/bin/splunk" dir="${value.build.test.directory}">
+        	<arg line="cmd" />
+        	<arg line="btool" />
+        	<arg line="check" />
+			<arg line="--app=${value.build.appname}" />
         </exec>
     </target>
 
