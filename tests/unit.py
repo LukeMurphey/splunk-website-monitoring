@@ -7,6 +7,8 @@ import shutil
 import tempfile
 import threading
 from StringIO import StringIO
+import errno
+import HTMLTestRunner
 
 sys.path.append(os.path.join("..", "src", "bin"))
 
@@ -468,7 +470,20 @@ class TestWebPing(WebsiteMonitoringAppTest, UnitTestWithWebServer):
 
 if __name__ == '__main__':
     try:
-        unittest.main(testRunner= unittest.TextTestRunner(verbosity=2))
+        report_path = os.path.join('..', os.environ.get('TEST_OUTPUT', 'tmp/test_report.html'))
+
+        # Make the test directory
+        try:
+            os.makedirs(os.path.dirname(report_path))
+        except OSError as exception:
+            if exception.errno != errno.EEXIST:
+                raise
+
+        with open(report_path, 'w') as report_file:
+            test_runner = HTMLTestRunner.HTMLTestRunner(
+                stream=report_file
+            )
+            unittest.main(testRunner=test_runner)
     finally:
         if WebsiteMonitoringAppTest.proxyd is not None:
             WebsiteMonitoringAppTest.proxyd.shutdown()
