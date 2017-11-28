@@ -209,5 +209,7 @@ Change History
 |---------|------------------------------------------------------------------------------------------------------------------|
 | 2.6.1   | Fixed issue where the alert search didn't provide information on some outages                                    |
 |         | Fixed Status Overview dashboard which didn't include all errors when "Include only failures" was selected        |
+|---------|------------------------------------------------------------------------------------------------------------------|
+| 2.6.2   | Connection failures now include a lot more detail which makes debugging easier                                   |
 +---------+------------------------------------------------------------------------------------------------------------------+
 
