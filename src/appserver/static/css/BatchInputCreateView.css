@@ -26,3 +26,21 @@
 .alert{
 	margin-top: 16px;
 }
+
+/*
+ * Minor styling changes to the tags input
+ */
+.BatchInputCreateView .bootstrap-tagsinput .tag [data-role="remove"]:after{
+    content: "×";
+    padding: 0px 2px;
+}
+
+.BatchInputCreateView .bootstrap-tagsinput .tag{
+  padding-top: 2px;
+  padding-bottom: 2px;
+  padding-left: 8px;
+}
+
+.BatchInputCreateView .bootstrap-tagsinput > .label-info{
+	text-transform: none;
+}
