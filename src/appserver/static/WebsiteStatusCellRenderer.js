@@ -97,12 +97,6 @@ define(['jquery', 'underscore', 'splunkjs/mvc', 'views/shared/results_table/rend
 					 }
 					 
 					 if(percent !== null){
-						 /*
-					     $td.html(_.template('<img class="performance_icon" height="12" width="12" src="/static/app/website_monitoring/img/<%- percent %>.png" /> <%- value %>', {
-				            	value: cell.value,
-				            	percent: percent
-				         }));
-					     */
 					     $td.html(_.template('<i class="stopwatch-icon-<%- percent %>" /> <%- value %>', {
 				            	value: cell.value,
 				            	percent: percent
