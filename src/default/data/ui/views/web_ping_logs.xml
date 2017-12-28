@@ -68,6 +68,9 @@
         <option name="dataOverlayMode">none</option>
         <option name="drilldown">cell</option>
         <option name="count">10</option>
+        <drilldown>
+          <link target="_blank"><![CDATA[search?q=index=_internal (sourcetype=web_availability_modular_input) $severity$&earliest=$field1.earliest$&amp;latest=$field1.latest$]]></link>
+        </drilldown>
       </table>
     </panel>
   </row>
