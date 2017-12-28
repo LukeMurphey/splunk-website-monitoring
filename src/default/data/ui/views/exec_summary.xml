@@ -1,0 +1,111 @@
+<dashboard>
+  <label>Executive Summary</label>
+
+    <fieldset submitButton="true" autoRun="true">
+		<input type="time">
+			<default>Last 24 hours</default>
+		</input>
+		<input type="text" token="title">
+			<label>Site Title:</label>
+			<default>*</default>
+		</input>
+	</fieldset>
+
+  <search id="baseSearch">
+    <query>
+sourcetype="web_ping" `website_monitoring_search_index` title="$title$"
+| fillnull response_code value="Connection failed"
+| eval response_code=if(response_code="", "Connection failed", response_code)
+| eval response_code=if(timed_out == "True", "Connection timed out", response_code)
+| fillnull has_expected_string value=""
+| eval response_code=response_code." ".has_expected_string
+| stats avg(total_time) as avg_response_time latest(response_code) as response_code latest(url) as url latest(total_time) as response_time by source
+| eval response_time=round(response_time, 0)
+| eval response=response_code
+| table title url response last_checked response_time average range sparkline_response_time 
+| `timesince(last_checked,last_checked)`
+| sort -response_time
+    </query>
+  </search>
+  <row>
+    <panel>
+      <single>
+        <search base="baseSearch">
+          <query>
+| search response="* false" OR response_time &gt; 1000
+| stats count as count</query>
+        </search>
+        <option name="colorBy">value</option>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="numberPrecision">0</option>
+        <option name="rangeColors">["0x555","0xd93f3c"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+        <option name="trendColorInterpretation">standard</option>
+        <option name="trendDisplayMode">absolute</option>
+        <option name="underLabel">Sites with Failures</option>
+        <option name="unitPosition">after</option>
+        <option name="useColors">1</option>
+        <option name="useThousandSeparators">1</option>
+      </single>
+    </panel>
+    <panel>
+      <single>
+        <search base="baseSearch">
+          <query><![CDATA[
+| search NOT (response="* false" OR response_time > 1000) AND response_time >= 500
+| stats count as count]]></query>
+        </search>
+        <option name="colorBy">value</option>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="numberPrecision">0</option>
+        <option name="rangeColors">["0x555","0xf58f39"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+        <option name="trendColorInterpretation">standard</option>
+        <option name="trendDisplayMode">absolute</option>
+        <option name="underLabel">Sites with Warnings</option>
+        <option name="unitPosition">after</option>
+        <option name="useColors">1</option>
+        <option name="useThousandSeparators">1</option>
+      </single>
+    </panel>
+    <panel>
+      <single>
+        <search base="baseSearch">
+          <query><![CDATA[
+| search NOT (response="* false") AND response_time < 500
+| stats count as count]]></query>
+        </search>
+        <option name="colorBy">value</option>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="numberPrecision">0</option>
+        <option name="rangeColors">["0x555","0x65a637"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+        <option name="trendColorInterpretation">standard</option>
+        <option name="trendDisplayMode">absolute</option>
+        <option name="underLabel">Sites OK</option>
+        <option name="unitPosition">after</option>
+        <option name="useColors">1</option>
+        <option name="useThousandSeparators">1</option>
+      </single>
+    </panel>
+  </row>
+
+</dashboard>
