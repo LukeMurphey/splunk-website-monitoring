@@ -11,6 +11,7 @@
     	<reload_conf endpoint="views" />
 		<reload_conf endpoint="macros" />
         <reload_conf endpoint="ui-tour" />
+        <reload_conf endpoint="commandsconf" />
     </target>
 
 </project>
