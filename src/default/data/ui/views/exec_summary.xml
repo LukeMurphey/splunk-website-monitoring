@@ -31,9 +31,8 @@ sourcetype="web_ping" `website_monitoring_search_index` title="$title$"
     <panel>
       <single>
         <search base="baseSearch">
-          <query>
-| search response="* false" OR response_time &gt; 1000
-| stats count as count</query>
+          <query><![CDATA[| search response="* false" OR response_time > 1000 OR response="*failed*" OR response="*timed*"
+| stats count as count]]></query>
         </search>
         <option name="colorBy">value</option>
         <option name="colorMode">block</option>
