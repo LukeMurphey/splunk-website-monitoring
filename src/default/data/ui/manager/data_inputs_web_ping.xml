@@ -1,6 +1,4 @@
-<endpoint name="data/inputs/web_ping">
-	<header>Connects to a website in order to obtain performance statistics</header>
-	
+<endpoint name="data/inputs/web_ping" redirect="exec_summary">
 	<breadcrumb>
 	    <parent hidecurrent="False">datainputstats</parent>
 	    <name>Website Availability Check</name>
