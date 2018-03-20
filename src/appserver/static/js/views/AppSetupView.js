@@ -23,8 +23,8 @@ define([
 	ServerInfo,
     Template
 ){
-
     var WebsiteMonitoringConfiguration = SplunkDBaseModel.extend({
+        url: '/en-US/splunkd/servicesNS/nobody/website_monitoring/admin/website_monitoring/',
 	    initialize: function() {
 	    	SplunkDBaseModel.prototype.initialize.apply(this, arguments);
 	    }
@@ -68,23 +68,37 @@ define([
         updateModel: function(){
 
             if(this.is_on_cloud){
-                this.website_monitoring_configuration.entry.content.attributes.proxy_server = "";
-                this.website_monitoring_configuration.entry.content.attributes.proxy_port = "";
-                this.website_monitoring_configuration.entry.content.attributes.proxy_type = "http";
+                this.website_monitoring_configuration.entry.content.set({
+                    name: 'default',
+                    
+                    proxy_server: 'proxy_server',
+                    proxy_port: '',
+                    proxy_type: 'http',
 
-                this.website_monitoring_configuration.entry.content.attributes.proxy_user = "";
-                this.website_monitoring_configuration.entry.content.attributes.proxy_password = "";
+                    proxy_user: 'user',
+                    proxy_password: '',
+
+                    thread_limit: this.getThreadLimit()
+                }, {
+                    silent: true
+                });
             }
             else{
-                this.website_monitoring_configuration.entry.content.attributes.proxy_server = this.getProxyServer();
-                this.website_monitoring_configuration.entry.content.attributes.proxy_port = this.getProxyServerPort();
-                this.website_monitoring_configuration.entry.content.attributes.proxy_type = this.getProxyType();
+                this.website_monitoring_configuration.entry.content.set({
+                    name: 'default',
+                    
+                    proxy_server: this.getProxyServer(),
+                    proxy_port: this.getProxyServerPort(),
+                    proxy_type: this.getProxyType(),
 
-                this.website_monitoring_configuration.entry.content.attributes.proxy_user = this.getProxyUser();
-                this.website_monitoring_configuration.entry.content.attributes.proxy_password = ""; //This will be stored in secure storage; this.getProxyPassword();
+                    proxy_user: this.getProxyUser(),
+                    proxy_password: '', //This will be stored in secure storage
+
+                    thread_limit: this.getThreadLimit()
+                }, {
+                    silent: true
+                });
             }
-
-            this.website_monitoring_configuration.entry.content.attributes.thread_limit = this.getThreadLimit();
         },
 
         savePassword: function(){
@@ -101,7 +115,7 @@ define([
         },
 
         saveConfig: function(){
-
+            
             if(!this.userHasAdminAllObjects()){
                 alert("You don't have permission to edit this app");
             }
@@ -112,7 +126,9 @@ define([
                 this.showFormInProgress(true);
 
                 $.when(
-                    this.website_monitoring_configuration.save(),
+                    this.website_monitoring_configuration.save({}, {
+                        'url' : '/en-US/splunkd/servicesNS/nobody/website_monitoring/admin/website_monitoring/default'
+                    }),
                     this.savePassword()
                 )
                 // If successful, show a success message
@@ -175,8 +191,11 @@ define([
 
             this.setControlsEnabled(false);
 
-            return this.website_monitoring_configuration.fetch({
-                url: '/splunkd/services/admin/website_monitoring/default',
+            // Get a promise ready
+            var promise = jQuery.Deferred();
+
+            this.website_monitoring_configuration.fetch({
+                url: '/en-US/splunkd/servicesNS/nobody/website_monitoring/admin/website_monitoring/default',
                 id: 'default',
                 success: function (model, response, options) {
                     console.info("Successfully retrieved the default website_monitoring configuration");
@@ -189,11 +208,44 @@ define([
                     this.setProxyUser(model.entry.content.attributes.proxy_user);
                     this.setProxyPassword(model.entry.content.attributes.proxy_password);
                     this.setProxyPasswordConfirmation(model.entry.content.attributes.proxy_password);
+
+                    promise.resolve(response);
                 }.bind(this),
-                error: function () {
-                    console.warn("Unsuccessfully retrieved the default website_monitoring configuration");
+                error: function(response, textStatus, errorThrown){
+
+                    /*
+                     * Handle the case where the default stanza doesn't exist. Cloud rules don't
+                     * allow default stanzas so we have to put defaults in code.
+                     */
+        			if(textStatus.status === 404){ 
+                        console.info("Default website_monitoring configuration doesn't exist yet");
+                        // Set to the default values
+                        this.setProxyServer("");
+                        this.setProxyServerPort("");
+                        this.setProxyType("http");
+    
+                        this.setThreadLimit("200");
+    
+                        this.setProxyUser("");
+                        this.setProxyPassword("");
+                        this.setProxyPasswordConfirmation("");
+
+                        // Start with a new configuration since one doesn't exist yet
+                        this.website_monitoring_configuration = new WebsiteMonitoringConfiguration({
+                            user: 'nobody',
+                            app: 'website_monitoring'
+                        });
+
+                        promise.resolve(response);
+        			}
+                    else{
+                        console.warn("Unsuccessfully retrieved the default website_monitoring configuration");
+                        promise.reject();
+                    }
                 }.bind(this)
             });
+
+            return promise;
         },
 
         render: function () {
