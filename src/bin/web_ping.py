@@ -326,8 +326,10 @@ class WebPing(ModularInput):
                     }
 
             else:
-                socks.setdefaultproxy(resolved_proxy_type, proxy_server, proxy_port)
+                socks.setdefaultproxy(resolved_proxy_type, proxy_server, int(proxy_port))
                 socket.socket = socks.socksocket
+                if logger:
+                    logger.debug("Using socks proxy server=%s, port=%s", proxy_server, proxy_port)
 
         else:
             # No proxy is being used
@@ -562,12 +564,13 @@ class WebPing(ModularInput):
 
         # Get the proxy configuration
         try: 
-            server_response, server_content = splunk.rest.simpleRequest('/servicesNS/nobody/website_monitoring/admin/website_monitoring?output_mode=json', sessionKey=session_key)
+            server_response, server_content = splunk.rest.simpleRequest('/servicesNS/nobody/website_monitoring/admin/website_monitoring/' + stanza + '?output_mode=json', sessionKey=session_key)
 
             if server_response['status'] != '200':
                 raise Exception("Could not get the website_monitoring configuration")
 
             app_content = json.loads(server_content)
+            self.logger.debug("Loaded config is %r", app_content)
             website_monitoring_config.update(app_content['entry'][0]['content'])
 
             # Convert the thread limit to an integer
@@ -656,7 +659,8 @@ class WebPing(ModularInput):
 
             # Get the default app config
             self.default_app_config = self.get_app_config(input_config.session_key)
-            self.logger.info("Config is %r", self.default_app_config)
+            self.logger.debug("Default config is %r", self.default_app_config)
+
             # Get the limit from the app config
             loaded_thread_limit = self.default_app_config['thread_limit']
 
