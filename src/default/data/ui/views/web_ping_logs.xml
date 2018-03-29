@@ -26,7 +26,7 @@
     <panel>
       <chart>
         <search>
-          <query>index=_internal sourcetype=web_availability_modular_input $severity$ | rex field=_raw "(?&lt;severity&gt;(DEBUG)|(ERROR)|(WARNING)|(INFO)|(CRITICAL)) (?&lt;message&gt;.*)" | fillnull severity value="UNDEFINED" | timechart count(severity) as count by severity</query>
+          <query>index=_internal sourcetype=web_availability_modular_input | rex field=_raw "(?&lt;severity&gt;(DEBUG)|(ERROR)|(WARNING)|(INFO)|(CRITICAL)) (?&lt;message&gt;.*)" | fillnull severity value="UNDEFINED" | timechart count(severity) as count by severity</query>
           <earliest>$field1.earliest$</earliest>
           <latest>$field1.latest$</latest>
         </search>
@@ -59,7 +59,7 @@
       <table>
         <title>Latest Logs</title>
         <search>
-          <query>index=_internal sourcetype=web_availability_modular_input $severity$ | rex field=_raw "(?&lt;severity&gt;(DEBUG)|(ERROR)|(WARNING)|(INFO)|(CRITICAL)) (?&lt;message&gt;.*)" | sort -_time | eval time=_time | convert ctime(time) | table time severity message</query>
+          <query>index=_internal sourcetype=web_availability_modular_input | rex field=_raw "(?&lt;severity&gt;(DEBUG)|(ERROR)|(WARNING)|(INFO)|(CRITICAL)) (?&lt;message&gt;.*)" | search severity=$severity$ | sort -_time | eval time=_time | convert ctime(time) | table time severity message</query>
           <earliest>$field1.earliest$</earliest>
           <latest>$field1.latest$</latest>
         </search>
