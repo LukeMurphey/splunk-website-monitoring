@@ -2,19 +2,22 @@
 This module defines the Website Monitoring web_ping modular input.
 """
 
-from splunk.models.base import SplunkAppObjModel
-from modular_input import Field, ModularInput, URLField, DurationField, forgive_splunkd_outages
+import os
+import sys
+
+path_to_mod_input_lib = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'modular_input.zip')
+sys.path.insert(0, path_to_mod_input_lib)
+from modular_input import Field, ModularInput, URLField, DurationField
+from modular_input.shortcuts import forgive_splunkd_outages
 from splunk.models.field import Field as ModelField
 from splunk.models.field import IntField as ModelIntField
 import splunk
 
 import re
 import hashlib
-import sys
 import time
 import json
 import threading
-import os
 import logging
 
 import socket
@@ -744,6 +747,10 @@ class WebPing(ModularInput):
 
             # Don't scan the URL if the URL is unencrypted and the host is on Cloud
             if self.is_on_cloud(input_config.session_key) and not url.scheme == "https":
+                self.logger.warn("The URL will not be scanned because the host is running on Splunk Cloud and the URL isn't using encryption, url=%s", url.geturl())
+
+            # Don't scan the URL if the host is SHC and 
+            elif self.is_on_cloud(input_config.session_key) and not url.scheme == "https":
                 self.logger.warn("The URL will not be scanned because the host is running on Splunk Cloud and the URL isn't using encryption, url=%s", url.geturl())
 
             # If this is not running in multi-threading mode, then run it now in the main thread
