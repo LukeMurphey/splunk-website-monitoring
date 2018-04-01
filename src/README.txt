@@ -212,7 +212,7 @@ Change History
 |---------|------------------------------------------------------------------------------------------------------------------|
 | 2.6.2   | Connection failures now include a lot more detail which makes debugging easier                                   |
 |---------|------------------------------------------------------------------------------------------------------------------|
-| 2.7.0   | Added an Exective Summary dashboard                                                                              |
+| 2.7.0   | Added an Executive Summary dashboard                                                                             |
 |         | You can no longer make inputs on an SHC (since they need to be on a forwarder)                                   |
 |         | Inputs on an SHC environment no longer run unless on the SHC captain                                             |
 |         | Fixed the drilldown from "Status Overview" to "Status History" which failed to carry over some arguments         |
