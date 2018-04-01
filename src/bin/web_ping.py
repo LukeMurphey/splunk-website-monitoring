@@ -9,6 +9,7 @@ path_to_mod_input_lib = os.path.join(os.path.dirname(os.path.abspath(__file__)),
 sys.path.insert(0, path_to_mod_input_lib)
 from modular_input import Field, ModularInput, URLField, DurationField
 from modular_input.shortcuts import forgive_splunkd_outages
+from modular_input.secure_password import get_secure_password
 from splunk.models.field import Field as ModelField
 from splunk.models.field import IntField as ModelIntField
 import splunk
@@ -618,9 +619,9 @@ class WebPing(ModularInput):
         website_monitoring_config = self.get_app_config(session_key, stanza)
 
         # Get the proxy password from secure storage (if it exists)
-        secure_password = self.get_secure_password(realm=WebPing.PROXY_PASSWORD_REALM,
-                                                   username=WebPing.PROXY_PASSWORD_USERNAME,
-                                                   session_key=session_key)
+        secure_password = get_secure_password(realm=WebPing.PROXY_PASSWORD_REALM,
+                                              username=WebPing.PROXY_PASSWORD_USERNAME,
+                                              session_key=session_key)
 
         if secure_password is not None:
             proxy_password = secure_password['content']['clear_password']
@@ -703,7 +704,7 @@ class WebPing(ModularInput):
 
             # Get the secure password if necessary
             if username is not None:
-                secure_password = self.get_secure_password(realm=stanza, session_key=input_config.session_key)
+                secure_password = get_secure_password(realm=stanza, session_key=input_config.session_key)
 
                 if secure_password is not None:
                     password = secure_password['content']['clear_password']
@@ -721,6 +722,9 @@ class WebPing(ModularInput):
                 except splunk.SplunkdConnectionException:
                     self.logger.error("The proxy configuration could not be loaded (Splunkd connection exception). The execution will be skipped for this input with stanza=%s, see url=http://lukemurphey.net/projects/splunk-website-monitoring/wiki/Troubleshooting", stanza)
                     return
+                except:
+                    self.logger.exception("Exception generated when attempting to get the proxy configuration stanza=%s, see url=http://lukemurphey.net/projects/splunk-website-monitoring/wiki/Troubleshooting", stanza)
+                    return
 
                 # Perform the ping
                 try:
@@ -732,6 +736,7 @@ class WebPing(ModularInput):
                     self.logger.warn('NTLM authentication failed due to configuration issue stanza=%s, message="%i"', stanza, str(e))
 
                 with self.lock:
+
                     # Send the event
                     self.output_result(result, stanza, title, host=host, index=index, source=source,
                                     sourcetype=sourcetype, unbroken=True, close=True,
