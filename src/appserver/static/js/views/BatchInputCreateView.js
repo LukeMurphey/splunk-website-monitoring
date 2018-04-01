@@ -15,7 +15,8 @@ define([
     "underscore",
     "backbone",
     "splunkjs/mvc",
-    "util/splunkd_utils",
+	"util/splunkd_utils",
+	"models/SplunkDBase",
     "jquery",
     "splunkjs/mvc/simplesplunkview",
 	"models/services/server/ServerInfo",
@@ -28,12 +29,22 @@ define([
     _,
     Backbone,
     mvc,
-    splunkd_utils,
+	splunkd_utils,
+	SplunkDBaseModel,
     $,
     SimpleSplunkView,
 	ServerInfo,
     Template
 ){
+    var SHCInfo = SplunkDBaseModel.extend({
+		url: '/en-US/splunkd/services/shcluster/status',
+		//urlRoot: "shcluster",
+		//id: 'status',
+	    initialize: function() {
+	    	SplunkDBaseModel.prototype.initialize.apply(this, arguments);
+	    }
+	});
+
     // Define the custom view class
     var BatchInputCreateView = SimpleSplunkView.extend({
         className: "BatchInputCreateView",
@@ -551,7 +562,38 @@ define([
         	});
 
         },
-        
+		
+		/**
+		 * Get the SHC information.
+		 */
+		getSHCInfo: function(){
+			// Get a promise ready
+			var promise = jQuery.Deferred();
+
+			new SHCInfo().fetch({
+				url: splunkd_utils.fullpath('/en-US/splunkd/services/shcluster/status'),
+				success: function (model, response, options) {
+					this.shc_info = model;
+					promise.resolve(model);
+				},
+                error: function(response, textStatus, errorThrown){
+					this.shc_info = null;
+
+                    /*
+                     * Handle the case where the host isn't SHC.
+                     */
+        			if(textStatus.status === 404 || textStatus.status === 503){ 
+						promise.resolve(null);
+					}
+					else{
+						promise.reject();
+					}
+				}
+			});
+
+			return promise;
+		},
+
         /**
          * Render the view.
          */
@@ -561,10 +603,17 @@ define([
 				this.server_info = new ServerInfo();
 			}
 			
-			new ServerInfo().fetch().done(function(model){
+			$.when(
+				// Get the SHC info
+				this.getSHCInfo(),
 
-				if(model.entry[0].content.instance_type){
-					this.is_on_cloud = model.entry[0].content.instance_type === 'cloud';
+				// Get the server-info
+				new ServerInfo().fetch()
+			)
+			.done(function(shc_info, model){
+				// Determine if the host is on cloud
+				if(model[0].entry[0].content.instance_type){
+					this.is_on_cloud = model[0].entry[0].content.instance_type === 'cloud';
 				}
 				else{
 					this.is_on_cloud = false;
@@ -587,6 +636,7 @@ define([
 				this.$el.html(_.template(Template, {
 					'has_permission' : capabilities_missing.length === 0,
 					'capabilities_missing' : capabilities_missing,
+					'is_shc' : shc_info !== null,
 					'is_on_cloud' : this.is_on_cloud
 				}));
 				
