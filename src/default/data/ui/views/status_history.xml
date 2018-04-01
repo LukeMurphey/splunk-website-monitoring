@@ -4,7 +4,7 @@
 	<label>Status History</label>
 	
 	<fieldset autoRun="true">
-		<input type="time" token="field1">
+		<input type="time">
 		    <label></label>
 			<default>Last 24 hours</default>
 		</input>
@@ -19,8 +19,8 @@
       <single>
         <search>
           <query>sourcetype="web_ping" `website_monitoring_search_index` title="$title$" | timechart avg(total_time) as response_time</query>
-          <earliest>$field1.earliest$</earliest>
-          <latest>$field1.latest$</latest>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
         </search>
         <option name="unit">ms</option>
         <option name="underLabel">Average Response Time</option>
@@ -42,8 +42,8 @@
       <single>
         <search>
           <query>sourcetype="web_ping" `website_monitoring_search_index` title="$title$" | stats max(total_time) as response_time</query>
-          <earliest>$field1.earliest$</earliest>
-          <latest>$field1.latest$</latest>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
         </search>
         <option name="unit">ms</option>
         <option name="underLabel">Maximum Response Time</option>
@@ -68,8 +68,8 @@
 			<title>Response Time History (Average)</title>
 		  	<search>
           <query>sourcetype="web_ping" `website_monitoring_search_index` title="$title$" | timechart avg(total_time) as response_time | eval response_time_over_threshold=if(response_time>`response_time_threshold`,response_time,0) | eval response_time=if(response_time>`response_time_threshold`,0,response_time)</query>
-		  	  <earliest>$field1.earliest$</earliest>
-          <latest>$field1.latest$</latest>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
 		  	</search>
 		  	<option name="height">200</option>
 		  	<option name="charting.chart">column</option>
@@ -85,8 +85,8 @@
       <single>
         <search>
           <query>sourcetype="web_ping" `website_monitoring_search_index` title="$title$" | fillnull value=1000 response_code | eval success=case(response_code&gt;=400, 0, timed_out == "True", 0) | fillnull value=1 success | chart count as total, sum(success) as successes | eval availability=round(100*(successes/total),2) | fields availability</query>
-          <earliest>$field1.earliest$</earliest>
-          <latest>$field1.latest$</latest>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
         </search>
         <option name="unit">%</option>
         <option name="underLabel">Availability</option>
@@ -108,8 +108,8 @@
       <single>
         <search>
           <query>sourcetype="web_ping" `website_monitoring_search_index` title="$title$" `filter_inoperable` | stats count as count</query>
-          <earliest>$field1.earliest$</earliest>
-          <latest>$field1.latest$</latest>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
         </search>
         <option name="underLabel">Failures</option>
         <option name="colorBy">value</option>
@@ -132,14 +132,14 @@
 		<table>
 			<search>
           <query>sourcetype="web_ping" `website_monitoring_search_index` title="$title$" `filter_inoperable` | eval time=_time | eval response_time=total_time | convert ctime(time) | fillnull response_code value="Connection failed" | eval response_code=if(timed_out == "True", "Connection timed out", response_code) | eval response_code=if(response_code="", "Connection failed", response_code) | fields - _raw _time | fields time title url response_code</query>
-	        <earliest>$field1.earliest$</earliest>
-	        <latest>$field1.latest$</latest>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
 	    </search>
 			<title>Failures</title>
 			<option name="count">10</option>
 			<option name="rowNumbers">true</option>
 			<drilldown>
-				<link><![CDATA[/app/website_monitoring/search/?q=search%20sourcetype%3Dweb_ping%20title%3D"$form.title$"%20%60filter_inoperable%60%20%60website_monitoring_search_index%60%20%7C%20%60format_events_raw%60&earliest=$earliest$&latest=$latest$]]></link>
+				<link><![CDATA[/app/website_monitoring/search/?earliest=$earliest$&latest=$latest$&q=search%20sourcetype%3Dweb_ping%20title%3D"$form.title$"%20%60filter_inoperable%60%20%60website_monitoring_search_index%60%20%7C%20%60format_events_raw%60&earliest=$earliest$&latest=$latest$]]></link>
 			</drilldown>
 		</table>
 	</row>
