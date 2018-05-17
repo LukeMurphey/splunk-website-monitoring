@@ -733,7 +733,7 @@ class WebPing(ModularInput):
                                           client_certificate, client_certificate_key, user_agent,
                                           logger=self.logger, should_contain_string=should_contain_string)
                 except NTLMAuthenticationValueException as e:
-                    self.logger.warn('NTLM authentication failed due to configuration issue stanza=%s, message="%i"', stanza, str(e))
+                    self.logger.warn('NTLM authentication failed due to configuration issue stanza=%s, message="%s"', stanza, str(e))
 
                 with self.lock:
 
