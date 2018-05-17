@@ -217,5 +217,7 @@ Change History
 |         | Inputs on an SHC environment no longer run unless on the SHC captain                                             |
 |         | Fixed the drilldown from "Status Overview" to "Status History" which failed to carry over some arguments         |
 |         | Apps should now be self-installable on Splunk Cloud                                                              |
+|---------|------------------------------------------------------------------------------------------------------------------|
+| 2.7.1   | Fixed issue where NTLM log message did not work                                                                  |
 +---------+------------------------------------------------------------------------------------------------------------------+
 
