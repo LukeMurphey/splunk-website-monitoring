@@ -1071,4 +1071,53 @@ Below is an example of the entry in the file:
         </exec>
     </target>
 
+    <!-- ================================= 
+          target: appinspect
+         ================================= -->
+    <target name="appinspect" description="Inspect the app appinspect" depends="package">
+		<if>
+			<not>
+				<isset property="value.test.appinspect_path"/>
+			</not>
+			<then>
+				<property name="value.test.appinspect_path" value="splunk-appinspect"/>
+			</then>
+		</if>
+
+		<!-- Check to see if it appinspect is defined in the appinspect_path parameter -->
+		<available file="${value.test.appinspect_path}"  
+             filepath="${value.test.appinspect_path}"  
+             property="appinspect.present" />
+
+		<!-- Check to see if appinspect is on the path -->
+		<available file="splunk-appinspect"  
+             filepath="${env.PATH}"  
+             property="appinspect.present" />
+
+		<if>
+			<isset property="appinspect.present"/>
+
+			<!-- Run appinspect on the package -->
+			<then>
+				<exec failonerror="true" executable="${value.test.appinspect_path}" dir="${value.build.packageoutput.directory}">
+					<arg line="inspect" />
+					<arg line="${value.build.package.file}" />
+					<arg line="--mode" />
+					<arg line="precert" />
+				</exec>
+			</then>
+
+			<!-- Tell the user that they need to install appinspect -->
+			<else>
+				<echo>appinspect was not found.
+Install appinspect from http://dev.splunk.com/view/appinspect/SP-CAAAFAK if you haven't already.
+
+You can declare the "value.test.appinspect_path" parameter with the path where appinspect is installed if isn't on your system path.
+Declare it in a local.properties file in the following path:
+     ${absolute_src_path}/local.properties
+</echo>
+			</else>
+		</if>
+    </target>
+
 </project>
