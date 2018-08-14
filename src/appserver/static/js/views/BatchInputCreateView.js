@@ -582,7 +582,7 @@ define([
                     /*
                      * Handle the case where the host isn't SHC.
                      */
-        			if(textStatus.status === 404 || textStatus.status === 503){ 
+        			if((textStatus.status > 400 && textStatus.status < 500) || textStatus.status === 503){ 
 						promise.resolve(null);
 					}
 					else{
