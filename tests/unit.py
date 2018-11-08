@@ -220,16 +220,9 @@ class TestWebPing(WebsiteMonitoringAppTest, UnitTestWithWebServer):
 
         self.assertEquals(result.timed_out, True)
 
-    def test_ping_timeout_localhost(self):
-        url_field = URLField("test_ping_timeout", "title", "this is a test")
-
-        result = WebPing.ping(url_field.to_python("https://127.0.0.1:8668"), timeout=3)
-
-        self.assertEquals(result.timed_out, True)
-
     def test_is_exception_for_timeout(self):
         try:
-            r = requests.get('http://127.0.0.1:8668')
+            r = requests.get('https://192.168.30.23/')
         except requests.exceptions.ConnectionError as e:
 
             if not WebPing.isExceptionForTimeout(e):
