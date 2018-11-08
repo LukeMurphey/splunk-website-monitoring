@@ -231,6 +231,9 @@ class TestWebPing(WebsiteMonitoringAppTest, UnitTestWithWebServer):
         try:
             r = requests.get('http://127.0.0.1:8668')
         except requests.exceptions.ConnectionError as e:
+
+            if not WebPing.isExceptionForTimeout(e):
+                print e
             self.assertTrue(WebPing.isExceptionForTimeout(e))
 
     def test_save_checkpoint(self):
