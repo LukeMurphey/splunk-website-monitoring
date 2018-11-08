@@ -84,7 +84,7 @@
     <panel>
       <single>
         <search>
-          <query>sourcetype="web_ping" `website_monitoring_search_index` title="$title$" | fillnull value=1000 response_code | eval success=case(response_code&gt;=400, 0, timed_out == "True", 0) | fillnull value=1 success | chart count as total, sum(success) as successes | eval availability=round(100*(successes/total),2) | fields availability</query>
+          <query><![CDATA[sourcetype="web_ping" `website_monitoring_search_index` title="$title$" | fillnull value=1000 response_code | eval success=case(response_code>=400, 0, timed_out == "True", 0, response_code="", 0) | fillnull value=1 success | chart count as total, sum(success) as successes | eval availability=round(100*(successes/total),2) | fields availability]]></query>
           <earliest>$earliest$</earliest>
           <latest>$latest$</latest>
         </search>
