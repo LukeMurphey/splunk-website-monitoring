@@ -271,6 +271,44 @@ class WebPing(ModularInput):
             return False
 
     @classmethod
+    def isExceptionForTimeout(cls, exception):
+        """
+        Determines if the given exception is due to a timeout
+
+        Argument:
+        exception -- The exception
+        """
+
+        if exception.args is not None and len(exception.args) > 0 and hasattr(exception.args[0], 'reason') and hasattr(exception.args[0].reason, 'errno') and exception.args[0].reason.errno in [60, 61, 10060, 10061]:
+            return True
+
+        else:
+            # Check the stacktrace to see if any of the exception indicate that the issue is a timeout
+            count = 0
+
+            while exception is not None and count < 10:
+                # Try to parse out the errno from the message since the errno is oftentimes
+                # unavailable in the exception chain
+                if re.match(".*\[Errno ((60)|(61)|(10060)|(10061))\].*", str(exception)):
+                    return True
+
+                # See if the exception has a reason code indicating a connection failure
+                if hasattr(exception, 'errno') and exception.errno in [60, 61, 10060, 10061]:
+                    return True
+
+                # Get the next exception
+                if hasattr(exception, 'args') and exception.args is not None and len(exception.args) > 0 and isinstance(exception.args[0], Exception):
+                    exception = exception.args[0]
+                elif hasattr(exception, 'reason') and exception.reason is not None:
+                    exception = exception.reason
+                else:
+                    exception = None
+
+                count = count + 1
+
+        return False
+
+    @classmethod
     def ping(cls, url, username=None, password=None, timeout=30, proxy_type=None,
              proxy_server=None, proxy_port=None, proxy_user=None, proxy_password=None,
              client_certificate=None, client_certificate_key=None, user_agent=None,
@@ -435,29 +473,7 @@ class WebPing(ModularInput):
                 logger.error("An SSL exception was thrown when executing a web request against url=%s: " + str(e), url.geturl())
 
         except requests.exceptions.ConnectionError as e:
-            timed_out = False
-            # Check the stacktrace to see if any of the exception indicate that the issue is a timeout
-            exception = e
-
-            while exception is not None:
-                # Try to parse out the errno from the message since the errno is oftentimes
-                # unavailable in the exception chain
-                if re.match(".*\[Errno ((60)|(61)|(10060)|(10061))\].*", str(exception)):
-                    timed_out = True
-                    break
-
-                # See if the exception has a reason code indicating a connection failure
-                if hasattr(exception, 'errno') and exception.errno in [60, 61, 10060, 10061]:
-                    timed_out = True
-                    break
-                
-                # Get the next exception
-                if hasattr(exception, 'args') and exception.args is not None and len(exception.args) > 0 and isinstance(exception.args[0], Exception):
-                    exception = exception.args[0]
-                elif hasattr(exception, 'reason') and exception.reason is not None:
-                    exception = exception.reason
-                else:
-                    exception = None
+            timed_out = WebPing.isExceptionForTimeout(e)
 
             if not timed_out and logger:
                 logger.exception("A connection exception was thrown when executing a web request against url=%s, this can happen if the domain name, IP address is invalid or if network connectivity is down or blocked by a firewall; see help_url=http://lukemurphey.net/projects/splunk-website-monitoring/wiki/Troubleshooting", url.geturl())

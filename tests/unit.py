@@ -15,6 +15,7 @@ sys.path.append(os.path.join("..", "src", "bin"))
 from web_ping import URLField, DurationField, WebPing, NTLMAuthenticationValueException
 from modular_input import Field, FieldValidationException
 from website_monitoring_rest_handler import HostFieldValidator
+from website_monitoring_app import requests
 
 from unit_test_web_server import UnitTestWithWebServer, skipIfNoServer
 from test_proxy_server import get_server as get_proxy_server
@@ -225,6 +226,12 @@ class TestWebPing(WebsiteMonitoringAppTest, UnitTestWithWebServer):
         result = WebPing.ping(url_field.to_python("https://127.0.0.1:8668"), timeout=3)
 
         self.assertEquals(result.timed_out, True)
+
+    def test_is_exception_for_timeout(self):
+        try:
+            r = requests.get('http://127.0.0.1:8668')
+        except requests.exceptions.ConnectionError as e:
+            self.assertTrue(WebPing.isExceptionForTimeout(e))
 
     def test_save_checkpoint(self):
         web_ping = WebPing()
