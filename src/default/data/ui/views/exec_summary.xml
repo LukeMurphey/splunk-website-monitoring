@@ -24,7 +24,7 @@ sourcetype="web_ping" `website_monitoring_search_index` title="$title$"
 | stats avg(total_time) as avg_response_time latest(response_code) as response_code latest(url) as url latest(total_time) as response_time by source
 | eval response_time=round(response_time, 0)
 | eval response=response_code
-| table title url response last_checked response_time average range sparkline_response_time 
+| table title url response response_code last_checked response_time average range sparkline_response_time 
 | `timesince(last_checked,last_checked)`
 | sort -response_time
     </query>
@@ -33,7 +33,7 @@ sourcetype="web_ping" `website_monitoring_search_index` title="$title$"
     <panel>
       <single>
         <search base="baseSearch">
-          <query><![CDATA[| search response="* false" OR response_time > 1000 OR response="*failed*" OR response="*timed*"
+          <query><![CDATA[| search `filter_response_codes_and_response_times`
 | stats count as count]]></query>
         </search>
         <option name="colorBy">value</option>
@@ -59,7 +59,9 @@ sourcetype="web_ping" `website_monitoring_search_index` title="$title$"
       <single>
         <search base="baseSearch">
           <query><![CDATA[
-| search NOT (response="* false" OR response_time > 1000) AND response_time >= 500
+| eval warning_limit=`response_time_threshold`/2
+| search NOT `filter_response_codes_and_response_times`
+| search response_time >= warning_limit
 | stats count as count]]></query>
         </search>
         <option name="colorBy">value</option>
