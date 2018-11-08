@@ -220,5 +220,8 @@ Change History
 |---------|------------------------------------------------------------------------------------------------------------------|
 | 2.7.1   | Fixed issue where NTLM log message did not work                                                                  |
 |         | Fixed issue where the did not work when using the developer license of Splunk                                    |
+|---------|------------------------------------------------------------------------------------------------------------------|
+| 2.7.2   | Fixed issue where timeouts where not detected as unavailability                                                  |
+|         | Fixed issue where the executive summary page didn't use the failure definition macro                             |
 +---------+------------------------------------------------------------------------------------------------------------------+
 
