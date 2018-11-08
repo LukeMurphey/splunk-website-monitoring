@@ -279,7 +279,7 @@ class WebPing(ModularInput):
         exception -- The exception
         """
 
-        if exception.args is not None and len(exception.args) > 0 and hasattr(exception.args[0], 'reason') and hasattr(exception.args[0].reason, 'errno') and exception.args[0].reason.errno in [60, 61, 10060, 10061]:
+        if exception.args is not None and len(exception.args) > 0 and hasattr(exception.args[0], 'reason') and hasattr(exception.args[0].reason, 'errno') and exception.args[0].reason.errno in [60, 61, 10060, 10061, 100]:
             return True
 
         else:
@@ -289,11 +289,11 @@ class WebPing(ModularInput):
             while exception is not None and count < 10:
                 # Try to parse out the errno from the message since the errno is oftentimes
                 # unavailable in the exception chain
-                if re.match(".*\[Errno ((60)|(61)|(10060)|(10061))\].*", str(exception)):
+                if re.match(".*\(([Errno ((60)|(61)|(10060)|(10061))\])|(timed out)).*", str(exception)):
                     return True
 
                 # See if the exception has a reason code indicating a connection failure
-                if hasattr(exception, 'errno') and exception.errno in [60, 61, 10060, 10061]:
+                if hasattr(exception, 'errno') and exception.errno in [60, 61, 10060, 10061, 110]:
                     return True
 
                 # Get the next exception
