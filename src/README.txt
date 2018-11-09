@@ -72,6 +72,12 @@ Q: Can I allow non-admin users to make and edit inputs?
 
 A: Yes, just assign users the "edit_modinput_web_ping" and "edit_tcp" capabilities. You will likely want to give them the "list_inputs"capability too.
 
+----------------------------------------------------------------------------------------------
+
+Q: How do I prevent users from making inputs on a Search Head Cluster?
+
+A: Remove the "edit_modinput_web_ping" capability from all roles when you are using the app in a Search Head Cluster to prevent people from making inputs on a cluster.
+
 
 
 ================================================
