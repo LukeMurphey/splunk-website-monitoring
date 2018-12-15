@@ -96,7 +96,7 @@ class WebPing(ModularInput):
             self.response_sha224 = response_sha224
             self.has_expected_string = has_expected_string
 
-    def __init__(self, timeout=30, thread_limit=None):
+    def __init__(self, timeout=None, thread_limit=None):
 
         scheme_args = {'title': "Website Availability Check",
                        'description': "Connects to a website in order to obtain performance statistics",
@@ -309,7 +309,7 @@ class WebPing(ModularInput):
         return False
 
     @classmethod
-    def ping(cls, url, username=None, password=None, timeout=30, proxy_type=None,
+    def ping(cls, url, username=None, password=None, timeout=None, proxy_type=None,
              proxy_server=None, proxy_port=None, proxy_user=None, proxy_password=None,
              client_certificate=None, client_certificate_key=None, user_agent=None,
              logger=None, should_contain_string=None):

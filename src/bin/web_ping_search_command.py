@@ -11,13 +11,18 @@ class WebPingSearchCommand(SearchCommand):
     This search command provides a Splunk interface for doing a web-ping.
     """
 
-    def __init__(self, url=None, expected_string=None):
+    def __init__(self, url=None, timeout=None, expected_string=None):
         SearchCommand.__init__(self, run_in_preview=False, logger_name="webping_search_command")
 
         self.url = url
         self.expected_string = expected_string
 
         self.logger.info("Web-ping running against url=%s", url)
+
+        if timeout:
+            self.timeout = float(timeout)
+        else:
+            self.timeout=30
 
     def handle_results(self, results, session_key, in_preview):
 
@@ -33,7 +38,12 @@ class WebPingSearchCommand(SearchCommand):
         url_parsed = url_field.to_python(self.url)
 
         # Do the web-ping
-        result = WebPing.ping(url_parsed, logger=self.logger, should_contain_string=self.expected_string)
+        result = WebPing.ping(
+            url_parsed,
+            logger=self.logger,
+            should_contain_string=self.expected_string,
+            timeout=self.timeout,
+        )
 
         # Prep the result dictionary
         data = {
