@@ -231,5 +231,7 @@ Change History
 |         | Fixed issue where the executive summary page didn't use the failure definition macro                             |
 |---------|------------------------------------------------------------------------------------------------------------------|
 | 2.7.3   | Fixed issue where only the first 30 passwords could be accessed                                                  |
+|---------|------------------------------------------------------------------------------------------------------------------|
+| 2.7.4   | Added ability to define a list of hosts to ignore the proxy for                                                  |
 +---------+------------------------------------------------------------------------------------------------------------------+
 
