@@ -342,9 +342,6 @@ class WebPing(ModularInput):
         if proxy_ignore is not None:
             os.environ['NO_PROXY'] = proxy_ignore
 
-            if logger:
-                logger.debug('Setting a no proxy, proxies="%s"', proxy_ignore)
-
         if logger:
             logger.debug('Proxies discovered from the environment, proxies="%r"', urllib.getproxies())
 
