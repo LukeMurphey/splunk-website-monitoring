@@ -32,6 +32,15 @@
         </div>
     </div>
 
+    <div class="control-group proxy-ignore">
+        <label class="control-label">Server Ignore List</label>
+        <div class="controls">
+            <input type="text" name="proxy_ignore" placeholder="e.g. textcritical.net.textcritical.com">
+            <span class="help-inline"></span>
+            <span class="help-block">Enter a list of hosts to not use a proxy server for. Enter "*" to disable the proxy entirely.</span>
+        </div>
+    </div>
+
   </fieldset>
 
   <fieldset <% if(is_on_cloud){%>style="display:none"<%}%>>

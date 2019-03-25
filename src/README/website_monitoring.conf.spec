@@ -31,6 +31,11 @@ proxy_type = <string>
     * Defines the protocol used by the proxy server
     * Must be one of: socks4, socks5, http
 
+proxy_ignore = <string>
+    * A list of hosts that will not use a proxy server
+    * You can disable all use of the proxy server by setting this to * (useful if a proxy server is being used from the environment)
+    * Example: textcritical.net,textcritical.com
+
 thread_limit = <int>
     * Defines the maximum number of threads that the input will create
     * Example: 200

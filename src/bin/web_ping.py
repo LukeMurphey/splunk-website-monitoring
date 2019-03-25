@@ -20,6 +20,7 @@ import time
 import json
 import threading
 import logging
+import urllib
 
 import socket
 from website_monitoring_app import socks
@@ -310,7 +311,7 @@ class WebPing(ModularInput):
 
     @classmethod
     def ping(cls, url, username=None, password=None, timeout=30, proxy_type=None,
-             proxy_server=None, proxy_port=None, proxy_user=None, proxy_password=None,
+             proxy_server=None, proxy_port=None, proxy_user=None, proxy_password=None, proxy_ignore=None,
              client_certificate=None, client_certificate_key=None, user_agent=None,
              logger=None, should_contain_string=None):
         """
@@ -326,6 +327,7 @@ class WebPing(ModularInput):
         proxy_port -- The port on the proxy server to use.
         proxy_user -- The proxy server to use.
         proxy_password -- The port on the proxy server to use.
+        proxy_ignore -- The list of domains to not use the proxy server for.
         client_certificate -- The path to the client certificate to use.
         client_certificate_key -- The path to the client key to use.
         user_agent -- The string to use for the user-agent
@@ -335,6 +337,16 @@ class WebPing(ModularInput):
 
         if logger:
             logger.info('Performing ping, url="%s"', url.geturl())
+    
+        # Disable the use of the proxy variables
+        if proxy_ignore is not None:
+            os.environ['NO_PROXY'] = proxy_ignore
+
+            if logger:
+                logger.debug('Setting a no proxy, proxies="%s"', proxy_ignore)
+
+        if logger:
+            logger.debug('Proxies discovered from the environment, proxies="%r"', urllib.getproxies())
 
         # Determine which type of proxy is to be used (if any)
         resolved_proxy_type = cls.resolve_proxy_type(proxy_type, logger=logger)
@@ -597,7 +609,8 @@ class WebPing(ModularInput):
             'proxy_port' : '',
             'proxy_user': '',
             'proxy_password' : '',
-            'thread_limit' : 200
+            'thread_limit' : 200,
+            'proxy_ignore' : None,
         }
 
         # Get the proxy configuration
@@ -668,9 +681,9 @@ class WebPing(ModularInput):
         if website_monitoring_config is not None:
             return website_monitoring_config['proxy_type'], website_monitoring_config['proxy_server'], \
                 website_monitoring_config['proxy_port'], website_monitoring_config['proxy_user'], \
-                proxy_password
+                proxy_password, website_monitoring_config['proxy_ignore']
         else:
-            return 'http', '', '', '', proxy_password
+            return 'http', '', '', '', proxy_password, None
 
     def run(self, stanza, cleaned_params, input_config):
 
@@ -748,7 +761,7 @@ class WebPing(ModularInput):
 
                 # Get the proxy configuration
                 try:
-                    proxy_type, proxy_server, proxy_port, proxy_user, proxy_password = \
+                    proxy_type, proxy_server, proxy_port, proxy_user, proxy_password, proxy_ignore = \
                     self.get_proxy_config(input_config.session_key, conf_stanza)
                 except splunk.ResourceNotFound:
                     self.logger.error("The proxy configuration could not be loaded (was not found). The execution will be skipped for this input with stanza=%s", stanza)
@@ -764,7 +777,7 @@ class WebPing(ModularInput):
                 try:
                     result = WebPing.ping(url, username, password, timeout, proxy_type,
                                           proxy_server, proxy_port, proxy_user, proxy_password,
-                                          client_certificate, client_certificate_key, user_agent,
+                                          proxy_ignore, client_certificate, client_certificate_key, user_agent,
                                           logger=self.logger, should_contain_string=should_contain_string)
                 except NTLMAuthenticationValueException as e:
                     self.logger.warn('NTLM authentication failed due to configuration issue stanza=%s, message="%s"', stanza, str(e))

@@ -45,6 +45,7 @@ define([
         formProperties: {
             'proxyServer' : '.proxy-address input',
             'proxyUser' : '.proxy-user input',
+            'proxyIgnore' : '.proxy-ignore input',
             'proxyServerPort' : '.proxy-port input',
             'threadLimit' : '.thread-limit input',
             'proxyPassword' : '.proxy-password input',
@@ -74,6 +75,7 @@ define([
                     proxy_server: 'proxy_server',
                     proxy_port: '',
                     proxy_type: 'http',
+                    proxy_ignore: '',
 
                     proxy_user: 'user',
                     proxy_password: '',
@@ -90,6 +92,7 @@ define([
                     proxy_server: this.getProxyServer(),
                     proxy_port: this.getProxyServerPort(),
                     proxy_type: this.getProxyType(),
+                    proxy_ignore: this.getProxyIgnore(),
 
                     proxy_user: this.getProxyUser(),
                     proxy_password: '', //This will be stored in secure storage
@@ -202,6 +205,7 @@ define([
                     this.setProxyServer(model.entry.content.attributes.proxy_server);
                     this.setProxyServerPort(model.entry.content.attributes.proxy_port);
                     this.setProxyType(model.entry.content.attributes.proxy_type);
+                    this.setProxyIgnore(model.entry.content.attributes.proxy_ignore);
 
                     this.setThreadLimit(model.entry.content.attributes.thread_limit);
 
@@ -223,6 +227,7 @@ define([
                         this.setProxyServer("");
                         this.setProxyServerPort("");
                         this.setProxyType("http");
+                        this.setProxyIgnore("");
     
                         this.setThreadLimit("200");
     
