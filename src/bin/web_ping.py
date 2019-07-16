@@ -643,6 +643,13 @@ class WebPing(ModularInput):
         """
         Get the proxy configuration
 
+        This returns the following in a list:
+            # proxy type
+            # proxy server
+            # proxy port
+            # proxy user
+            # proxy ignore list
+
         Arguments:
         session_key -- The session key to use when connecting to the REST API
         stanza -- The stanza to get the proxy information from (defaults to "default")
@@ -653,7 +660,7 @@ class WebPing(ModularInput):
         # Some do use the app to test proxies but they should use an on-prem forwarder
         # instead.
         if self.is_on_cloud(session_key):
-            return "http", None, None, None, None
+            return "http", None, None, None, None, None
 
         # If the stanza is empty, then just use the default
         if stanza is None or stanza.strip() == "":

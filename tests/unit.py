@@ -478,6 +478,26 @@ class TestWebPing(WebsiteMonitoringAppTest, UnitTestWithWebServer):
         self.assertEquals(result.response_sha224, 'deaf4c0062539c98b4e957712efcee6d42832fed2d803c2bbf984b23')
         self.assertEquals(result.has_expected_string, False)
 
+class TestOnCloud(unittest.TestCase):
+    
+    def setUp(self):
+        super(TestOnCloud, self).setUp()
+
+        # Configure an instance of the class to test
+        self.web_ping = WebPing()
+
+        # Force the class to act like it is on cloud
+        self.web_ping.is_on_cloud = self.fake_is_on_cloud
+
+    def fake_is_on_cloud(self, session_key):
+        return True
+
+    def test_get_proxy_config(self):
+        # See https://lukemurphey.net/issues/2445
+        self.web_ping.is_on_cloud = self.fake_is_on_cloud
+        self.web_ping.get_proxy_config('a session key')
+        self.assertEquals(self.web_ping.get_proxy_config('a session key'), ("http", None, None, None, None, None))
+
 if __name__ == '__main__':
     try:
         report_path = os.path.join('..', os.environ.get('TEST_OUTPUT', 'tmp/test_report.html'))
