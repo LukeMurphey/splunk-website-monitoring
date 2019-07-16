@@ -620,7 +620,7 @@ define([
 				}
 
 				// Below is the list of capabilities required
-				var capabilities_required = ['edit_modinput_web_ping', 'edit_tcp', 'list_inputs'];
+				var capabilities_required = ['edit_modinput_web_ping', 'list_inputs'];
 				
 				// Find out which capabilities are missing
 				var capabilities_missing = [];
