@@ -692,9 +692,10 @@ class WebPing(ModularInput):
     def run(self, stanza, cleaned_params, input_config):
 
         # Make the parameters
-        interval = cleaned_params["interval"]
-        title = cleaned_params["title"]
-        url = cleaned_params["url"]
+        interval = cleaned_params.get("interval", None)
+        title = cleaned_params.get("title", None)
+        url = cleaned_params.get("url", None)
+
         client_certificate = cleaned_params.get("client_certificate", None)
         client_certificate_key = cleaned_params.get("client_certificate_key", None)
         username = cleaned_params.get("username", None)
@@ -707,6 +708,19 @@ class WebPing(ModularInput):
         user_agent = cleaned_params.get("user_agent", None)
         should_contain_string = cleaned_params.get("should_contain_string", None)
         source = stanza
+
+        # Check for missing parameters
+        if interval is None:
+            self.logger.error("Required parameter '%s' is missing for stanza=%s", "interval", stanza)
+            return
+
+        if title is None:
+            self.logger.error("Required parameter '%s' is missing for stanza=%s", "title", stanza)
+            return
+
+        if url is None:
+            self.logger.error("Required parameter '%s' is missing for stanza=%s", "url", stanza)
+            return
 
         # Load the thread_limit if necessary
         # This should only be necessary once in the processes lifetime
