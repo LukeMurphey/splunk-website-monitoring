@@ -625,8 +625,13 @@ class WebPing(ModularInput):
             try:
                 website_monitoring_config['thread_limit'] = int(website_monitoring_config['thread_limit'])
             except ValueError:
-                self.logger.error("The value for the thread limit is invalid and will be ignored (will use a limit of 200), value=%s", website_monitoring_config['thread_limit'])
-                website_monitoring_config['thread_limit'] = 200
+                # Use a value of 25 on Splunk Cloud
+                if self.is_on_cloud(session_key):
+                    self.logger.error("The value for the thread limit is invalid and will be ignored (will use a limit of 25), value=%s", website_monitoring_config['thread_limit'])
+                    website_monitoring_config['thread_limit'] = 25
+                else:
+                    self.logger.error("The value for the thread limit is invalid and will be ignored (will use a limit of 200), value=%s", website_monitoring_config['thread_limit'])
+                    website_monitoring_config['thread_limit'] = 200
 
             self.logger.debug("App config information loaded, stanza=%s", stanza)
 
@@ -731,17 +736,33 @@ class WebPing(ModularInput):
             self.logger.debug("Default config is %r", self.default_app_config)
 
             # Get the limit from the app config
-            loaded_thread_limit = self.default_app_config['thread_limit']
+            try:
+                loaded_thread_limit = int(self.default_app_config['thread_limit'])
+            except ValueError:
+                loaded_thread_limit = None
 
             # Ensure that the thread limit is valid
-            if loaded_thread_limit is not None and loaded_thread_limit > 0:
+            # If it is valid and we are not on cloud, then just load it
+            # Or: if it is valid even for cloud, then load it
+            if (loaded_thread_limit is not None and loaded_thread_limit > 0 and not self.is_on_cloud(input_config.session_key)) or
+               (loaded_thread_limit is not None and loaded_thread_limit <= 25 and self.is_on_cloud(input_config.session_key)):
                 self.thread_limit = loaded_thread_limit
                 self.logger.debug("Thread limit successfully loaded, thread_limit=%r",
+                                  loaded_thread_limit)
+
+            # If it is valid but too high and we are on cloud, then just set it to 25
+            elif loaded_thread_limit is not None and loaded_thread_limit > 25 and self.is_on_cloud(input_config.session_key):
+                self.thread_limit = 25
+                self.logger.warn("Thread limit is too high for Splunk Cloud as it must be no greater than 25; it will be set to 25, thread_limit=%r",
                                   loaded_thread_limit)
 
             # Warn that the thread limit is invalid
             else:
                 self.logger.warn("The thread limit is invalid and will be ignored, thread_limit=%r", loaded_thread_limit)
+
+                # Default to 25 if on cloud
+                if self.is_on_cloud(input_config.session_key):
+                    self.thread_limit = 25
 
         # Clean up old threads
         for thread_stanza in self.threads.keys():

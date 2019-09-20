@@ -107,7 +107,7 @@ class WebsiteMonitoringRestHandler(RestHandler):
             for stanza, settings in confDict.items():
                 for key, val in settings.items():
                     if key == self.PARAM_THREAD_LIMIT and int(val) > 25 and ServerInfo.is_on_cloud(session_key=self.getSessionKey()):
-                        confInfo[stanza].append(key, '25')
+                        confInfo[stanza].append(key, 25)
                     else:
                         confInfo[stanza].append(key, val)
 
