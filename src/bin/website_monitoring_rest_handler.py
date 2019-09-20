@@ -8,6 +8,12 @@ import splunk
 
 import logging
 
+import os
+import sys
+path_to_mod_input_lib = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'modular_input.zip')
+sys.path.insert(0, path_to_mod_input_lib)
+from modular_input.server_info import ServerInfo
+
 from website_monitoring_app.simple_rest_handler import RestHandler, BooleanFieldValidator, \
 IntegerFieldValidator, StandardFieldValidator, HostFieldValidator
 
@@ -56,8 +62,7 @@ class WebsiteMonitoringRestHandler(RestHandler):
         PARAM_PROXY_SERVER : HostFieldValidator(),
         PARAM_PROXY_PORT   : IntegerFieldValidator(0, 65535),
         PARAM_PROXY_TYPE   : ProxyTypeFieldValidator(),
-        PARAM_PROXY_IGNORE : StandardFieldValidator(),
-        PARAM_THREAD_LIMIT : IntegerFieldValidator(1, 5000),
+        PARAM_PROXY_IGNORE : StandardFieldValidator()
     }
 
     # General variables
@@ -67,6 +72,24 @@ class WebsiteMonitoringRestHandler(RestHandler):
     logger_file_name = 'website_monitoring_rest_handler.log'
     logger_name = 'WebsiteMonitoringRestHandler'
     logger_level = logging.INFO
+
+    # This will indicate if we added the thread limit validator
+    # This will be done in convertParams() once we have a session-key that will let us know if the
+    # host is running on Splunk Cloud (in which a thread limit of 25 must be used)
+    added_thread_limit_validator = False
+
+    def convertParams(self, name, params, to_string=False):
+        if not self.added_thread_limit_validator:
+            # Only allow a thread limit of 25 if this is on cloud
+            if ServerInfo.is_on_cloud(session_key=self.getSessionKey()):
+                self.field_validators[self.PARAM_THREAD_LIMIT] = IntegerFieldValidator(1, 25)
+            else:
+                self.field_validators[self.PARAM_THREAD_LIMIT] = IntegerFieldValidator(1, 5000)
+
+            self.added_thread_limit_validator = True
+
+        # Call the super class convertParams()
+        return super(WebsiteMonitoringRestHandler, self).convertParams(name, params, to_string)
 
 # initialize the handler
 if __name__ == "__main__":
