@@ -744,12 +744,12 @@ class WebPing(ModularInput):
             # Ensure that the thread limit is valid
             # If it is valid and we are not on cloud, then just load it
             # Or: if it is valid even for cloud, then load it
-            if (loaded_thread_limit is not None and loaded_thread_limit > 0 and not self.is_on_cloud(input_config.session_key)) or
-               (loaded_thread_limit is not None and loaded_thread_limit <= 25 and self.is_on_cloud(input_config.session_key)):
+            if (loaded_thread_limit is not None and loaded_thread_limit > 0 and not self.is_on_cloud(input_config.session_key)) \
+                or (loaded_thread_limit is not None and loaded_thread_limit <= 25 and self.is_on_cloud(input_config.session_key)):
                 self.thread_limit = loaded_thread_limit
                 self.logger.debug("Thread limit successfully loaded, thread_limit=%r",
                                   loaded_thread_limit)
-
+    
             # If it is valid but too high and we are on cloud, then just set it to 25
             elif loaded_thread_limit is not None and loaded_thread_limit > 25 and self.is_on_cloud(input_config.session_key):
                 self.thread_limit = 25
