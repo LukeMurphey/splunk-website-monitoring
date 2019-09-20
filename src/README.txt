@@ -240,5 +240,6 @@ Change History
 | 2.7.6   | Made inputs provide better error messaging when an input is missing fields                                       |
 |         | Fixing error when reload is called                                                                               |
 |         | Improving error messaging on the setup page                                                                      |
+|         | Thread limit is restricted to 25 on Splunk Cloud                                                                 |
 +---------+------------------------------------------------------------------------------------------------------------------+
 
