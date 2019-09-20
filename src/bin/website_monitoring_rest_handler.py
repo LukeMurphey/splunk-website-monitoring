@@ -91,6 +91,26 @@ class WebsiteMonitoringRestHandler(RestHandler):
         # Call the super class convertParams()
         return super(WebsiteMonitoringRestHandler, self).convertParams(name, params, to_string)
 
+    def handleList(self, confInfo):
+        """
+        Provide the list of configuration options.
+
+        Arguments
+        confInfo -- The object containing the information about what is being requested.
+        """
+
+        # Read the current settings from the conf file
+        confDict = self.readConf(self.conf_file)
+
+        # Set the settings
+        if confDict != None:
+            for stanza, settings in confDict.items():
+                for key, val in settings.items():
+                    if key == self.PARAM_THREAD_LIMIT and int(val) > 25 and ServerInfo.is_on_cloud(session_key=self.getSessionKey()):
+                        confInfo[stanza].append(key, '25')
+                    else:
+                        confInfo[stanza].append(key, val)
+
 # initialize the handler
 if __name__ == "__main__":
     admin.init(WebsiteMonitoringRestHandler, admin.CONTEXT_NONE)
