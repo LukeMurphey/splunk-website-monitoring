@@ -147,7 +147,12 @@ define([
                 // Otherwise, show a failure message
                 .fail(function (response) {
                     this.showFormInProgress(false);
-                    this.showWarningMessage("Configuration could not be saved");
+
+                    if (response.responseJSON && response.responseJSON.messages && response.responseJSON.messages.length > 0 && response.responseJSON.messages[0].text) {
+                        this.showWarningMessage("Configuration could not be saved: " + response.responseJSON.messages[0].text);
+                    } else {
+                        this.showWarningMessage("Configuration could not be saved");
+                    }
                 }.bind(this));
                 
                 // Set the app as configured
