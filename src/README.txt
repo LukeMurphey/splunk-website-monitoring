@@ -238,5 +238,7 @@ Change History
 |         | Removed requirement of 'edit_tcp' capability                                                                     |
 |---------|------------------------------------------------------------------------------------------------------------------|
 | 2.7.6   | Made inputs provide better error messaging when an input is missing fields                                       |
+|         | Fixing error when reload is called                                                                               |
+|         | Improving error messaging on the setup page                                                                      |
 +---------+------------------------------------------------------------------------------------------------------------------+
 
