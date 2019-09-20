@@ -475,7 +475,7 @@ class RestHandler(admin.MConfigHandler):
                     # ADD CODE HERE to get your parameters
 
     @log_function_invocation
-    def handleReload(self):
+    def handleReload(self, confInfo):
         """
         Reload the list of configuration options.
         """
