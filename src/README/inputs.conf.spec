@@ -32,3 +32,16 @@ user_agent = <value>
 should_contain_string = <value>
 * Defines a string that ought to be included in the response content
 * If the content isn't included then the content will be considered wrong
+
+timeout = <value>
+* The maximum number of seconds to wait for a web page to respond
+* Default: 30
+
+max_redirects = <value>
+* The maximum number of redirects to follow.
+* '0' turns off redirection following.
+* '-1' or no value (default) will follow all redirects (no limit).
+
+return_body = <value>
+* If 'true', will return the body of the response (up to the global limit defined in website_monitoring.conf)
+* Default: blank (false)

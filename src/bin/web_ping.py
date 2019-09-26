@@ -7,7 +7,7 @@ import sys
 
 path_to_mod_input_lib = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'modular_input.zip')
 sys.path.insert(0, path_to_mod_input_lib)
-from modular_input import Field, ModularInput, URLField, DurationField
+from modular_input import Field, ModularInput, URLField, DurationField, IntegerField, BooleanField
 from modular_input.shortcuts import forgive_splunkd_outages
 from modular_input.secure_password import get_secure_password
 from splunk.models.field import Field as ModelField
@@ -72,6 +72,8 @@ class WebPing(ModularInput):
     HTTP_AUTH_NONE = None
 
     DEFAULT_THREAD_LIMIT = 200
+    
+    DEFAULT_MAX_RESPONSE_BODY_LENGTH = 1000
 
     # The following define which secure password entry to use for the proxy
     PROXY_PASSWORD_REALM = 'website_monitoring_app_proxy'
@@ -86,7 +88,7 @@ class WebPing(ModularInput):
         """
 
         def __init__(self, request_time, response_code, timed_out, url, response_size=None,
-                     response_md5=None, response_sha224=None, has_expected_string=None):
+                     response_md5=None, response_sha224=None, has_expected_string=None, response_body=None, exceeded_redirects=None, return_body=False):
 
             self.request_time = request_time
             self.response_code = response_code
@@ -96,6 +98,9 @@ class WebPing(ModularInput):
             self.response_md5 = response_md5
             self.response_sha224 = response_sha224
             self.has_expected_string = has_expected_string
+            self.response_body = response_body
+            self.exceeded_redirects = exceeded_redirects
+            self.return_body = return_body
 
     def __init__(self, timeout=30, thread_limit=None):
 
@@ -115,7 +120,10 @@ class WebPing(ModularInput):
                 Field("username", "Username", "The username to use for authenticating (only HTTP authentication supported)", none_allowed=True, empty_allowed=True, required_on_create=False, required_on_edit=False),
                 Field("password", "Password", "The password to use for authenticating (only HTTP authentication supported)", none_allowed=True, empty_allowed=True, required_on_create=False, required_on_edit=False),
                 Field("user_agent", "User Agent", "The user-agent to use when communicating with the server", none_allowed=True, empty_allowed=True, required_on_create=False, required_on_edit=False),
-                Field("should_contain_string", "String match", "A string that should be present in the content", none_allowed=True, empty_allowed=True, required_on_create=False, required_on_edit=False)
+                Field("should_contain_string", "String match", "A string that should be present in the content", none_allowed=True, empty_allowed=True, required_on_create=False, required_on_edit=False),
+                IntegerField("max_redirects", "Maximum Redirects", "The maximum number of redirects to follow (-1 or blank for unlimited, 0 to not follow any redirects)", none_allowed=True, empty_allowed=True, required_on_create=False, required_on_edit=False),
+                IntegerField("timeout", "Timeout", "The maximum number of seconds to wait for a response", none_allowed=True, empty_allowed=True, required_on_create=False, required_on_edit=False),
+                BooleanField("return_body", "Return response body", "If checked, will return the response body", none_allowed=True, empty_allowed=True, required_on_create=False, required_on_edit=False)
         ]
 
         ModularInput.__init__(self, scheme_args, args, logger_name='web_availability_modular_input', logger_level=logging.DEBUG)
@@ -312,8 +320,8 @@ class WebPing(ModularInput):
     @classmethod
     def ping(cls, url, username=None, password=None, timeout=30, proxy_type=None,
              proxy_server=None, proxy_port=None, proxy_user=None, proxy_password=None, proxy_ignore=None,
-             client_certificate=None, client_certificate_key=None, user_agent=None,
-             logger=None, should_contain_string=None):
+             client_certificate=None, client_certificate_key=None, user_agent=None, max_redirects=None,
+             logger=None, should_contain_string=None, response_body_length=0):
         """
         Perform a ping to a website. Returns a WebPing.Result instance.
 
@@ -333,6 +341,8 @@ class WebPing(ModularInput):
         user_agent -- The string to use for the user-agent
         logger -- The logger object to use for logging
         should_contain_string -- A string that is expected in the response
+        max_redirects -- The maximum number of redirects to follow
+        response_body_length -- How much of the response body to return. -1 for unlimited, 0 to disable.
         """
 
         if logger:
@@ -356,6 +366,12 @@ class WebPing(ModularInput):
         # Make sure that a timeout is not None since that is infinite
         if timeout is None:
             timeout = 30
+            
+        # Make sure that the max_redirects is None or >= 0
+        if max_redirects is not None and max_redirects < 0:
+            max_redirects = None
+        if logger and max_redirects is not None:
+            logger.debug("max_redirects = %d", max_redirects)
 
         # Setup the proxy info if so configured
         proxies = {}
@@ -404,6 +420,8 @@ class WebPing(ModularInput):
         timed_out = False
         response_size = None
         has_expected_string = None
+        response_body = None
+        exceeded_redirects = None
 
         # Setup the headers as necessary
         headers = {}
@@ -454,7 +472,11 @@ class WebPing(ModularInput):
             with Timer() as timer:
 
                 # Make the client
-                http = requests.get(url.geturl(), proxies=proxies, timeout=timeout, cert=cert, verify=False, auth=auth, headers=headers)
+                # http = requests.get(url.geturl(), proxies=proxies, timeout=timeout, cert=cert, verify=False, auth=auth, headers=headers)
+                session = requests.Session()
+                if max_redirects is not None:
+                    session.max_redirects = max_redirects
+                http = session.get(url.geturl(), proxies=proxies, timeout=timeout, cert=cert, verify=False, auth=auth, headers=headers)
 
                 # Get the hash of the content
                 if not cls.is_fips_mode():
@@ -468,6 +490,11 @@ class WebPing(ModularInput):
 
                 # Get the size of the content
                 response_size = len(http.text)
+                
+                if response_body_length < 0:
+                    response_body = http.text
+                elif response_body_length > 0:
+                    response_body = http.text[:response_body_length]
 
             response_code = http.status_code
             request_time = timer.msecs
@@ -491,13 +518,18 @@ class WebPing(ModularInput):
             # This may be thrown if the user configured the proxy settings incorrectly
             if logger:
                 logger.exception("An error occurred when attempting to communicate with the proxy for url=%s", url.geturl())
+                
+        except requests.exceptions.TooManyRedirects as e:
+            exceeded_redirects = True
+            if logger:
+                logger.exception("The maximum number of redirects (%d) were exceeded for url=%s", max_redirects, url.geturl())
 
         except Exception as e:
             if logger:
                 logger.exception("A general exception was thrown when executing a web request for url=%s", url.geturl())
 
         # Finally, return the result
-        return cls.Result(request_time, response_code, timed_out, url.geturl(), response_size, response_md5, response_sha224, has_expected_string)
+        return cls.Result(request_time, response_code, timed_out, url.geturl(), response_size, response_md5, response_sha224, has_expected_string, response_body, exceeded_redirects)
 
     def output_result(self, result, stanza, title, index=None, source=None, sourcetype=None,
                       host=None,unbroken=True, close=True, proxy_server=None, proxy_port=None,
@@ -551,7 +583,38 @@ class WebPing(ModularInput):
         # Add the variable noting if the expected string was present
         if result.has_expected_string is not None:
             data['has_expected_string'] = str(result.has_expected_string).lower()
+            
+        # Add the variable noting if the maximum number of redirects was exceeded
+        if result.exceeded_redirects is not None:
+            data['exceeded_redirects'] = result.exceeded_redirects
 
+        # Output the response body as a separate event, if present
+        if result.response_body is not None:
+            
+            # Make the event
+            event_dict = {'stanza': stanza,
+                          'data' : result.response_body}
+
+            if index is not None:
+                event_dict['index'] = index
+
+            if sourcetype is not None:
+                event_dict['sourcetype'] = sourcetype + ":response"
+
+            if source is not None:
+                event_dict['source'] = source
+
+            if host is not None:
+                event_dict['host'] = host
+
+            event = self._create_event(self.document,
+                                       params=event_dict,
+                                       stanza=stanza,
+                                       unbroken=unbroken,
+                                       close=close)
+            out.write(self._print_event(self.document, event))
+            
+        # Output event with fields
         return self.output_event(data, stanza, index=index, host=host, source=source,
                                  sourcetype=sourcetype, unbroken=unbroken, close=close, out=out)
 
@@ -608,6 +671,7 @@ class WebPing(ModularInput):
             'proxy_password' : '',
             'thread_limit' : 200,
             'proxy_ignore' : None,
+            'max_response_body_length' : 1000
         }
 
         # Get the proxy configuration
@@ -632,6 +696,14 @@ class WebPing(ModularInput):
                 else:
                     self.logger.error("The value for the thread limit is invalid and will be ignored (will use a limit of 200), value=%s", website_monitoring_config['thread_limit'])
                     website_monitoring_config['thread_limit'] = 200
+
+            # Convert the max_response_body_length to an integer
+            try:
+                website_monitoring_config['max_response_body_length'] = int(website_monitoring_config['max_response_body_length'])
+            except ValueError:
+                self.logger.error("The value for the maximum response body length is invalid and will be ignored (will use a limit of 1000), value=%s", website_monitoring_config['max_response_body_length'])
+                website_monitoring_config['max_response_body_length'] = 1000
+
 
             self.logger.debug("App config information loaded, stanza=%s", stanza)
 
@@ -705,14 +777,19 @@ class WebPing(ModularInput):
         client_certificate_key = cleaned_params.get("client_certificate_key", None)
         username = cleaned_params.get("username", None)
         password = cleaned_params.get("password", None)
-        timeout = self.timeout
+        timeout = cleaned_params.get("timeout", self.timeout)
         sourcetype = cleaned_params.get("sourcetype", "web_ping")
         host = cleaned_params.get("host", None)
         index = cleaned_params.get("index", "default")
         conf_stanza = cleaned_params.get("configuration", None)
         user_agent = cleaned_params.get("user_agent", None)
         should_contain_string = cleaned_params.get("should_contain_string", None)
+        max_redirects = cleaned_params.get("max_redirects", -1)
+        return_body = cleaned_params.get("return_body", False)
         source = stanza
+        
+        self.logger.debug("cleaned_params")
+        self.logger.debug(cleaned_params)
 
         # Check for missing parameters
         if interval is None:
@@ -812,12 +889,17 @@ class WebPing(ModularInput):
                     self.logger.exception("Exception generated when attempting to get the proxy configuration stanza=%s, see url=http://lukemurphey.net/projects/splunk-website-monitoring/wiki/Troubleshooting", stanza)
                     return
 
+                # Set the max response body length for this request
+                response_body_length = self.default_app_config['max_response_body_length']
+                if return_body is False:
+                    response_body_length = 0
+
                 # Perform the ping
                 try:
                     result = WebPing.ping(url, username, password, timeout, proxy_type,
                                           proxy_server, proxy_port, proxy_user, proxy_password,
-                                          proxy_ignore, client_certificate, client_certificate_key, user_agent,
-                                          logger=self.logger, should_contain_string=should_contain_string)
+                                          proxy_ignore, client_certificate, client_certificate_key, user_agent, max_redirects, 
+                                          logger=self.logger, should_contain_string=should_contain_string, response_body_length=response_body_length)
                 except NTLMAuthenticationValueException as e:
                     self.logger.warn('NTLM authentication failed due to configuration issue stanza=%s, message="%s"', stanza, str(e))
 
