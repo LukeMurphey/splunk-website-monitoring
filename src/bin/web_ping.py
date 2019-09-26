@@ -7,7 +7,7 @@ import sys
 
 path_to_mod_input_lib = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'modular_input.zip')
 sys.path.insert(0, path_to_mod_input_lib)
-from modular_input import Field, ModularInput, URLField, DurationField
+from modular_input import Field, ModularInput, URLField, DurationField, RangeField
 from modular_input.shortcuts import forgive_splunkd_outages
 from modular_input.secure_password import get_secure_password
 from splunk.models.field import Field as ModelField
@@ -115,7 +115,8 @@ class WebPing(ModularInput):
                 Field("username", "Username", "The username to use for authenticating (only HTTP authentication supported)", none_allowed=True, empty_allowed=True, required_on_create=False, required_on_edit=False),
                 Field("password", "Password", "The password to use for authenticating (only HTTP authentication supported)", none_allowed=True, empty_allowed=True, required_on_create=False, required_on_edit=False),
                 Field("user_agent", "User Agent", "The user-agent to use when communicating with the server", none_allowed=True, empty_allowed=True, required_on_create=False, required_on_edit=False),
-                Field("should_contain_string", "String match", "A string that should be present in the content", none_allowed=True, empty_allowed=True, required_on_create=False, required_on_edit=False)
+                Field("should_contain_string", "String match", "A string that should be present in the content", none_allowed=True, empty_allowed=True, required_on_create=False, required_on_edit=False),
+                RangeField("max_response_time", "Maximum Expected Response Time", "The maximum response time that is allowable", low=1, high=65535, none_allowed=True, empty_allowed=True, required_on_create=False, required_on_edit=False)
         ]
 
         ModularInput.__init__(self, scheme_args, args, logger_name='web_availability_modular_input', logger_level=logging.DEBUG)
