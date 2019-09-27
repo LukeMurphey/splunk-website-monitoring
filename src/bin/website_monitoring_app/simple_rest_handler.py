@@ -17,7 +17,7 @@ restmap.conf example
 Below is an example of the restmap.conf file (assumes your code is placed in
 bin/my_custom_rest_handler.py):
 
-[admin_external:my_custom_rest_handler]
+[admin_external:my_custom]
 handlertype = python
 handlerfile = my_custom_rest_handler.py
 handleractions = list,edit,_reload
@@ -348,7 +348,7 @@ class RestHandler(admin.MConfigHandler):
             if not file_name.endswith('.log'):
                 file_name = file_name + '.log'
 
-            self._logger = setup_logger(self.logger_level, self.logger_name, file_name)
+            self._logger = setup_logger(logging.INFO, self.logger_name, file_name)
 
         return self._logger
 
@@ -389,21 +389,23 @@ class RestHandler(admin.MConfigHandler):
         """
         Setup the required and optional arguments
         """
-        self.logger.debug("Setup called for action=%r", self.requestedAction)
+        self.logger.debug('Configuring the REST handler')
 
         try:
             self.checkIfProperlyInitialized()
         except IncorrectlyConfiguredException as exception_raised:
             self.logger.error('The REST handler is improperly configured: ' + str(exception_raised))
 
-        # Set the required parameters
-        for arg in self.required_params:
-            self.supportedArgs.addReqArg(arg)
+        if self.requestedAction == admin.ACTION_EDIT or self.requestedAction == admin.ACTION_CREATE:
 
-        # Set up the valid parameters
-        for arg in self.valid_params:
-            if arg not in self.required_params:
-                self.supportedArgs.addOptArg(arg)
+            # Set the required parameters
+            for arg in self.required_params:
+                self.supportedArgs.addReqArg(arg)
+
+            # Set up the valid parameters
+            for arg in self.valid_params:
+                if arg not in self.required_params:
+                    self.supportedArgs.addOptArg(arg)
 
     def removeMultiFieldSpecifier(self, name):
         """
@@ -478,6 +480,9 @@ class RestHandler(admin.MConfigHandler):
     def handleReload(self, confInfo):
         """
         Reload the list of configuration options.
+
+        Arguments
+        confInfo -- The object containing the information about what is being requested.
         """
 
         # Refresh the configuration (handles disk based updates)
@@ -494,33 +499,6 @@ class RestHandler(admin.MConfigHandler):
 
         if name in d:
             d[name] = None
-
-    def saveConf(self, settings, name, confInfo, existing_settings=None):
-        """
-        Save the given configuration to the conf file.
-
-        Arguments:
-        settings -- A dictionary with the settings to write out
-        name -- The stanze name of the conf file to write out
-        confInfo -- The confInfo 
-        existing_settings -- The existing settings of the previous conf entry (if it exists). This is used to determine which values to be cleared.
-        """
-
-        # Check the configuration settings
-        cleaned_params = self.checkConf(settings, name, confInfo, existing_settings=existing_settings)
-
-        # Get the validated parameters
-        validated_params = self.convertParams(name, cleaned_params, True)
-
-        # Clear out the given parameters if blank so that it can be removed if the user wishes (note that values of none are ignored by Splunk)
-        clearable_params = []
-
-        for p in clearable_params:
-            if p in validated_params and validated_params[p] is None:
-                validated_params[p] = ""
-
-        # Write out the updated conf
-        self.writeConf(self.conf_file, name, validated_params)
 
     @log_function_invocation
     def handleEdit(self, confInfo):
@@ -565,57 +543,26 @@ class RestHandler(admin.MConfigHandler):
             # Create the resulting configuration that would be persisted if the settings provided are applied
             settings.update(new_settings)
 
-            # Save the configuraiton
-            self.saveConf(new_settings, name, confInfo, existing_settings)
+            # Check the configuration settings
+            cleaned_params = self.checkConf(new_settings, name, confInfo, existing_settings=existing_settings)
+
+            # Get the validated parameters
+            validated_params = self.convertParams(name, cleaned_params, True)
+
+            # Clear out the given parameters if blank so that it can be removed if the user wishes (note that values of none are ignored by Splunk)
+            clearable_params = []
+
+            for p in clearable_params:
+                if p in validated_params and validated_params[p] is None:
+                    validated_params[p] = ""
+
+            # Write out the updated conf
+            self.writeConf(self.conf_file, name, validated_params)
 
         except admin.NotFoundException, e:
             raise e
         except Exception, e:
             self.logger.exception("Exception generated while performing edit")
-
-            raise e
-
-    @log_function_invocation
-    def handleCreate(self, confInfo):
-        """
-        Handles creation of configuration options
-
-        Arguments
-        confInfo -- The object containing the information about what is being requested.
-        """
-
-        try:
-
-            name = self.callerArgs.id
-            args = self.callerArgs
-
-            self.logger.info("Creating a new entry for stanza=%r", name)
-
-            # Load the existing configuration
-            confDict = self.readConf(self.conf_file)
-
-            # Make sure the entry doesn't exist already
-            if name is not None:
-                for stanza, settings in confDict.items():
-                    if stanza == name:
-                        is_found = True
-
-                        raise splunk.admin.ArgValidationException('Entry exists already')
-
-            # Get the settings that are being set
-            new_settings = {}
-
-            for key in args.data:
-                new_settings[key] = args[key][0]
-
-            # Save the configuration
-            self.saveConf(new_settings, name, confInfo)
-
-            # Make sure Splunk reloads the changes
-            self.handleReload()
-
-        except Exception, e:
-            self.logger.exception("Exception generated while performing creation of new entry")
 
             raise e
 
