@@ -7,7 +7,7 @@ import sys
 
 path_to_mod_input_lib = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'modular_input.zip')
 sys.path.insert(0, path_to_mod_input_lib)
-from modular_input import Field, ModularInput, URLField, DurationField, IntegerField, BooleanField
+from modular_input import Field, ModularInput, URLField, DurationField, IntegerField, BooleanField, RangeField
 from modular_input.shortcuts import forgive_splunkd_outages
 from modular_input.secure_password import get_secure_password
 from splunk.models.field import Field as ModelField
@@ -122,7 +122,7 @@ class WebPing(ModularInput):
                 Field("user_agent", "User Agent", "The user-agent to use when communicating with the server", none_allowed=True, empty_allowed=True, required_on_create=False, required_on_edit=False),
                 Field("should_contain_string", "String match", "A string that should be present in the content", none_allowed=True, empty_allowed=True, required_on_create=False, required_on_edit=False),
                 IntegerField("max_redirects", "Maximum Redirects", "The maximum number of redirects to follow (-1 or blank for unlimited, 0 to not follow any redirects)", none_allowed=True, empty_allowed=True, required_on_create=False, required_on_edit=False),
-                IntegerField("timeout", "Timeout", "The maximum number of seconds to wait for a response", none_allowed=True, empty_allowed=True, required_on_create=False, required_on_edit=False),
+                DurationField("timeout", "Timeout", "The maximum number of seconds to wait for a response", none_allowed=True, empty_allowed=True, required_on_create=False, required_on_edit=False),
                 BooleanField("return_body", "Return response body", "If checked, will return the response body", none_allowed=True, empty_allowed=True, required_on_create=False, required_on_edit=False)
         ]
 
@@ -346,7 +346,7 @@ class WebPing(ModularInput):
         """
 
         if logger:
-            logger.info('Performing ping, url="%s"', url.geturl())
+            logger.info('Performing ping, url="%s" timeout=%r', url.geturl(), timeout)
     
         # Disable the use of the proxy variables
         if proxy_ignore is not None:
@@ -675,7 +675,7 @@ class WebPing(ModularInput):
         }
 
         # Get the proxy configuration
-        try: 
+        try:
             server_response, server_content = splunk.rest.simpleRequest('/servicesNS/nobody/website_monitoring/admin/website_monitoring/' + stanza + '?output_mode=json', sessionKey=session_key)
 
             if server_response['status'] != '200':
@@ -788,8 +788,7 @@ class WebPing(ModularInput):
         return_body = cleaned_params.get("return_body", False)
         source = stanza
         
-        self.logger.debug("cleaned_params")
-        self.logger.debug(cleaned_params)
+        self.logger.debug("cleaned_params=%r", cleaned_params)
 
         # Check for missing parameters
         if interval is None:
