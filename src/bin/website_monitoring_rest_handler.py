@@ -15,7 +15,7 @@ sys.path.insert(0, path_to_mod_input_lib)
 from modular_input.server_info import ServerInfo
 
 from website_monitoring_app.simple_rest_handler import RestHandler, BooleanFieldValidator, \
-IntegerFieldValidator, StandardFieldValidator, HostFieldValidator
+IntegerFieldValidator, StandardFieldValidator, HostFieldValidator, log_function_invocation
 
 class ProxyTypeFieldValidator(StandardFieldValidator):
     """
@@ -93,6 +93,7 @@ class WebsiteMonitoringRestHandler(RestHandler):
         # Call the super class convertParams()
         return super(WebsiteMonitoringRestHandler, self).convertParams(name, params, to_string)
 
+    @log_function_invocation
     def handleList(self, confInfo):
         """
         Provide the list of configuration options.
