@@ -648,10 +648,12 @@ define([
 				// Find out which capabilities are missing
 				var capabilities_missing = [];
 				
-				// Check each one
-				for(var c = 0; c < capabilities_required.length; c++){
-					if(!this.hasCapability(capabilities_required[c])){
-						capabilities_missing.push(capabilities_required[c]);
+				// Check each capability if the user isn't using the free version of Splunk
+				if (!$C.SPLUNKD_FREE_LICENSE) {
+					for(var c = 0; c < capabilities_required.length; c++){
+						if(!this.hasCapability(capabilities_required[c])){
+							capabilities_missing.push(capabilities_required[c]);
+						}
 					}
 				}
 
