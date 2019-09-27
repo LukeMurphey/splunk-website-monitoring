@@ -126,7 +126,7 @@ class WebPing(ModularInput):
                 BooleanField("return_body", "Return response body", "If checked, will return the response body", none_allowed=True, empty_allowed=True, required_on_create=False, required_on_edit=False)
         ]
 
-        ModularInput.__init__(self, scheme_args, args, logger_name='web_availability_modular_input', logger_level=logging.DEBUG)
+        ModularInput.__init__(self, scheme_args, args, logger_name='web_availability_modular_input', logger_level=logging.INFO)
 
         if timeout > 0:
             self.timeout = timeout
