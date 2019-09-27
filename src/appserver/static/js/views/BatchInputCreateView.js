@@ -67,7 +67,8 @@ define([
         	this.processing_queue = [];
         	this.processed_queue = [];
         	this.unprocessed_queue = [];
-        	this.interval = null;
+			this.interval = null;
+			this.timeout = null;
         	this.index = null;
         	this.dont_duplicate = true;
         	this.stop_processing = false;
@@ -159,13 +160,13 @@ define([
         /**
          * Create an input
          */
-        createInput: function(url, interval, index, name, title){
+        createInput: function(url, interval, index, timeout, name, title){
         	
         	// Get a promise ready
         	var promise = jQuery.Deferred();
         	
         	// Set a default value for the arguments
-        	if( typeof name == 'undefined' ){
+        	if( typeof name === 'undefined' ){
         		name = null;
         	}
         	
@@ -175,6 +176,10 @@ define([
         	
         	if( typeof index == 'undefined' ){
         		index = null;
+			}
+			
+			if( typeof timeout == 'undefined' || timeout.toString().length === 0 ){
+        		timeout = null;
         	}
         	
         	// Populate defaults for the arguments
@@ -189,11 +194,17 @@ define([
         	// Make the data that will be posted to the server
         	var data = {
         		"url": url,
-        		"interval": interval,
+				"interval": interval,
         		"name": name,
         		"title": title,
-        	};
-        	
+			};
+			
+			// Add the optional timeout parameter
+			if(timeout !== null){
+        		data["timeout"] = timeout;
+        	}
+			
+			// Add the optional index parameter
         	if(index !== null){
         		data["index"] = index;
         	}
@@ -317,7 +328,7 @@ define([
         		// Create the input
         		else{
                 	// Process the next input
-                    $.when(this.createInput(url, this.interval, this.index)).done(function(){
+                    $.when(this.createInput(url, this.interval, this.index, this.timeout)).done(function(){
                     	this.createNextInput();
               		}.bind(this));
         		}
@@ -353,6 +364,17 @@ define([
         	else{
            		$(".control-group.interval", this.$el).removeClass("error");
         		$(".control-group.interval .help-inline", this.$el).hide();
+			}
+			
+        	// Validate the timeout
+        	if(!this.isValidInterval($("#timeout", this.$el).val())){
+        		issues = issues + 1;
+        		$(".control-group.timeout", this.$el).addClass("error");
+        		$(".control-group.timeout .help-inline", this.$el).show();
+        	}
+        	else{
+           		$(".control-group.timeout", this.$el).removeClass("error");
+        		$(".control-group.timeout .help-inline", this.$el).hide();
         	}
         	
         	return issues === 0;
@@ -371,7 +393,7 @@ define([
         	else{
         		return false;
         	}
-        },
+		},
         
         /**
          * Ensure that the tag is a valid URL.
@@ -419,7 +441,8 @@ define([
             	this.processed_queue = [];
             	this.unprocessed_queue = [];
             	this.processing_queue = $("#urls", this.$el).tagsinput('items');
-            	this.interval = $("#interval", this.$el).val();
+				this.interval = $("#interval", this.$el).val();
+				this.timeout = $("#timeout", this.$el).val();
             	this.dont_duplicate = $(".dont-duplicate", this.$el).is(':checked');
             	//this.index = $("#index", this.$el).val();
             	
