@@ -241,5 +241,9 @@ Change History
 |         | Fixing error when reload is called                                                                               |
 |         | Improving error messaging on the setup page                                                                      |
 |         | Thread limit is restricted to 25 on Splunk Cloud                                                                 |
+|---------|------------------------------------------------------------------------------------------------------------------|
+| 2.8.0   | Added ability to define a custom timeout                                                                         |
+|         | Added ability to define the redirect limit                                                                       |
+|         | Added REST handler logs to health monitoring dashboard                                                           |
 +---------+------------------------------------------------------------------------------------------------------------------+
 
