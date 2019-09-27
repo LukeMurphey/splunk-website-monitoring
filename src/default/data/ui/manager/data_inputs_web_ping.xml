@@ -33,6 +33,12 @@
 	          <view name="create"/>
 	          <key name="exampleText">A short description (typically just the domain name)</key>
 	        </element>
+
+	        <element name="timeout" type="textfield" label="Timeout">
+	          <view name="edit"/>
+	          <view name="create"/>
+	          <key name="exampleText">The maximum number of seconds to wait for a response before giving up</key>
+	        </element>
 		  	
 	      </elements>
 	  	</element>
@@ -162,13 +168,7 @@
 	        <element name="max_redirects" type="textfield" label="Maximum number of redirects to follow">
 	          <view name="edit"/>
 	          <view name="create"/>
-	          <key name="exampleText">A number indicating the maximum number of redirects to follow. Use '0' to turn OFF redirection following. Use '-1' to follow an unlimited number of redirects.</key>
-	        </element>
-
-	        <element name="timeout" type="textfield" label="Timeout">
-	          <view name="edit"/>
-	          <view name="create"/>
-	          <key name="exampleText">The maximum number of seconds to wait for a response before giving up</key>
+	          <key name="exampleText">The maximum number of redirects to follow; leave blank to allow unlimited redirects</key>
 	        </element>
 
 	      </elements>
