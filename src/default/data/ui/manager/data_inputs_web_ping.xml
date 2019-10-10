@@ -39,6 +39,12 @@
 	          <view name="create"/>
 	          <key name="exampleText">The maximum number of seconds to wait for a response before giving up</key>
 	        </element>
+
+	        <element name="return_body" type="checkbox" label="Include Raw Output">
+	          <view name="edit"/>
+	          <view name="create"/>
+	          <key name="exampleText">Save the response body</key>
+	        </element>
 		  	
 	      </elements>
 	  	</element>
