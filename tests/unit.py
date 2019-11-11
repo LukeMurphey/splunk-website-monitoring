@@ -6,9 +6,9 @@ import time
 import shutil
 import tempfile
 import threading
-from StringIO import StringIO
 import errno
-import HTMLTestRunner
+
+from six import StringIO
 
 sys.path.append(os.path.join("..", "src", "bin"))
 
@@ -181,7 +181,7 @@ class TestWebPing(WebsiteMonitoringAppTest, UnitTestWithWebServer):
         shutil.rmtree(self.tmp_dir)
 
     def test_get_file_path(self):
-        self.assertEquals(WebPing.get_file_path("/Users/lmurphey/Applications/splunk/var/lib/splunk/modinputs/web_ping", "web_ping://TextCritical.com"), "/Users/lmurphey/Applications/splunk/var/lib/splunk/modinputs/web_ping" + os.sep + "35163af7282b92013f810b2b4822d7df.json")
+        self.assertEqual(WebPing.get_file_path("/Users/lmurphey/Applications/splunk/var/lib/splunk/modinputs/web_ping", "web_ping://TextCritical.com"), "/Users/lmurphey/Applications/splunk/var/lib/splunk/modinputs/web_ping" + os.sep + "35163af7282b92013f810b2b4822d7df.json")
 
     def test_ping(self):
 
@@ -189,7 +189,7 @@ class TestWebPing(WebsiteMonitoringAppTest, UnitTestWithWebServer):
 
         result = WebPing.ping(url_field.to_python("http://127.0.0.1:" + str(self.web_server_port) + "/test_page"), timeout=3)
 
-        self.assertEquals(result.response_code, 200)
+        self.assertEqual(result.response_code, 200)
         self.assertGreater(result.request_time, 0)
 
     def test_ping_super_long_url(self):
@@ -200,7 +200,7 @@ class TestWebPing(WebsiteMonitoringAppTest, UnitTestWithWebServer):
         #result = WebPing.ping(url_field.to_python("http://127.0.0.1:" + str(self.web_server_port) + "/test_page?s=superloooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooong"), timeout=3)
         result = WebPing.ping(url_field.to_python("http://127.0.0.1:" + str(self.web_server_port) + "/test_page_superlooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooong"), timeout=3)
 
-        self.assertEquals(result.response_code, 200)
+        self.assertEqual(result.response_code, 200)
         self.assertGreater(result.request_time, 0)
 
     def test_ping_non_existent_domain(self):
@@ -210,15 +210,15 @@ class TestWebPing(WebsiteMonitoringAppTest, UnitTestWithWebServer):
 
         result = WebPing.ping(url_field.to_python("http://xyz"), timeout=3)
 
-        self.assertEquals(result.response_code, 0)
-        self.assertEquals(result.request_time, 0)
+        self.assertEqual(result.response_code, 0)
+        self.assertEqual(result.request_time, 0)
 
     def test_ping_timeout(self):
         url_field = URLField("test_ping_timeout", "title", "this is a test")
 
         result = WebPing.ping(url_field.to_python("https://192.168.30.23/"), timeout=3)
 
-        self.assertEquals(result.timed_out, True)
+        self.assertEqual(result.timed_out, True)
 
     def test_is_exception_for_timeout(self):
         try:
@@ -232,7 +232,7 @@ class TestWebPing(WebsiteMonitoringAppTest, UnitTestWithWebServer):
     def test_save_checkpoint(self):
         web_ping = WebPing()
         web_ping.save_checkpoint(self.tmp_dir, "web_ping://TextCritical.com", 100)
-        self.assertEquals(web_ping.last_ran(self.tmp_dir, "web_ping://TextCritical.com"), 100)
+        self.assertEqual(web_ping.last_ran(self.tmp_dir, "web_ping://TextCritical.com"), 100)
 
     def test_is_expired(self):
         self.assertFalse(WebPing.is_expired(time.time(), 30))
@@ -299,10 +299,10 @@ class TestWebPing(WebsiteMonitoringAppTest, UnitTestWithWebServer):
 
         result = WebPing.ping(url_field.to_python("http://127.0.0.1:" + str(self.web_server_port) + "/test_page"), timeout=3)
 
-        self.assertEquals(result.response_code, 200)
+        self.assertEqual(result.response_code, 200)
 
-        self.assertEquals(result.response_md5, '1f6c14189070f50c4c06ada640c14850') # This is 1f6c14189070f50c4c06ada640c14850 on disk
-        self.assertEquals(result.response_sha224, 'deaf4c0062539c98b4e957712efcee6d42832fed2d803c2bbf984b23')
+        self.assertEqual(result.response_md5, '1f6c14189070f50c4c06ada640c14850') # This is 1f6c14189070f50c4c06ada640c14850 on disk
+        self.assertEqual(result.response_sha224, 'deaf4c0062539c98b4e957712efcee6d42832fed2d803c2bbf984b23')
 
     def test_missing_servername(self):
         """
@@ -316,7 +316,7 @@ class TestWebPing(WebsiteMonitoringAppTest, UnitTestWithWebServer):
         url_field = URLField("test_ping", "title", "this is a test")
         result = WebPing.ping(url_field.to_python("https://lukemurphey.net"), timeout=3)
 
-        self.assertEquals(result.response_code, 200)
+        self.assertEqual(result.response_code, 200)
 
     @skipIfNoProxyServer
     def test_ping_over_proxy(self):
@@ -324,7 +324,7 @@ class TestWebPing(WebsiteMonitoringAppTest, UnitTestWithWebServer):
         url_field = URLField("test_ping", "title", "this is a test")
         result = WebPing.ping(url_field.to_python("http://textcritical.com"), timeout=3, proxy_type=self.proxy_type, proxy_server=self.proxy_address, proxy_port=self.proxy_port)
 
-        self.assertEquals(result.response_code, 200)
+        self.assertEqual(result.response_code, 200)
 
     @skipIfNoServer
     def test_ping_with_basic_authentication(self):
@@ -333,15 +333,15 @@ class TestWebPing(WebsiteMonitoringAppTest, UnitTestWithWebServer):
         url_field = URLField("test_ping", "title", "this is a test")
         result = WebPing.ping(url_field.to_python("http://127.0.0.1:" + str(self.web_server_port)), timeout=3, username="admin", password="changeme")
 
-        self.assertEquals(result.response_code, 200)
+        self.assertEqual(result.response_code, 200)
 
-        self.assertEquals(result.response_md5, '1f6c14189070f50c4c06ada640c14850') # This is 1f6c14189070f50c4c06ada640c14850 on disk
-        self.assertEquals(result.response_sha224, 'deaf4c0062539c98b4e957712efcee6d42832fed2d803c2bbf984b23')
+        self.assertEqual(result.response_md5, '1f6c14189070f50c4c06ada640c14850') # This is 1f6c14189070f50c4c06ada640c14850 on disk
+        self.assertEqual(result.response_sha224, 'deaf4c0062539c98b4e957712efcee6d42832fed2d803c2bbf984b23')
 
         # Verify that bad authentication fails
         result = WebPing.ping(url_field.to_python("http://127.0.0.1:" + str(self.web_server_port)), timeout=3, username="admin", password="wrongpassword")
 
-        self.assertEquals(result.response_code, 401)
+        self.assertEqual(result.response_code, 401)
         self.assertGreater(result.request_time, 0)
 
     def test_ping_with_digest_authentication(self):
@@ -350,7 +350,7 @@ class TestWebPing(WebsiteMonitoringAppTest, UnitTestWithWebServer):
         url_field = URLField( "test_ping", "title", "this is a test")
         result = WebPing.ping( url_field.to_python("http://httpbin.org/digest-auth/auth/user/passwd"), timeout=3, username="user", password="passwd")
 
-        self.assertEquals(result.response_code, 200)
+        self.assertEqual(result.response_code, 200)
 
     @skipIfNoServer
     def test_ping_with_ntlm_authentication(self):
@@ -359,7 +359,7 @@ class TestWebPing(WebsiteMonitoringAppTest, UnitTestWithWebServer):
         url_field = URLField("test_ping", "title", "this is a test")
         result = WebPing.ping(url_field.to_python("http://127.0.0.1:" + str(self.web_server_port) + "/ntlm_auth"), timeout=3, username="user\\domain", password="passwd")
 
-        self.assertEquals(result.response_code, 200)
+        self.assertEqual(result.response_code, 200)
 
     @skipIfNoServer
     def test_ping_with_ntlm_negotiate_authentication(self):
@@ -368,7 +368,7 @@ class TestWebPing(WebsiteMonitoringAppTest, UnitTestWithWebServer):
         url_field = URLField("test_ping", "title", "this is a test")
         result = WebPing.ping(url_field.to_python("http://127.0.0.1:" + str(self.web_server_port) + "/ntlm_auth_negotiate"), timeout=3, username="user\\domain", password="passwd")
 
-        self.assertEquals(result.response_code, 200)
+        self.assertEqual(result.response_code, 200)
 
     def test_ping_with_ntlm_authentication_missing_domain(self):
 
@@ -383,12 +383,12 @@ class TestWebPing(WebsiteMonitoringAppTest, UnitTestWithWebServer):
         url_field = URLField("test_ping", "title", "this is a test")
         result = WebPing.ping(url_field.to_python("http://127.0.0.1:" + str(self.web_server_port) + "/optional_auth"), timeout=3, username="admin", password="changeme")
 
-        self.assertEquals(result.response_code, 203)
+        self.assertEqual(result.response_code, 203)
 
         # Verify that no authentication still works
         result = WebPing.ping( url_field.to_python("http://127.0.0.1:" + str(self.web_server_port) + "/optional_auth"), timeout=3)
 
-        self.assertEquals(result.response_code, 202)
+        self.assertEqual(result.response_code, 202)
         self.assertGreater(result.request_time, 0)
 
     @skipIfNoServer
@@ -398,7 +398,7 @@ class TestWebPing(WebsiteMonitoringAppTest, UnitTestWithWebServer):
         url_field = URLField( "test_ping", "title", "this is a test")
         auth_type = WebPing.determine_auth_type( url_field.to_python("http://127.0.0.1:" + str(self.web_server_port)))
 
-        self.assertEquals(auth_type, WebPing.HTTP_AUTH_BASIC)
+        self.assertEqual(auth_type, WebPing.HTTP_AUTH_BASIC)
 
     def test_determine_auth_method_digest(self):
 
@@ -406,7 +406,7 @@ class TestWebPing(WebsiteMonitoringAppTest, UnitTestWithWebServer):
         url_field = URLField( "test_ping", "title", "this is a test")
         auth_type = WebPing.determine_auth_type( url_field.to_python("http://httpbin.org/digest-auth/auth/user/passwd"))
 
-        self.assertEquals(auth_type, WebPing.HTTP_AUTH_DIGEST)
+        self.assertEqual(auth_type, WebPing.HTTP_AUTH_DIGEST)
 
     @skipIfNoServer
     def test_determine_auth_method_ntlm(self):
@@ -415,7 +415,7 @@ class TestWebPing(WebsiteMonitoringAppTest, UnitTestWithWebServer):
         url_field = URLField( "test_ping", "title", "this is a test")
         auth_type = WebPing.determine_auth_type( url_field.to_python("http://127.0.0.1:" + str(self.web_server_port) + "/ntlm_auth"))
 
-        self.assertEquals(auth_type, WebPing.HTTP_AUTH_NTLM)
+        self.assertEqual(auth_type, WebPing.HTTP_AUTH_NTLM)
 
     @skipIfNoServer
     def test_determine_auth_method_ntlm_comma_header(self):
@@ -424,7 +424,7 @@ class TestWebPing(WebsiteMonitoringAppTest, UnitTestWithWebServer):
         url_field = URLField( "test_ping", "title", "this is a test")
         auth_type = WebPing.determine_auth_type( url_field.to_python("http://127.0.0.1:" + str(self.web_server_port) + "/ntlm_auth_negotiate"))
 
-        self.assertEquals(auth_type, WebPing.HTTP_AUTH_NTLM)
+        self.assertEqual(auth_type, WebPing.HTTP_AUTH_NTLM)
 
     @skipIfNoServer
     def test_determine_auth_method_none(self):
@@ -433,7 +433,7 @@ class TestWebPing(WebsiteMonitoringAppTest, UnitTestWithWebServer):
         url_field = URLField( "test_ping", "title", "this is a test")
         auth_type = WebPing.determine_auth_type( url_field.to_python("http://127.0.0.1:" + str(self.web_server_port) + "/test_page"))
 
-        self.assertEquals(auth_type, WebPing.HTTP_AUTH_NONE)
+        self.assertEqual(auth_type, WebPing.HTTP_AUTH_NONE)
 
     @skipIfNoServer
     def test_custom_user_agent(self):
@@ -446,11 +446,11 @@ class TestWebPing(WebsiteMonitoringAppTest, UnitTestWithWebServer):
         # Make sure that the server is validating the user-agent by returning 200 when the user-agent doesn't match
         # This just validates that the test case works
         result = WebPing.ping(url_field.to_python("http://127.0.0.1:" + str(self.web_server_port) + "/user_agent_check"), user_agent="USER_AGENT_CHECK_DOESNT_MATCH", timeout=3)
-        self.assertEquals(result.response_code, 200)
+        self.assertEqual(result.response_code, 200)
 
         # Make sure that the server is validating the user-agent which returns 201 when the user-agent matches "USER_AGENT_CHECK"
         result = WebPing.ping(url_field.to_python("http://127.0.0.1:" + str(self.web_server_port) + "/user_agent_check"), user_agent="USER_AGENT_CHECK", timeout=3)
-        self.assertEquals(result.response_code, 201)
+        self.assertEqual(result.response_code, 201)
 
     @skipIfNoServer
     def test_should_contain_string(self):
@@ -459,11 +459,11 @@ class TestWebPing(WebsiteMonitoringAppTest, UnitTestWithWebServer):
 
         result = WebPing.ping(url_field.to_python("http://127.0.0.1:" + str(self.web_server_port) + "/test_page"), timeout=3, should_contain_string="<h1>My First Heading</h1>")
 
-        self.assertEquals(result.response_code, 200)
+        self.assertEqual(result.response_code, 200)
 
-        self.assertEquals(result.response_md5, '1f6c14189070f50c4c06ada640c14850') # This is 1f6c14189070f50c4c06ada640c14850 on disk
-        self.assertEquals(result.response_sha224, 'deaf4c0062539c98b4e957712efcee6d42832fed2d803c2bbf984b23')
-        self.assertEquals(result.has_expected_string, True)
+        self.assertEqual(result.response_md5, '1f6c14189070f50c4c06ada640c14850') # This is 1f6c14189070f50c4c06ada640c14850 on disk
+        self.assertEqual(result.response_sha224, 'deaf4c0062539c98b4e957712efcee6d42832fed2d803c2bbf984b23')
+        self.assertEqual(result.has_expected_string, True)
 
     @skipIfNoServer
     def test_should_contain_string_no_match(self):
@@ -472,11 +472,11 @@ class TestWebPing(WebsiteMonitoringAppTest, UnitTestWithWebServer):
 
         result = WebPing.ping(url_field.to_python("http://127.0.0.1:" + str(self.web_server_port) + "/test_page"), timeout=3, should_contain_string="<h1>Should not Match!</h1>")
 
-        self.assertEquals(result.response_code, 200)
+        self.assertEqual(result.response_code, 200)
 
-        self.assertEquals(result.response_md5, '1f6c14189070f50c4c06ada640c14850') # This is 1f6c14189070f50c4c06ada640c14850 on disk
-        self.assertEquals(result.response_sha224, 'deaf4c0062539c98b4e957712efcee6d42832fed2d803c2bbf984b23')
-        self.assertEquals(result.has_expected_string, False)
+        self.assertEqual(result.response_md5, '1f6c14189070f50c4c06ada640c14850') # This is 1f6c14189070f50c4c06ada640c14850 on disk
+        self.assertEqual(result.response_sha224, 'deaf4c0062539c98b4e957712efcee6d42832fed2d803c2bbf984b23')
+        self.assertEqual(result.has_expected_string, False)
 
 class TestOnCloud(unittest.TestCase):
     
@@ -496,7 +496,7 @@ class TestOnCloud(unittest.TestCase):
         # See https://lukemurphey.net/issues/2445
         self.web_ping.is_on_cloud = self.fake_is_on_cloud
         self.web_ping.get_proxy_config('a session key')
-        self.assertEquals(self.web_ping.get_proxy_config('a session key'), ("http", None, None, None, None, None))
+        self.assertEqual(self.web_ping.get_proxy_config('a session key'), ("http", None, None, None, None, None))
 
 if __name__ == '__main__':
     try:

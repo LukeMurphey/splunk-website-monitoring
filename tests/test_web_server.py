@@ -1,9 +1,17 @@
-from BaseHTTPServer import BaseHTTPRequestHandler
+from six.moves.BaseHTTPServer import BaseHTTPRequestHandler
 import os
 import base64
 
+from six.moves.urllib.parse import urlparse, parse_qs
+from six.moves.BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
+from six import binary_type, text_type
+
 class TestWebServerHandler(BaseHTTPRequestHandler):
     ''' Main class to present webpages and authentication. '''
+
+    def get_header(self, header_name):
+        return self.headers.get(header_name.lower())
+
     def do_HEAD(self):
         self.send_response(200)
         self.send_header('Content-type', 'text/html')
@@ -15,16 +23,33 @@ class TestWebServerHandler(BaseHTTPRequestHandler):
         self.send_header('Content-type', 'text/html')
         self.end_headers()
 
+    def write_string(self, content):
+        if isinstance(content, text_type):
+            return self.wfile.write(content.encode('utf-8'))
+        else:
+            return self.wfile.write(content)
+
+    def get_file(self, dirname, fname):
+        with open(os.path.join(dirname, fname), "rb") as webfile:
+            self.wfile.write(webfile.read())
+
     def do_GET(self):
         username = 'admin'
         password = 'changeme'
-        
-        encoded_password = base64.b64encode(username + ":" + password)
+        combined_user_pass = username + ":" + password
+
+        if not isinstance(combined_user_pass, binary_type):
+            combined_user_pass = combined_user_pass.encode('utf-8')
+
+        encoded_password = base64.b64encode(combined_user_pass)
+
+        if isinstance(encoded_password, binary_type):
+            encoded_password = encoded_password.decode('utf-8')
         
         # Present header reflection page
         if self.path == "/header_reflection":
             self.do_HEAD()
-            self.wfile.write('<html><body><div class="user-agent">%s</div></body></html>' % str(self.headers['user-agent']))
+            self.write_string('<html><body><div class="user-agent">%s</div></body></html>' % str(self.headers['user-agent']))
             
         # Check the user-agent and return 201 when the user-agent is "USER_AGENT_CHECK"
         if self.path == "/user_agent_check":
@@ -35,26 +60,23 @@ class TestWebServerHandler(BaseHTTPRequestHandler):
                 print("user-agent was not set to 'USER_AGENT_CHECK'")
             
             self.do_HEAD()
-            self.wfile.write('<html><body></body></html>')
-            
+            self.write_string('<html><body></body></html>')
             
         # Present the HTML page with no authentication
         if self.path.startswith("/test_page"):
             self.do_HEAD()
-            
-            with open( os.path.join("web_files", "test_page.html"), "r") as webfile:
-                self.wfile.write(webfile.read())#.replace('\n', '')
+            self.get_file("web_files", "test_page.html")
         
         # Present the HTML page with optional authentication
         elif self.path == "/optional_auth":
             
-            if self.headers.getheader('Authorization') == None:
+            if self.get_header('Authorization') == None:
                 self.send_response(202)
-                self.wfile.write('not authenticated')
+                self.write_string('not authenticated')
             
-            elif self.headers.getheader('Authorization') == ('Basic ' + encoded_password):
+            elif self.get_header('Authorization') == ('Basic ' + encoded_password):
                 self.send_response(203)
-                self.wfile.write('authenticated')
+                self.write_string('authenticated')
             
         # Present the HTML page with NTLM authentication
         # This is basically a fake NTLM session. This is the best I can do in a unit test since simulating a AD environment and a web-server with NTLM auth is not easy.
@@ -65,41 +87,39 @@ class TestWebServerHandler(BaseHTTPRequestHandler):
             else:
                 auth_header = "NTLM"
             
-            if self.headers.getheader('Authorization') == None:
+            if self.get_header('Authorization') == None:
                 self.send_response(401)
                 self.send_header('WWW-Authenticate', auth_header)
                 self.send_header('Content-type', 'text/html')
-                self.wfile.write('not authenticated')
+                self.write_string('not authenticated')
                 
             # Do the challenge
-            elif len(self.headers.getheader('Authorization')) < 200: #self.headers.getheader('Authorization') == "NTLM TlRMTVNTUAABAAAAB7IIogQABAA2AAAADgAOACgAAAAFASgKAAAAD0xNVVJQSEVZLU1CUDE1VVNFUg==":
+            elif len(self.get_header('Authorization')) < 200: #self.get_header('Authorization') == "NTLM TlRMTVNTUAABAAAAB7IIogQABAA2AAAADgAOACgAAAAFASgKAAAAD0xNVVJQSEVZLU1CUDE1VVNFUg==":
                 # NTLM TlRMTVNTUAABAAAAB7IIogQABAA2AAAADgAOACgAAAAFASgKAAAAD0xNVVJQSEVZLU1CUDE1VVNFUg==
                 self.send_response(401)
                 self.send_header('WWW-Authenticate', 'NTLM TlRMTVNTUAACAAAAAAAAACgAAAABAAAAAAAAAAAAAAA=') # The challenge
-                self.wfile.write('not authenticated, step two')
+                self.write_string('not authenticated, step two')
             
-            else: # elif self.headers.getheader('Authorization') == "NTLM TlRMTVNTUAADAAAAGAAYAHgAAAAYABgAkAAAAAgACABIAAAADAAMAFAAAAAcABwAXAAAAAAAAACoAAAABYKIogUBKAoAAAAPVQBTAEUAUgBkAG8AbQBhAGkAbgBMAE0AVQBSAFAASABFAFkALQBNAEIAUAAxADUAjkdanfmkRwLTvPN8tRWYl1fpobeVQMN00VGvOdOFEzgb0gY0ZnA0W8LL0pJ3BlOW":
+            else: # elif self.get_header('Authorization') == "NTLM TlRMTVNTUAADAAAAGAAYAHgAAAAYABgAkAAAAAgACABIAAAADAAMAFAAAAAcABwAXAAAAAAAAACoAAAABYKIogUBKAoAAAAPVQBTAEUAUgBkAG8AbQBhAGkAbgBMAE0AVQBSAFAASABFAFkALQBNAEIAUAAxADUAjkdanfmkRwLTvPN8tRWYl1fpobeVQMN00VGvOdOFEzgb0gY0ZnA0W8LL0pJ3BlOW":
                 # NTLM TlRMTVNTUAADAAAAGAAYAHgAAAAYABgAkAAAAAgACABIAAAADAAMAFAAAAAcABwAXAAAAAAAAACoAAAABYKIogUBKAoAAAAPVQBTAEUAUgBkAG8AbQBhAGkAbgBMAE0AVQBSAFAASABFAFkALQBNAEIAUAAxADUAjkdanfmkRwLTvPN8tRWYl1fpobeVQMN00VGvOdOFEzgb0gY0ZnA0W8LL0pJ3BlOW
                 self.send_response(200)
-                self.wfile.write('authenticated')
+                self.write_string('authenticated')
                 
             #else:
-            #    print "Auth header not the expected value=", self.headers.getheader('Authorization')
+            #    print "Auth header not the expected value=", self.get_header('Authorization')
             
         # Present frontpage with user authentication.
-        elif self.headers.getheader('Authorization') == None:
+        elif self.get_header('Authorization') == None:
             self.do_AUTHHEAD()
-            self.wfile.write('no auth header received')
+            self.write_string('no auth header received')
             
-        elif self.headers.getheader('Authorization') == ('Basic ' + encoded_password):
+        elif self.get_header('Authorization') == ('Basic ' + encoded_password):
             self.do_HEAD()
-            #self.wfile.write(self.headers.getheader('Authorization'))
-            #self.wfile.write('authenticated!')
-            
-            with open( os.path.join("web_files", "test_page.html"), "r") as webfile:
-                self.wfile.write(webfile.read())#.replace('\n', '')
+            #self.write_string(self.get_header('Authorization'))
+            #self.write_string('authenticated!')
+            self.get_file("web_files", "test_page.html")
             
         else:
             self.do_AUTHHEAD()
-            self.wfile.write(self.headers.getheader('Authorization'))
-            self.wfile.write('not authenticated')
+            self.write_string(self.headers['Authorization'])
+            self.write_string('not authenticated')

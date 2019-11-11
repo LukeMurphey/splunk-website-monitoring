@@ -23,6 +23,7 @@ import logging
 import urllib
 
 import socket
+from six import text_type, binary_type
 from website_monitoring_app import socks
 from website_monitoring_app import requests
 from website_monitoring_app.requests_ntlm import HttpNtlmAuth
@@ -478,11 +479,17 @@ class WebPing(ModularInput):
                     session.max_redirects = max_redirects
                 http = session.get(url.geturl(), proxies=proxies, timeout=timeout, cert=cert, verify=False, auth=auth, headers=headers)
 
+                # Prep the content for hashing; we might need to convert it for Python 3
+                if isinstance(http.text, binary_type):
+                    http_text = http.text
+                else:
+                    http_text = http.text.encode('utf-8')
+
                 # Get the hash of the content
                 if not cls.is_fips_mode():
-                    response_md5 = hashlib.md5(http.text).hexdigest()
+                    response_md5 = hashlib.md5(http_text).hexdigest()
 
-                response_sha224 = hashlib.sha224(http.text).hexdigest()
+                response_sha224 = hashlib.sha224(http_text).hexdigest()
 
                 # Determine if the expected string is in the content
                 if should_contain_string is not None:
@@ -515,6 +522,7 @@ class WebPing(ModularInput):
                 logger.exception("A connection exception was thrown when executing a web request against url=%s, this can happen if the domain name, IP address is invalid or if network connectivity is down or blocked by a firewall; see help_url=http://lukemurphey.net/projects/splunk-website-monitoring/wiki/Troubleshooting", url.geturl())
 
         except socks.GeneralProxyError:
+
             # This may be thrown if the user configured the proxy settings incorrectly
             if logger:
                 logger.exception("An error occurred when attempting to communicate with the proxy for url=%s", url.geturl())
@@ -630,6 +638,9 @@ class WebPing(ModularInput):
         checkpoint_dir -- The directory where checkpoints ought to be saved
         stanza -- The stanza of the input being used
         """
+
+        if isinstance(stanza, text_type):
+            stanza = stanza.encode('utf-8')
 
         if cls.is_fips_mode():
             return os.path.join(checkpoint_dir, hashlib.sha224(stanza).hexdigest() + ".json")

@@ -3,7 +3,7 @@ import sys
 import os
 import time
 import threading
-import SocketServer
+from six.moves.socketserver import TCPServer
 
 # There needs to be a file named test_web_server next to this file with a class named TestWebServerHandler that inherits from BaseHTTPServer.BaseHTTPRequestHandler
 from test_web_server import TestWebServerHandler
@@ -73,7 +73,7 @@ class UnitTestWithWebServer(unittest.TestCase):
         Call httpd.shutdown() to stop the server
         """
         
-        httpd = SocketServer.TCPServer(("", port), TestWebServerHandler)
+        httpd = TCPServer(("", port), TestWebServerHandler)
         return httpd
         
 def skipIfNoServer(func):

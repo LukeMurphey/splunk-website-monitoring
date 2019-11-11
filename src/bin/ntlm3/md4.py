@@ -1,6 +1,10 @@
 from array import array
-from string import join
+import sys
+# from string import join
 from struct import pack, unpack
+
+def join(items):
+	return " ".join(items)
 
 _DECODE = lambda x, e: list(array('B', x.decode(e)))
 _ENCODE = lambda x, e: join([chr(i) for i in x], '').encode(e)
@@ -12,7 +16,10 @@ BYTES_TO_TXT = lambda x: BYTES_TO_HEX(x).decode('hex')
 def _pad(msg):
 	n = len(msg)
 	bit_len = n * 8
-	index = (bit_len >> 3) & 0x3fL
+	if sys.version_info.major >= 3:
+		index = (bit_len >> 3) & 0x3f
+	else:
+		index = (bit_len >> 3) & long(0x3f)
 	pad_len = 120 - index
 	if index < 56:
 		pad_len = 56 - index

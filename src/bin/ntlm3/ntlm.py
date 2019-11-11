@@ -15,7 +15,7 @@ import struct
 import base64
 import hashlib
 import hmac
-from md4 import MD4
+from .md4 import MD4
 import random
 import re
 import binascii
