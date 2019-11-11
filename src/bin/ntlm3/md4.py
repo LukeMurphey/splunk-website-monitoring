@@ -121,7 +121,7 @@ if __name__ == '__main__':
 	def Check(msg, sig):
 		m = MD4()
 		m.update(msg)
-		print m.hexdigest() == sig
+		print(m.hexdigest() == sig)
 
 	Check("", '31d6cfe0d16ae931b73c59d7e0c089c0')
 	Check("a", 'bde52cb31de33e46245e05fbdbd6fb24')

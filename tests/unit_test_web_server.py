@@ -35,7 +35,7 @@ class UnitTestWithWebServer(unittest.TestCase):
             try:
                 UnitTestWithWebServer.httpd = cls.get_server(cls.web_server_port)
                 
-                print " Done"
+                print(" Done")
                     
             except IOError:
                 UnitTestWithWebServer.httpd = None
@@ -45,7 +45,7 @@ class UnitTestWithWebServer(unittest.TestCase):
                 sys.stdout.flush()
                         
         if UnitTestWithWebServer.httpd is None:
-            print "Web-server could not be started"
+            print("Web-server could not be started")
             return
         
         def start_server(httpd):

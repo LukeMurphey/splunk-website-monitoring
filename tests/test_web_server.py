@@ -32,7 +32,7 @@ class TestWebServerHandler(BaseHTTPRequestHandler):
             if 'user-agent' in self.headers and self.headers['user-agent'] == 'USER_AGENT_CHECK':
                 self.send_response(201)
             else:
-                print "user-agent was not set to 'USER_AGENT_CHECK'"
+                print("user-agent was not set to 'USER_AGENT_CHECK'")
             
             self.do_HEAD()
             self.wfile.write('<html><body></body></html>')

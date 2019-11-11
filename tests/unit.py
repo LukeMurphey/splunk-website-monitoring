@@ -226,7 +226,7 @@ class TestWebPing(WebsiteMonitoringAppTest, UnitTestWithWebServer):
         except requests.exceptions.ConnectionError as e:
 
             if not WebPing.isExceptionForTimeout(e):
-                print e
+                print(e)
             self.assertTrue(WebPing.isExceptionForTimeout(e))
 
     def test_save_checkpoint(self):
@@ -500,20 +500,7 @@ class TestOnCloud(unittest.TestCase):
 
 if __name__ == '__main__':
     try:
-        report_path = os.path.join('..', os.environ.get('TEST_OUTPUT', 'tmp/test_report.html'))
-
-        # Make the test directory
-        try:
-            os.makedirs(os.path.dirname(report_path))
-        except OSError as exception:
-            if exception.errno != errno.EEXIST:
-                raise
-
-        with open(report_path, 'w') as report_file:
-            test_runner = HTMLTestRunner.HTMLTestRunner(
-                stream=report_file
-            )
-            unittest.main(testRunner=test_runner)
+        unittest.main()
     finally:
         if WebsiteMonitoringAppTest.proxyd is not None:
             WebsiteMonitoringAppTest.proxyd.shutdown()
