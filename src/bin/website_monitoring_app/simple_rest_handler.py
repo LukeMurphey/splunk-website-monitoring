@@ -476,18 +476,6 @@ class RestHandler(admin.MConfigHandler):
 
                     # ADD CODE HERE to get your parameters
 
-    @log_function_invocation
-    def handleReload(self, confInfo):
-        """
-        Reload the list of configuration options.
-
-        Arguments
-        confInfo -- The object containing the information about what is being requested.
-        """
-
-        # Refresh the configuration (handles disk based updates)
-        entity.refreshEntities('properties/' + self.conf_file, sessionKey=self.getSessionKey())
-
     def clearValue(self, d, name):
         """
         Set the value of in the dictionary to none
@@ -573,9 +561,9 @@ class RestHandler(admin.MConfigHandler):
             # Write out the updated conf
             self.writeConf(self.conf_file, name, validated_params)
 
-        except admin.NotFoundException, e:
+        except admin.NotFoundException as e:
             raise e
-        except Exception, e:
+        except Exception as e:
             self.logger.exception("Exception generated while performing edit")
 
             raise e
@@ -584,6 +572,9 @@ class RestHandler(admin.MConfigHandler):
     def handleReload(self, confInfo):
         """
         Reload the list of configuration options.
+
+        Arguments
+        confInfo -- The object containing the information about what is being requested.
         """
 
         # Refresh the configuration (handles disk based updates)
