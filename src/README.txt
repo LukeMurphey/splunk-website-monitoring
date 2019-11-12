@@ -245,5 +245,7 @@ Change History
 | 2.8.0   | Added ability to define a custom timeout                                                                         |
 |         | Added ability to define the redirect limit                                                                       |
 |         | Added REST handler logs to health monitoring dashboard                                                           |
+|         | Added support for Splunk 8.0                                                                                     |
+|         | Added support for Python 3                                                                                       |
 +---------+------------------------------------------------------------------------------------------------------------------+
 
