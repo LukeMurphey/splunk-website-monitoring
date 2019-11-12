@@ -99,7 +99,8 @@ class TestWebServerHandler(BaseHTTPRequestHandler):
                 else:
                     auth_header = "NTLM"
 
-                print('Authorization Header:', self.get_header('Authorization'))
+                if self.DEBUG:
+                    print('Authorization Header:', self.get_header('Authorization'))
                 
                 if self.get_header('Authorization') == None:
                     if self.DEBUG:
