@@ -395,7 +395,7 @@ class TestWebPing(WebsiteMonitoringAppTest, UnitTestWithWebServer):
 
         # Try with basic auth
         url_field = URLField( "test_ping", "title", "this is a test")
-        auth_type = WebPing.determine_auth_type( url_field.to_python("http://127.0.0.1:" + str(self.web_server_port)))
+        auth_type = WebPing.determine_auth_type(url_field.to_python("http://127.0.0.1:" + str(self.web_server_port)))
 
         self.assertEqual(auth_type, WebPing.HTTP_AUTH_BASIC)
 
@@ -403,7 +403,7 @@ class TestWebPing(WebsiteMonitoringAppTest, UnitTestWithWebServer):
 
         # Try with digest auth
         url_field = URLField( "test_ping", "title", "this is a test")
-        auth_type = WebPing.determine_auth_type( url_field.to_python("http://httpbin.org/digest-auth/auth/user/passwd"))
+        auth_type = WebPing.determine_auth_type(url_field.to_python("http://httpbin.org/digest-auth/auth/user/passwd"))
 
         self.assertEqual(auth_type, WebPing.HTTP_AUTH_DIGEST)
 
@@ -412,7 +412,7 @@ class TestWebPing(WebsiteMonitoringAppTest, UnitTestWithWebServer):
 
         # Try with digest auth
         url_field = URLField( "test_ping", "title", "this is a test")
-        auth_type = WebPing.determine_auth_type( url_field.to_python("http://127.0.0.1:" + str(self.web_server_port) + "/ntlm_auth"))
+        auth_type = WebPing.determine_auth_type(url_field.to_python("http://127.0.0.1:" + str(self.web_server_port) + "/ntlm_auth"))
 
         self.assertEqual(auth_type, WebPing.HTTP_AUTH_NTLM)
 
@@ -421,7 +421,7 @@ class TestWebPing(WebsiteMonitoringAppTest, UnitTestWithWebServer):
 
         # Try with digest auth
         url_field = URLField( "test_ping", "title", "this is a test")
-        auth_type = WebPing.determine_auth_type( url_field.to_python("http://127.0.0.1:" + str(self.web_server_port) + "/ntlm_auth_negotiate"))
+        auth_type = WebPing.determine_auth_type(url_field.to_python("http://127.0.0.1:" + str(self.web_server_port) + "/ntlm_auth_negotiate"))
 
         self.assertEqual(auth_type, WebPing.HTTP_AUTH_NTLM)
 
@@ -430,7 +430,7 @@ class TestWebPing(WebsiteMonitoringAppTest, UnitTestWithWebServer):
 
         # Try with digest auth
         url_field = URLField( "test_ping", "title", "this is a test")
-        auth_type = WebPing.determine_auth_type( url_field.to_python("http://127.0.0.1:" + str(self.web_server_port) + "/test_page"))
+        auth_type = WebPing.determine_auth_type(url_field.to_python("http://127.0.0.1:" + str(self.web_server_port) + "/test_page"))
 
         self.assertEqual(auth_type, WebPing.HTTP_AUTH_NONE)
 
