@@ -80,7 +80,7 @@ class WebsiteMonitoringRestHandler(RestHandler):
     # host is running on Splunk Cloud (in which a thread limit of 25 must be used)
     added_thread_limit_validator = False
 
-    def convertParams(self, name, params, to_string=False):
+    def convertParams(self, name, cleaned_params, to_string=False):
         if not self.added_thread_limit_validator:
             # Only allow a thread limit of 25 if this is on cloud
             if ServerInfo.is_on_cloud(session_key=self.getSessionKey()):
@@ -91,7 +91,7 @@ class WebsiteMonitoringRestHandler(RestHandler):
             self.added_thread_limit_validator = True
 
         # Call the super class convertParams()
-        return super(WebsiteMonitoringRestHandler, self).convertParams(name, params, to_string)
+        return super(WebsiteMonitoringRestHandler, self).convertParams(name, cleaned_params, to_string)
 
     @log_function_invocation
     def handleList(self, confInfo):
