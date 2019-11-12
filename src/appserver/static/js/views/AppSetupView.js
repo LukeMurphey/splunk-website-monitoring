@@ -24,7 +24,7 @@ define([
     Template
 ){
     var WebsiteMonitoringConfiguration = SplunkDBaseModel.extend({
-        url: '/en-US/splunkd/servicesNS/nobody/website_monitoring/admin/website_monitoring/',
+        url: '/en-US/splunkd/__raw/servicesNS/nobody/website_monitoring/admin/website_monitoring/',
 	    initialize: function() {
 	    	SplunkDBaseModel.prototype.initialize.apply(this, arguments);
 	    }
@@ -130,7 +130,7 @@ define([
 
                 $.when(
                     this.website_monitoring_configuration.save({}, {
-                        'url' : '/en-US/splunkd/servicesNS/nobody/website_monitoring/admin/website_monitoring/default'
+                        'url' : '/en-US/splunkd/__raw/servicesNS/nobody/website_monitoring/admin/website_monitoring/default'
                     }),
                     this.savePassword()
                 )
