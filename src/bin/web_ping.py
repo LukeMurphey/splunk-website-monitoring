@@ -512,25 +512,21 @@ class WebPing(ModularInput):
             timed_out = True
 
         except requests.exceptions.SSLError as e:
-            print("SSL!")
             if logger:
                 logger.error("An SSL exception was thrown when executing a web request against url=%s: " + str(e), url.geturl())
 
         except requests.exceptions.ConnectionError as e:
-            print("TImeout!!")
             timed_out = WebPing.isExceptionForTimeout(e)
 
             if not timed_out and logger:
                 logger.exception("A connection exception was thrown when executing a web request against url=%s, this can happen if the domain name, IP address is invalid or if network connectivity is down or blocked by a firewall; see help_url=http://lukemurphey.net/projects/splunk-website-monitoring/wiki/Troubleshooting", url.geturl())
 
         except socks.GeneralProxyError:
-            print("Proxy error!")
             # This may be thrown if the user configured the proxy settings incorrectly
             if logger:
                 logger.exception("An error occurred when attempting to communicate with the proxy for url=%s", url.geturl())
                 
         except requests.exceptions.TooManyRedirects as e:
-            print("Too many redirs")
             exceeded_redirects = True
             if logger:
                 logger.exception("The maximum number of redirects (%d) were exceeded for url=%s", max_redirects, url.geturl())
