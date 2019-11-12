@@ -8,14 +8,13 @@ import tempfile
 import threading
 import errno
 
-from six import StringIO
-
 sys.path.append(os.path.join("..", "src", "bin"))
 
 from web_ping import URLField, DurationField, WebPing, NTLMAuthenticationValueException
 from modular_input import Field, FieldValidationException
 from website_monitoring_rest_handler import HostFieldValidator
 from website_monitoring_app import requests
+from six import StringIO
 
 from unit_test_web_server import UnitTestWithWebServer, skipIfNoServer
 from test_proxy_server import get_server as get_proxy_server
