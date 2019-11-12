@@ -356,7 +356,7 @@ class TestWebPing(WebsiteMonitoringAppTest, UnitTestWithWebServer):
 
         # Try with valid authentication
         url_field = URLField("test_ping", "title", "this is a test")
-        result = WebPing.ping(url_field.to_python("http://127.0.0.1:" + str(self.web_server_port) + "/ntlm_auth"), timeout=3, username="user\\domain", password="passwd")
+        result = WebPing.ping(url_field.to_python("http://127.0.0.1:" + str(self.web_server_port) + "/ntlm_auth"), timeout=3, username="user\\domain", password="passwd", raise_all=True)
 
         self.assertEqual(result.response_code, 200)
 

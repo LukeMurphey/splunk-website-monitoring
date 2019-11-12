@@ -314,7 +314,7 @@ class WebPing(ModularInput):
     def ping(cls, url, username=None, password=None, timeout=30, proxy_type=None,
              proxy_server=None, proxy_port=None, proxy_user=None, proxy_password=None, proxy_ignore=None,
              client_certificate=None, client_certificate_key=None, user_agent=None, max_redirects=None,
-             logger=None, should_contain_string=None, response_body_length=0):
+             logger=None, should_contain_string=None, response_body_length=0, raise_all=False):
         """
         Perform a ping to a website. Returns a WebPing.Result instance.
 
@@ -336,6 +336,7 @@ class WebPing(ModularInput):
         should_contain_string -- A string that is expected in the response
         max_redirects -- The maximum number of redirects to follow
         response_body_length -- How much of the response body to return. -1 for unlimited, 0 to disable.
+        raise_all -- Raise all exceptions even if it is for possibly recoverable issues.
         """
 
         if logger:
@@ -506,31 +507,37 @@ class WebPing(ModularInput):
 
         # Handle time outs
         except requests.exceptions.Timeout:
+
             # Note that the connection timed out
             timed_out = True
 
         except requests.exceptions.SSLError as e:
+            print("SSL!")
             if logger:
                 logger.error("An SSL exception was thrown when executing a web request against url=%s: " + str(e), url.geturl())
 
         except requests.exceptions.ConnectionError as e:
+            print("TImeout!!")
             timed_out = WebPing.isExceptionForTimeout(e)
 
             if not timed_out and logger:
                 logger.exception("A connection exception was thrown when executing a web request against url=%s, this can happen if the domain name, IP address is invalid or if network connectivity is down or blocked by a firewall; see help_url=http://lukemurphey.net/projects/splunk-website-monitoring/wiki/Troubleshooting", url.geturl())
 
         except socks.GeneralProxyError:
-
+            print("Proxy error!")
             # This may be thrown if the user configured the proxy settings incorrectly
             if logger:
                 logger.exception("An error occurred when attempting to communicate with the proxy for url=%s", url.geturl())
                 
         except requests.exceptions.TooManyRedirects as e:
+            print("Too many redirs")
             exceeded_redirects = True
             if logger:
                 logger.exception("The maximum number of redirects (%d) were exceeded for url=%s", max_redirects, url.geturl())
 
         except Exception as e:
+            if raise_all:
+                raise e
             if logger:
                 logger.exception("A general exception was thrown when executing a web request for url=%s", url.geturl())
 

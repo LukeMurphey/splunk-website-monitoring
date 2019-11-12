@@ -93,13 +93,17 @@ class TestWebServerHandler(BaseHTTPRequestHandler):
             # Present the HTML page with NTLM authentication
             # This is basically a fake NTLM session. This is the best I can do in a unit test since simulating a AD environment and a web-server with NTLM auth is not easy.
             elif self.path == "/ntlm_auth" or self.path == "/ntlm_auth_negotiate":
-
+                
                 if self.path == "/ntlm_auth_negotiate":
                     auth_header = "Negotiate, NTLM"
                 else:
                     auth_header = "NTLM"
+
+                print('Authorization Header:', self.get_header('Authorization'))
                 
                 if self.get_header('Authorization') == None:
+                    if self.DEBUG:
+                        print('Performing initial NTLM auth')
                     self.send_response(401)
                     self.send_header('WWW-Authenticate', auth_header)
                     self.send_header('Content-type', 'text/html')
@@ -109,6 +113,8 @@ class TestWebServerHandler(BaseHTTPRequestHandler):
                 # Do the challenge
                 elif len(self.get_header('Authorization')) < 200: #self.get_header('Authorization') == "NTLM TlRMTVNTUAABAAAAB7IIogQABAA2AAAADgAOACgAAAAFASgKAAAAD0xNVVJQSEVZLU1CUDE1VVNFUg==":
                     # NTLM TlRMTVNTUAABAAAAB7IIogQABAA2AAAADgAOACgAAAAFASgKAAAAD0xNVVJQSEVZLU1CUDE1VVNFUg==
+                    if self.DEBUG:
+                        print('Performing NTLM auth challenge')
                     self.send_response(401)
                     self.send_header('WWW-Authenticate', 'NTLM TlRMTVNTUAACAAAAAAAAACgAAAABAAAAAAAAAAAAAAA=') # The challenge
                     self.end_headers()
@@ -116,6 +122,8 @@ class TestWebServerHandler(BaseHTTPRequestHandler):
                 
                 else: # elif self.get_header('Authorization') == "NTLM TlRMTVNTUAADAAAAGAAYAHgAAAAYABgAkAAAAAgACABIAAAADAAMAFAAAAAcABwAXAAAAAAAAACoAAAABYKIogUBKAoAAAAPVQBTAEUAUgBkAG8AbQBhAGkAbgBMAE0AVQBSAFAASABFAFkALQBNAEIAUAAxADUAjkdanfmkRwLTvPN8tRWYl1fpobeVQMN00VGvOdOFEzgb0gY0ZnA0W8LL0pJ3BlOW":
                     # NTLM TlRMTVNTUAADAAAAGAAYAHgAAAAYABgAkAAAAAgACABIAAAADAAMAFAAAAAcABwAXAAAAAAAAACoAAAABYKIogUBKAoAAAAPVQBTAEUAUgBkAG8AbQBhAGkAbgBMAE0AVQBSAFAASABFAFkALQBNAEIAUAAxADUAjkdanfmkRwLTvPN8tRWYl1fpobeVQMN00VGvOdOFEzgb0gY0ZnA0W8LL0pJ3BlOW
+                    if self.DEBUG:
+                        print('Completing NTLM auth')
                     self.send_response(200)
                     self.end_headers()
                     self.write_string('authenticated')
