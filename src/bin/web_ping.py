@@ -172,7 +172,7 @@ class WebPing(ModularInput):
             return None
 
     @classmethod
-    def determine_auth_type(cls, url, proxies=None, timeout=None, cert=None, logger=None):
+    def determine_auth_type(cls, url, proxies=None, timeout=None, cert=None, logger=None, ):
         """
         Determine the authentication type that is appropriate to authenticate to the given
         web-server.
@@ -186,45 +186,37 @@ class WebPing(ModularInput):
         """
 
         # Perform a request to the URL and see what authentication method is required
-        try:
+        http = requests.get(url.geturl(), proxies=proxies, timeout=timeout, cert=cert,
+                            verify=False)
 
-            # Make the GET
-            http = requests.get(url.geturl(), proxies=proxies, timeout=timeout, cert=cert,
-                                verify=False)
+        # Find the authentication header irrespective of case
+        auth_header_value = None
 
-            # Find the authentication header irrespective of case
-            auth_header_value = None
+        for header, value in http.headers.items():
+            if header.lower() == 'www-authenticate':
+                auth_header_value = value
+                break
 
-            for header, value in http.headers.items():
-                if header.lower() == 'www-authenticate':
-                    auth_header_value = value
-                    break
+        # Determine if the authentication header is present and use it to determine the
+        # authentication type
+        if auth_header_value is not None:
 
-            # Determine if the authentication header is present and use it to determine the
-            # authentication type
-            if auth_header_value is not None:
+            # Handle the pesky cases where a comma separated value is provided in the header
+            # for NTLM negotiation (like "negotiate, ntlm")
+            if 'ntlm' in auth_header_value.lower():
+                return cls.HTTP_AUTH_NTLM
 
-                # Handle the pesky cases where a comma separated value is provided in the header
-                # for NTLM negotiation (like "negotiate, ntlm")
-                if 'ntlm' in auth_header_value.lower():
-                    return cls.HTTP_AUTH_NTLM
+            # Otherwise, check the HTTP header for the authentication header
+            m = re.search('^([a-zA-Z0-9]+)', auth_header_value)
+            auth_type = m.group(1)
+            return auth_type.lower()
 
-                # Otherwise, check the HTTP header for the authentication header
-                m = re.search('^([a-zA-Z0-9]+)', auth_header_value)
-                auth_type = m.group(1)
-                return auth_type.lower()
-
-            # No authentication header is present
-            else:
-                if logger:
-                    logger.warn("Unable to determine authentication type (no www-authenticate header); will default to basic authentication")
-
-                return cls.HTTP_AUTH_NONE
-
-        except Exception:
-
+        # No authentication header is present
+        else:
             if logger:
-                logger.exception("Unable to determine authentication type")
+                logger.warn("Unable to determine authentication type (no www-authenticate header); will default to basic authentication")
+
+            return cls.HTTP_AUTH_NONE
 
     @classmethod
     def create_auth_for_request(cls, auth_type, username, password, logger=None):
@@ -440,8 +432,14 @@ class WebPing(ModularInput):
         if username is not None and password is not None:
 
             # Determine the auth type
-            auth_type = cls.determine_auth_type(url, proxies=proxies, timeout=timeout, cert=cert,
-                                                logger=logger)
+            try:
+                auth_type = cls.determine_auth_type(url, proxies=proxies, timeout=timeout, cert=cert,
+                                                    logger=logger)
+
+            except Exception as e:
+                auth_type = None
+                if logger:
+                    logger.exception("Unable to determine authentication type")                  
 
             # Don't allow the use of NTLM on a host in FIPS mode since NTLM uses MD4 which is a
             # weak algorithm
