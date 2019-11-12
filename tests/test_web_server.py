@@ -103,6 +103,7 @@ class TestWebServerHandler(BaseHTTPRequestHandler):
                     self.send_response(401)
                     self.send_header('WWW-Authenticate', auth_header)
                     self.send_header('Content-type', 'text/html')
+                    self.end_headers()
                     self.write_string('not authenticated')
                     
                 # Do the challenge
@@ -110,11 +111,13 @@ class TestWebServerHandler(BaseHTTPRequestHandler):
                     # NTLM TlRMTVNTUAABAAAAB7IIogQABAA2AAAADgAOACgAAAAFASgKAAAAD0xNVVJQSEVZLU1CUDE1VVNFUg==
                     self.send_response(401)
                     self.send_header('WWW-Authenticate', 'NTLM TlRMTVNTUAACAAAAAAAAACgAAAABAAAAAAAAAAAAAAA=') # The challenge
+                    self.end_headers()
                     self.write_string('not authenticated, step two')
                 
                 else: # elif self.get_header('Authorization') == "NTLM TlRMTVNTUAADAAAAGAAYAHgAAAAYABgAkAAAAAgACABIAAAADAAMAFAAAAAcABwAXAAAAAAAAACoAAAABYKIogUBKAoAAAAPVQBTAEUAUgBkAG8AbQBhAGkAbgBMAE0AVQBSAFAASABFAFkALQBNAEIAUAAxADUAjkdanfmkRwLTvPN8tRWYl1fpobeVQMN00VGvOdOFEzgb0gY0ZnA0W8LL0pJ3BlOW":
                     # NTLM TlRMTVNTUAADAAAAGAAYAHgAAAAYABgAkAAAAAgACABIAAAADAAMAFAAAAAcABwAXAAAAAAAAACoAAAABYKIogUBKAoAAAAPVQBTAEUAUgBkAG8AbQBhAGkAbgBMAE0AVQBSAFAASABFAFkALQBNAEIAUAAxADUAjkdanfmkRwLTvPN8tRWYl1fpobeVQMN00VGvOdOFEzgb0gY0ZnA0W8LL0pJ3BlOW
                     self.send_response(200)
+                    self.end_headers()
                     self.write_string('authenticated')
                     
                 #else:
