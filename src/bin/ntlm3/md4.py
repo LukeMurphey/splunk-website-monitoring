@@ -1,145 +1,98 @@
-from array import array
-import sys
-import string
-from struct import pack, unpack
+# From https://gist.github.com/BenWiederhake/eb6dfc2c31d3dc8c34508f4fd091cea9
+# Based on https://gist.github.com/bonsaiviking/5644414
+# Converted to Python3 by hand.
 
-def join(items, splitter):
-	return splitter.join(items)
+import codecs
+import struct
 
-_DECODE = lambda x, e: list(array('B', x.decode(e)))
-_ENCODE = lambda x, e: join([chr(i) for i in x], '').encode(e)
-HEX_TO_BYTES = lambda x: _DECODE(x, 'hex')
-TXT_TO_BYTES = lambda x: HEX_TO_BYTES(x.encode('hex'))
-BYTES_TO_HEX = lambda x: _ENCODE(x, 'hex')
-BYTES_TO_TXT = lambda x: BYTES_TO_HEX(x).decode('hex')
+def leftrotate(i, n):
+	return ((i << n) & 0xffffffff) | (i >> (32 - n))
 
-def _pad(msg):
-	n = len(msg)
-	bit_len = n * 8
+def F(x, y, z):
+	return (x & y) | (~x & z)
 
-	if sys.version_info.major >= 3:
-		index = (bit_len >> 3) & 0x3f
-	else:
-		index = (bit_len >> 3) & long(0x3f)
+def G(x, y, z):
+	return (x & y) | (x & z) | (y & z)
 
-	pad_len = 120 - index
-	if index < 56:
-		pad_len = 56 - index
-	padding = '\x80' + '\x00'*63
-	padded_msg = msg + padding[:pad_len] + pack('<Q', bit_len)
-	return padded_msg
+def H(x, y, z):
+	return x ^ y ^ z
 
-def _left_rotate(n, b):
-	return ((n << b) | ((n & 0xffffffff) >> (32 - b))) & 0xffffffff
+class MD4(object):
+	def __init__(self, data=b''):
+		self.remainder = data
+		self.count = 0
+		self.h = [
+				0x67452301,
+				0xefcdab89,
+				0x98badcfe,
+				0x10325476
+				]
 
-def _f(x, y, z): return x & y | ~x & z
-def _g(x, y, z): return x & y | x & z | y & z
-def _h(x, y, z): return x ^ y ^ z
+	def _add_chunk(self, chunk):
+		self.count += 1
+		X = list( struct.unpack("<16I", chunk) + (None,) * (80-16) )
+		h = [x for x in self.h]
+		# Round 1
+		s = (3, 7, 11, 19)
+		for r in range(16):
+			i = (16-r)%4
+			k = r
+			h[i] = leftrotate( (h[i] + F(h[(i+1)%4], h[(i+2)%4], h[(i+3)%4]) + X[k]) % 2**32, s[r%4] )
+		# Round 2
+		s = (3, 5, 9, 13)
+		for r in range(16):
+			i = (16-r)%4 
+			k = 4*(r%4) + r//4
+			h[i] = leftrotate( (h[i] + G(h[(i+1)%4], h[(i+2)%4], h[(i+3)%4]) + X[k] + 0x5a827999) % 2**32, s[r%4] )
+		# Round 3
+		s = (3, 9, 11, 15)
+		k = (0, 8, 4, 12, 2, 10, 6, 14, 1, 9, 5, 13, 3, 11, 7, 15) #wish I could function
+		for r in range(16):
+			i = (16-r)%4 
+			h[i] = leftrotate( (h[i] + H(h[(i+1)%4], h[(i+2)%4], h[(i+3)%4]) + X[k[r]] + 0x6ed9eba1) % 2**32, s[r%4] )
 
-def _f1(a, b, c, d, k, s, X): return _left_rotate(a + _f(b, c, d) + X[k], s)
-def _f2(a, b, c, d, k, s, X): return _left_rotate(a + _g(b, c, d) + X[k] + 0x5a827999, s)
-def _f3(a, b, c, d, k, s, X): return _left_rotate(a + _h(b, c, d) + X[k] + 0x6ed9eba1, s)
+		for i, v in enumerate(h):
+			self.h[i] = (v + self.h[i]) % 2**32
 
-class MD4:
+	def add(self, data):
+		message = self.remainder + data
+		r = len(message) % 64
+		if r != 0:
+			self.remainder = message[-r:]
+		else:
+			self.remainder = b''
+		for chunk in range(0, len(message)-r, 64):
+			self._add_chunk( message[chunk:chunk+64] )
+		return self
 
-	def __init__(self):
-		self.A = 0x67452301
-		self.B = 0xefcdab89
-		self.C = 0x98badcfe
-		self.D = 0x10325476
+	def finish(self):
+		l = len(self.remainder) + 64 * self.count
+		self.add( b'\x80' + b'\x00' * ((55 - l) % 64) + struct.pack("<Q", l * 8) )
+		out = struct.pack("<4I", *self.h)
+		self.__init__()
+		return out
 
-	def update(self, message_string):
-		msg_bytes = TXT_TO_BYTES(_pad(message_string))
-		for i in range(0, len(msg_bytes), 64):
-			self._compress(msg_bytes[i:i+64])
-
-	def _compress(self, block):
-
-		a, b, c, d = self.A, self.B, self.C, self.D
-
-		x = []
-		for i in range(0, 64, 4):
-			x.append(unpack('<I', BYTES_TO_TXT(block[i:i+4]))[0])
-
-		a = _f1(a,b,c,d, 0, 3, x)
-		d = _f1(d,a,b,c, 1, 7, x)
-		c = _f1(c,d,a,b, 2,11, x)
-		b = _f1(b,c,d,a, 3,19, x)
-		a = _f1(a,b,c,d, 4, 3, x)
-		d = _f1(d,a,b,c, 5, 7, x)
-		c = _f1(c,d,a,b, 6,11, x)
-		b = _f1(b,c,d,a, 7,19, x)
-		a = _f1(a,b,c,d, 8, 3, x)
-		d = _f1(d,a,b,c, 9, 7, x)
-		c = _f1(c,d,a,b,10,11, x)
-		b = _f1(b,c,d,a,11,19, x)
-		a = _f1(a,b,c,d,12, 3, x)
-		d = _f1(d,a,b,c,13, 7, x)
-		c = _f1(c,d,a,b,14,11, x)
-		b = _f1(b,c,d,a,15,19, x)
-
-		a = _f2(a,b,c,d, 0, 3, x)
-		d = _f2(d,a,b,c, 4, 5, x)
-		c = _f2(c,d,a,b, 8, 9, x)
-		b = _f2(b,c,d,a,12,13, x)
-		a = _f2(a,b,c,d, 1, 3, x)
-		d = _f2(d,a,b,c, 5, 5, x)
-		c = _f2(c,d,a,b, 9, 9, x)
-		b = _f2(b,c,d,a,13,13, x)
-		a = _f2(a,b,c,d, 2, 3, x)
-		d = _f2(d,a,b,c, 6, 5, x)
-		c = _f2(c,d,a,b,10, 9, x)
-		b = _f2(b,c,d,a,14,13, x)
-		a = _f2(a,b,c,d, 3, 3, x)
-		d = _f2(d,a,b,c, 7, 5, x)
-		c = _f2(c,d,a,b,11, 9, x)
-		b = _f2(b,c,d,a,15,13, x)
-
-		a = _f3(a,b,c,d, 0, 3, x)
-		d = _f3(d,a,b,c, 8, 9, x)
-		c = _f3(c,d,a,b, 4,11, x)
-		b = _f3(b,c,d,a,12,15, x)
-		a = _f3(a,b,c,d, 2, 3, x)
-		d = _f3(d,a,b,c,10, 9, x)
-		c = _f3(c,d,a,b, 6,11, x)
-		b = _f3(b,c,d,a,14,15, x)
-		a = _f3(a,b,c,d, 1, 3, x)
-		d = _f3(d,a,b,c, 9, 9, x)
-		c = _f3(c,d,a,b, 5,11, x)
-		b = _f3(b,c,d,a,13,15, x)
-		a = _f3(a,b,c,d, 3, 3, x)
-		d = _f3(d,a,b,c,11, 9, x)
-		c = _f3(c,d,a,b, 7,11, x)
-		b = _f3(b,c,d,a,15,15, x)
-
-		# update state
-		self.A = (self.A + a) & 0xffffffff
-		self.B = (self.B + b) & 0xffffffff
-		self.C = (self.C + c) & 0xffffffff
-		self.D = (self.D + d) & 0xffffffff
+	def update(self, data):
+		return self.add(data)
 
 	def digest(self):
-		b = TXT_TO_BYTES(pack('<IIII', self.A, self.B, self.C, self.D))
-		return "".join(map(chr, b))
+		return self.finish()
 
-	def hexdigest(self):
-		return BYTES_TO_HEX(TXT_TO_BYTES(pack('<IIII', self.A, self.B, self.C, self.D)))
-
-if __name__ == '__main__':
-
-	def Check(msg, sig):
-		m = MD4()
-		m.update(msg)
-		print(m.hexdigest() == sig)
-
-	Check("", '31d6cfe0d16ae931b73c59d7e0c089c0')
-	Check("a", 'bde52cb31de33e46245e05fbdbd6fb24')
-	Check("abc", 'a448017aaf21d8525fc10ae87aa6729d')
-	Check("message digest",
-			'd9130a8164549fe818874806e1c7014b')
-	Check("abcdefghijklmnopqrstuvwxyz",
-			'd79e1c308aa5bbcdeea8ed63df412da9')
-	Check("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789",
-			'043f8582f241db351ce627e153e7f0e4')
-	Check("12345678901234567890123456789012345678901234567890123456789012345678901234567890",
-			'e33b4ddc9c38f2199c3e7b164fcc0536')
+if __name__=="__main__":
+	test = (
+			(b'', "31d6cfe0d16ae931b73c59d7e0c089c0"),
+			(b'a', "bde52cb31de33e46245e05fbdbd6fb24"),
+			(b'abc', "a448017aaf21d8525fc10ae87aa6729d"),
+			(b'message digest', "d9130a8164549fe818874806e1c7014b"),
+			(b'abcdefghijklmnopqrstuvwxyz', "d79e1c308aa5bbcdeea8ed63df412da9"),
+			(b'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789', "043f8582f241db351ce627e153e7f0e4"),
+			(b'12345678901234567890123456789012345678901234567890123456789012345678901234567890', "e33b4ddc9c38f2199c3e7b164fcc0536")
+		)
+	md = MD4()
+	for t, h in test:
+		md.add(t)
+		d = md.finish()
+		if d == codecs.decode(h, "hex"):
+			print("pass")
+		else:
+			print("FAIL: {0}: {1}\n\texpected: {2}".format(t, codecs.encode(d, "hex"), h))
