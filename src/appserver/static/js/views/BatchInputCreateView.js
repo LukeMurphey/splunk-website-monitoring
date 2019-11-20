@@ -367,7 +367,7 @@ define([
 			}
 			
         	// Validate the timeout
-        	if(!this.isValidInterval($("#timeout", this.$el).val())){
+        	if(!this.isValidTimeout($("#timeout", this.$el).val(), true)){
         		issues = issues + 1;
         		$(".control-group.timeout", this.$el).addClass("error");
         		$(".control-group.timeout .help-inline", this.$el).show();
@@ -388,6 +388,25 @@ define([
         	var re = /^\s*([0-9]+([.][0-9]+)?)\s*([dhms])?\s*$/gi;
         	
         	if(re.exec(interval)){
+        		return true;
+        	}
+        	else{
+        		return false;
+        	}
+		},
+
+        /**
+         * Returns true if the item is a valid timeout.
+         */
+        isValidTimeout: function(timeout, allowempty){
+
+			if(allowempty && !timeout){
+				return true;
+			}
+
+        	var timeout_int = parseInt(timeout, 10);
+        	
+        	if(timeout_int >= 0){
         		return true;
         	}
         	else{
