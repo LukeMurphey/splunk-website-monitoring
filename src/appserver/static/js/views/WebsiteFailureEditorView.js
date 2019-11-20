@@ -74,10 +74,12 @@ define([
                 mvc.Components.getInstance("response-threshold-input").val(this.response_time_macro.entry.content.attributes.definition);
             }
 
+            /*
             // Get the 'warning' threshold macro
             if(mvc.Components.getInstance("response-threshold-input-warning") !== null){
                 mvc.Components.getInstance("response-threshold-input-warning").val(this.response_time_warning_macro.entry.content.attributes.definition);
             }
+            */
 
             // Get the response code macro
             if(mvc.Components.getInstance("response-code-input") !== null){
@@ -236,9 +238,6 @@ define([
         			'<div class="input" id="response-threshold-input">' +
                 		'<label>Error Response Time Threshold (in milliseconds)</label>' +
                     '</div>' +
-        			'<div class="input" id="response-threshold-input-warning">' +
-                		'<label>Warning Response Time Threshold (in milliseconds)</label>' +
-                    '</div>' +
         			'<div style="margin-top: 24px" class="input" id="response-code-input">' +
                 		'<label>Response Codes Considered Failures</label>' +
                 	'</div>' + 
@@ -299,11 +298,13 @@ define([
         	if( !/([0-9])+$/gi.test( mvc.Components.getInstance("response-threshold-input").val())){
         		return "The threshold is not valid (must be a integer greater than zero)";
         	}
-        	
+            
+            /*
         	// Validate the 'warning' threshold
         	if( !/([0-9])+$/gi.test( mvc.Components.getInstance("response-threshold-input-warning").val())){
         		return "The threshold is not valid (must be a integer greater than zero)";
-        	}
+            }
+            */
         	
         	return issues === 0;
         },
@@ -359,6 +360,7 @@ define([
                         this.validate();
                     }.bind(this));
                     
+                    /*
                     // Make the 'warning' threshold widget
                     var response_threshold_input_warning = new TextInput({
                         "id": "response-threshold-input-warning",
@@ -369,6 +371,7 @@ define([
                     response_threshold_input_warning.on("change", function(newValue) {
                         this.validate();
                     }.bind(this));
+                    */
                     
                     // Make the response code widget
                     var response_code_input = new DropdownInput({
@@ -398,7 +401,7 @@ define([
                     // This prevents a JS error in Core Splunk
                     response_code_input.onInputReady = function(){}
                     response_threshold_input.onInputReady = function(){}
-                    response_threshold_input_warning.onInputReady = function(){}
+                    // response_threshold_input_warning.onInputReady = function(){}
 
                     // Koad the macro values into the widgets
                     this.loadMacrosIntoForm();
@@ -460,8 +463,8 @@ define([
         	
         	this.showSaving();
 
+            // .then(this.saveMacroModel(this.response_time_warning_macro, mvc.Components.getInstance("response-threshold-input-warning").val()))
             $.when(this.saveMacroModel(this.response_time_macro, mvc.Components.getInstance("response-threshold-input").val()))
-            .then(this.saveMacroModel(this.response_time_warning_macro, mvc.Components.getInstance("response-threshold-input-warning").val()))
             .then(this.saveMacroModel(this.response_code_macro, mvc.Components.getInstance("response-code-input").val()))
             .done(function(){
                 this.showSaving(false);
