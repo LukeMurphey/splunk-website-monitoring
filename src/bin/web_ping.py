@@ -646,6 +646,7 @@ class WebPing(ModularInput):
         # Add warning_threshold and/or error_threshold if not None
         if result.warning_threshold is not None:
             data['warning_threshold'] = result.warning_threshold
+
         if result.error_threshold is not None:
             data['error_threshold'] = result.error_threshold
             
@@ -741,7 +742,6 @@ class WebPing(ModularInput):
             except ValueError:
                 self.logger.error("The value for the maximum response body length is invalid and will be ignored (will use a limit of 1000), value=%s", website_monitoring_config['max_response_body_length'])
                 website_monitoring_config['max_response_body_length'] = 1000
-
 
             self.logger.debug("App config information loaded, stanza=%s", stanza)
 
