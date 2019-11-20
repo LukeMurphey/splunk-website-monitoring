@@ -104,6 +104,26 @@
 
 	      </elements>
 	  	</element>
+
+		<element name="thresholdFields" type="fieldset">
+		  <key name="legend">Thresholds</key>
+	      <view name="list"/>
+	      <view name="edit"/>
+	      <view name="create"/>
+	      <elements>
+
+	        <element name="warning_threshold" type="textfield" label="Warning threshold">
+	          <view name="edit"/>
+	          <view name="create"/>
+	          <key name="exampleText">If the response time is above this number (ms), consider the test a warning; leave blank to use global default</key>
+	        </element>
+
+	        <element name="error_threshold" type="textfield" label="Error threshold">
+	          <view name="edit"/>
+	          <view name="create"/>
+	          <key name="exampleText">If the response time is above this number (ms), consider the test as a failure; leave blank to use global default</key>
+	        </element>
+		</element>
 	  	
 		<element name="advancedFields" type="fieldset">
 		  <key name="legend">Advanced</key>
@@ -176,7 +196,6 @@
 	          <view name="create"/>
 	          <key name="exampleText">The maximum number of redirects to follow; leave blank to allow unlimited redirects</key>
 	        </element>
-
 	      </elements>
 	  	</element>
 	  	

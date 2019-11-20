@@ -20,9 +20,9 @@ import time
 import json
 import threading
 import logging
-import urllib
 
 import socket
+from six.moves.urllib.request import getproxies
 from six import text_type, binary_type
 from website_monitoring_app import socks
 from website_monitoring_app import requests
@@ -73,8 +73,6 @@ class WebPing(ModularInput):
     HTTP_AUTH_NONE = None
 
     DEFAULT_THREAD_LIMIT = 200
-    
-    DEFAULT_MAX_RESPONSE_BODY_LENGTH = 1000
 
     # The following define which secure password entry to use for the proxy
     PROXY_PASSWORD_REALM = 'website_monitoring_app_proxy'
@@ -89,7 +87,9 @@ class WebPing(ModularInput):
         """
 
         def __init__(self, request_time, response_code, timed_out, url, response_size=None,
-                     response_md5=None, response_sha224=None, has_expected_string=None, response_body=None, exceeded_redirects=None, return_body=False):
+                     response_md5=None, response_sha224=None, has_expected_string=None, 
+                     response_body=None, exceeded_redirects=None, return_body=False,
+                     timeout=0, max_redirects=-1, warning_threshold=None, error_threshold=None):
 
             self.request_time = request_time
             self.response_code = response_code
@@ -102,6 +102,10 @@ class WebPing(ModularInput):
             self.response_body = response_body
             self.exceeded_redirects = exceeded_redirects
             self.return_body = return_body
+            self.timeout = timeout
+            self.max_redirects = max_redirects
+            self.warning_threshold = warning_threshold
+            self.error_threshold = error_threshold
 
     def __init__(self, timeout=30, thread_limit=None):
 
@@ -123,8 +127,10 @@ class WebPing(ModularInput):
                 Field("user_agent", "User Agent", "The user-agent to use when communicating with the server", none_allowed=True, empty_allowed=True, required_on_create=False, required_on_edit=False),
                 Field("should_contain_string", "String match", "A string that should be present in the content", none_allowed=True, empty_allowed=True, required_on_create=False, required_on_edit=False),
                 IntegerField("max_redirects", "Maximum Redirects", "The maximum number of redirects to follow (-1 or blank for unlimited, 0 to not follow any redirects)", none_allowed=True, empty_allowed=True, required_on_create=False, required_on_edit=False),
-                DurationField("timeout", "Timeout", "The maximum number of seconds to wait for a response", none_allowed=True, empty_allowed=True, required_on_create=False, required_on_edit=False),
-                BooleanField("return_body", "Return response body", "If checked, will return the response body", none_allowed=True, empty_allowed=True, required_on_create=False, required_on_edit=False)
+                IntegerField("timeout", "Timeout", "The maximum number of seconds to wait for a response", none_allowed=True, empty_allowed=True, required_on_create=False, required_on_edit=False),
+                BooleanField("return_body", "Return response body", "If checked, will return the response body", none_allowed=True, empty_allowed=True, required_on_create=False, required_on_edit=False),
+                IntegerField("warning_threshold", "Warning Threshold", "The number of milliseconds above which a response time is considered a 'Warning'", none_allowed=True, empty_allowed=True, required_on_create=False, required_on_edit=False),
+                IntegerField("error_threshold", "Error Threshold", "The number of milliseconds above which a response time is considered 'Failed'", none_allowed=True, empty_allowed=True, required_on_create=False, required_on_edit=False)
         ]
 
         ModularInput.__init__(self, scheme_args, args, logger_name='web_availability_modular_input', logger_level=logging.INFO)
@@ -314,7 +320,8 @@ class WebPing(ModularInput):
     def ping(cls, url, username=None, password=None, timeout=30, proxy_type=None,
              proxy_server=None, proxy_port=None, proxy_user=None, proxy_password=None, proxy_ignore=None,
              client_certificate=None, client_certificate_key=None, user_agent=None, max_redirects=None,
-             logger=None, should_contain_string=None, response_body_length=0, raise_all=False):
+             logger=None, should_contain_string=None, response_body_length=0, raise_all=False,
+             warning_threshold=None, error_threshold=None):
         """
         Perform a ping to a website. Returns a WebPing.Result instance.
 
@@ -337,6 +344,8 @@ class WebPing(ModularInput):
         max_redirects -- The maximum number of redirects to follow
         response_body_length -- How much of the response body to return. -1 for unlimited, 0 to disable.
         raise_all -- Raise all exceptions even if it is for possibly recoverable issues.
+        warning_threshold -- If the response time is above this number (in ms), it is considered a 'Warning'
+        error_threshold -- If the response time is above this number (in ms), it is concidered an 'Error' (Failed)
         """
 
         if logger:
@@ -347,7 +356,7 @@ class WebPing(ModularInput):
             os.environ['NO_PROXY'] = proxy_ignore
 
         if logger:
-            logger.debug('Proxies discovered from the environment, proxies="%r"', urllib.getproxies())
+            logger.debug('Proxies discovered from the environment, proxies="%r"', getproxies())
 
         # Determine which type of proxy is to be used (if any)
         resolved_proxy_type = cls.resolve_proxy_type(proxy_type, logger=logger)
@@ -366,6 +375,12 @@ class WebPing(ModularInput):
             max_redirects = None
         if logger and max_redirects is not None:
             logger.debug("max_redirects = %d", max_redirects)
+            
+        # Make sure that warning_threshold and error_threshold are positive or None
+        if warning_threshold is not None and warning_threshold < 0:
+            warning_threshold = None
+        if error_threshold is not None and error_threshold < 0:
+            error_threshold = None
 
         # Setup the proxy info if so configured
         proxies = {}
@@ -440,7 +455,7 @@ class WebPing(ModularInput):
             except Exception as e:
                 auth_type = None
                 if logger:
-                    logger.exception("Unable to determine authentication type")                  
+                    logger.exception("Unable to determine authentication type")
 
             # Don't allow the use of NTLM on a host in FIPS mode since NTLM uses MD4 which is a
             # weak algorithm
@@ -538,7 +553,7 @@ class WebPing(ModularInput):
                 logger.exception("A general exception was thrown when executing a web request for url=%s", url.geturl())
 
         # Finally, return the result
-        return cls.Result(request_time, response_code, timed_out, url.geturl(), response_size, response_md5, response_sha224, has_expected_string, response_body, exceeded_redirects)
+        return cls.Result(request_time, response_code, timed_out, url.geturl(), response_size, response_md5, response_sha224, has_expected_string, response_body, exceeded_redirects, timeout=timeout, max_redirects=max_redirects, warning_threshold=warning_threshold, error_threshold=error_threshold)
 
     def output_result(self, result, stanza, title, index=None, source=None, sourcetype=None,
                       host=None,unbroken=True, close=True, proxy_server=None, proxy_port=None,
@@ -563,7 +578,8 @@ class WebPing(ModularInput):
             'request_time': round(result.request_time, 2) if result.request_time > 0 else '',
             'timed_out': result.timed_out,
             'title': title,
-            'url': result.url
+            'url': result.url,
+            'timeout': result.timeout
         }
 
         # Log proxy server information
@@ -597,6 +613,10 @@ class WebPing(ModularInput):
         if result.exceeded_redirects is not None:
             data['exceeded_redirects'] = result.exceeded_redirects
 
+        # Add the variable indicating what the maximum number of redirects allowed was
+        if result.max_redirects is not None:
+            data['max_redirects'] = result.max_redirects
+
         # Output the response body as a separate event, if present
         if result.response_body is not None:
             
@@ -622,6 +642,12 @@ class WebPing(ModularInput):
                                        unbroken=unbroken,
                                        close=close)
             out.write(self._print_event(self.document, event))
+            
+        # Add warning_threshold and/or error_threshold if not None
+        if result.warning_threshold is not None:
+            data['warning_threshold'] = result.warning_threshold
+        if result.error_threshold is not None:
+            data['error_threshold'] = result.error_threshold
             
         # Output event with fields
         return self.output_event(data, stanza, index=index, host=host, source=source,
@@ -798,6 +824,8 @@ class WebPing(ModularInput):
         should_contain_string = cleaned_params.get("should_contain_string", None)
         max_redirects = cleaned_params.get("max_redirects", -1)
         return_body = cleaned_params.get("return_body", False)
+        warning_threshold = cleaned_params.get("warning_threshold", None)
+        error_threshold = cleaned_params.get("error_threshold", None)
         source = stanza
         
         self.logger.debug("cleaned_params=%r", cleaned_params)
@@ -910,7 +938,9 @@ class WebPing(ModularInput):
                     result = WebPing.ping(url, username, password, timeout, proxy_type,
                                           proxy_server, proxy_port, proxy_user, proxy_password,
                                           proxy_ignore, client_certificate, client_certificate_key, user_agent, max_redirects, 
-                                          logger=self.logger, should_contain_string=should_contain_string, response_body_length=response_body_length)
+                                          logger=self.logger, should_contain_string=should_contain_string,
+                                          response_body_length=response_body_length, warning_threshold=warning_threshold,
+                                          error_threshold=error_threshold)
                 except NTLMAuthenticationValueException as e:
                     self.logger.warn('NTLM authentication failed due to configuration issue stanza=%s, message="%s"', stanza, str(e))
 
