@@ -1,19 +1,15 @@
-<?xml version='1.0' encoding='utf-8'?>
-
-<form script="status_history.js" >
-	<label>Status History</label>
-	
-	<fieldset autoRun="true">
-		<input type="time">
-		    <label></label>
-			<default>Last 24 hours</default>
-		</input>
-		<input type="text" token="title">
-			<label>Site Title:</label>
-			<default>*</default>
-		</input>
-	</fieldset>
-	 
+<?xml version="1.0" encoding="utf-8"?><form script="status_history.js">
+  <label>Status History</label>
+  <fieldset autoRun="true">
+    <input type="time">
+      <label></label>
+      <default>Last 24 hours</default>
+    </input>
+    <input type="text" token="title">
+      <label>Site Title:</label>
+      <default>*</default>
+    </input>
+  </fieldset>
   <row>
     <panel>
       <single>
@@ -62,29 +58,31 @@
       </single>
     </panel>
   </row>
-	 
-	<row>
-		<chart>
-			<title>Response Time History (Average)</title>
-		  	<search>
-          <query>sourcetype="web_ping" `website_monitoring_search_index` title="$title$" | timechart avg(total_time) as response_time | eval response_time_over_threshold=if(response_time>`response_time_threshold`,response_time,0) | eval response_time=if(response_time>`response_time_threshold`,0,response_time)</query>
+  <row>
+    <panel>
+      <chart>
+        <title>Response Time History (Average)</title>
+        <search>
+          <query>sourcetype="web_ping" `website_monitoring_search_index` title="$title$" | timechart avg(total_time) as response_time | eval response_time_over_threshold=if(response_time&gt;`response_time_threshold`,response_time,0) | eval response_time=if(response_time&gt;`response_time_threshold`,0,response_time)</query>
           <earliest>$earliest$</earliest>
           <latest>$latest$</latest>
-		  	</search>
-		  	<option name="height">200</option>
-		  	<option name="charting.chart">column</option>
-		  	<option name="charting.chart.stackMode">stacked</option>
-			<option name="charting.legend.labels">[response_time_over_threshold,response_time]</option>
-			<option name="charting.seriesColors">[0xd93f3c,0x65a637]</option>
-			<option name="charting.legend.placement">none</option>	
-		</chart>
-	</row>
-	
+        </search>
+        <option name="height">200</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.legend.labels">[response_time_over_threshold,response_time]</option>
+        <option name="charting.seriesColors">[0xd93f3c,0x65a637]</option>
+        <option name="charting.legend.placement">none</option>
+      </chart>
+    </panel>
+  </row>
   <row>
     <panel>
       <single>
         <search>
-          <query><![CDATA[sourcetype="web_ping" `website_monitoring_search_index` title="$title$" | fillnull value=1000 response_code | eval success=case(response_code>=400, 0, timed_out == "True", 0, response_code="", 0) | fillnull value=1 success | chart count as total, sum(success) as successes | eval availability=round(100*(successes/total),2) | fields availability]]></query>
+          <query>
+            <![CDATA[sourcetype="web_ping" `website_monitoring_search_index` title="$title$" | fillnull value=1000 response_code | eval success=case(response_code>=400, 0, timed_out == "True", 0, response_code="", 0) | fillnull value=1 success | chart count as total, sum(success) as successes | eval availability=round(100*(successes/total),2) | fields availability]]>
+          </query>
           <earliest>$earliest$</earliest>
           <latest>$latest$</latest>
         </search>
@@ -127,20 +125,49 @@
       </single>
     </panel>
   </row>
-	
-	<row>
-		<table>
-			<search>
+  <row>
+    <panel>
+      <table>
+        <title>Failures</title>
+        <search>
           <query>sourcetype="web_ping" `website_monitoring_search_index` title="$title$" `filter_inoperable` | eval time=_time | eval response_time=total_time | convert ctime(time) | fillnull response_code value="Connection failed" | eval response_code=if(timed_out == "True", "Connection timed out", response_code) | eval response_code=if(response_code="", "Connection failed", response_code) | fields - _raw _time | fields time title url response_code</query>
           <earliest>$earliest$</earliest>
           <latest>$latest$</latest>
-	    </search>
-			<title>Failures</title>
-			<option name="count">10</option>
-			<option name="rowNumbers">true</option>
-			<drilldown>
-				<link><![CDATA[/app/website_monitoring/search/?earliest=$earliest$&latest=$latest$&q=search%20sourcetype%3Dweb_ping%20title%3D"$form.title$"%20%60filter_inoperable%60%20%60website_monitoring_search_index%60%20%7C%20%60format_events_raw%60&earliest=$earliest$&latest=$latest$]]></link>
-			</drilldown>
-		</table>
-	</row>
+        </search>
+        <option name="count">10</option>
+        <option name="rowNumbers">true</option>
+        <drilldown>
+          <link>
+            <![CDATA[/app/website_monitoring/search/?earliest=$earliest$&latest=$latest$&q=search%20sourcetype%3Dweb_ping%20title%3D"$form.title$"%20%60filter_inoperable%60%20%60website_monitoring_search_index%60%20%7C%20%60format_events_raw%60&earliest=$earliest$&latest=$latest$]]>
+          </link>
+        </drilldown>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <viz type="status_indicator_app.status_indicator">
+        <search>
+          <query>sourcetype="web_ping" `website_monitoring_search_index` title="amazon.com" | `set_response_code` 
+|  `set_status` 
+| stats avg(total_time) as response_time, latest(status) as status 
+| eval color=case(status="Failed", "red", status="Warning", "yellow", true(), "green"), icon = case(status="Failed", "exclamation-triangle", status="Warning", "exclamation-circle", true(), "thumbs-up")
+| table response_time, icon, color</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="status_indicator_app.status_indicator.colorBy">field_value</option>
+        <option name="status_indicator_app.status_indicator.fillTarget">background</option>
+        <option name="status_indicator_app.status_indicator.fixIcon">warning</option>
+        <option name="status_indicator_app.status_indicator.icon">field_value</option>
+        <option name="status_indicator_app.status_indicator.precision">0</option>
+        <option name="status_indicator_app.status_indicator.showOption">1</option>
+        <option name="status_indicator_app.status_indicator.staticColor">#555</option>
+        <option name="status_indicator_app.status_indicator.useColors">true</option>
+        <option name="status_indicator_app.status_indicator.useThousandSeparator">true</option>
+      </viz>
+    </panel>
+  </row>
 </form>

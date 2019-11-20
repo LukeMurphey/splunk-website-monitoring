@@ -45,3 +45,16 @@ max_redirects = <value>
 return_body = <value>
 * If 'true', will return the body of the response (up to the global limit defined in website_monitoring.conf)
 * Default: blank (false)
+
+warning_threshold = <value>
+* If the response time of a page is higher than this number (in ms), consider it a 'Warning'.
+* Must be >= 0.
+* If not specified, the global value set in the UI will be used.
+* Default: blank (use global value)
+
+error_threshold = <value>
+* If the response time of a page is higher than this number (in ms), consider it 'Failed'.
+* Must be >= 0.
+* If not specified, the global value set in the UI will be used.
+* Default: blank (use global value)
+

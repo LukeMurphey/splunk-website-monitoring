@@ -69,9 +69,14 @@ define([
          */
         loadMacrosIntoForm: function(){
 
-            // Get the threshold macro
+            // Get the 'error' threshold macro
             if(mvc.Components.getInstance("response-threshold-input") !== null){
                 mvc.Components.getInstance("response-threshold-input").val(this.response_time_macro.entry.content.attributes.definition);
+            }
+
+            // Get the 'warning' threshold macro
+            if(mvc.Components.getInstance("response-threshold-input-warning") !== null){
+                mvc.Components.getInstance("response-threshold-input-warning").val(this.response_time_warning_macro.entry.content.attributes.definition);
             }
 
             // Get the response code macro
@@ -227,9 +232,12 @@ define([
                     'These settings will also apply to the ' +
                     '<a class="external" target="external" href="alert?s=%2FservicesNS%2Fnobody%2Fwebsite_monitoring%2Fsaved%2Fsearches%2FWebsite%2520Performance%2520Problem">alert search</a> that provides notifications of outages.' +
                     '</div>' +
-        			'<div style="margin-bottom: 16px">.</div>' +
+        			'<div style="margin-bottom: 16px"></div>' +
         			'<div class="input" id="response-threshold-input">' +
-                		'<label>Response Time Threshold (in milliseconds)</label>' +
+                		'<label>Error Response Time Threshold (in milliseconds)</label>' +
+                    '</div>' +
+        			'<div class="input" id="response-threshold-input-warning">' +
+                		'<label>Warning Response Time Threshold (in milliseconds)</label>' +
                     '</div>' +
         			'<div style="margin-top: 24px" class="input" id="response-code-input">' +
                 		'<label>Response Codes Considered Failures</label>' +
@@ -287,8 +295,13 @@ define([
         	
         	var issues = 0;
 
-        	// Validate the threshold
+        	// Validate the 'error' threshold
         	if( !/([0-9])+$/gi.test( mvc.Components.getInstance("response-threshold-input").val())){
+        		return "The threshold is not valid (must be a integer greater than zero)";
+        	}
+        	
+        	// Validate the 'warning' threshold
+        	if( !/([0-9])+$/gi.test( mvc.Components.getInstance("response-threshold-input-warning").val())){
         		return "The threshold is not valid (must be a integer greater than zero)";
         	}
         	
@@ -300,11 +313,12 @@ define([
          */
         startRendering: function(){
 
-            var deferreds = [this.getMacro("response_time_threshold"), this.getMacro("response_codes_to_alert_on")];
+            var deferreds = [this.getMacro("response_time_threshold"), this.getMacro("response_time_threshold_warning"), this.getMacro("response_codes_to_alert_on")];
 
-            $.when.apply($, deferreds).done(function(response_time_macro, response_code_macro) {
+            $.when.apply($, deferreds).done(function(response_time_macro, response_time_warning_macro, response_code_macro) {
                 this.response_code_macro = response_code_macro;
                 this.response_time_macro = response_time_macro;
+				this.response_time_warning_macro = response_time_warning_macro;
 
                 this.completeRender();
             }.bind(this));
@@ -324,7 +338,7 @@ define([
         	// Stop if the view was already rendered
         	if(!this.already_rendered){
 	        	
-                if(this.response_time_macro.entry.acl.attributes.can_write && this.response_code_macro.entry.acl.attributes.can_write){
+                if(this.response_time_macro.entry.acl.attributes.can_write && this.response_time_warning_macro.entry.acl.attributes.can_write && this.response_code_macro.entry.acl.attributes.can_write){
 
                     var html = '<a id="open-settings-modal" href="#">Modify the definition of a failure</a>';
                     
@@ -334,7 +348,7 @@ define([
                     // Set the HTML
                     this.$el.html(html);
                     
-                    // Make the threshold widget
+                    // Make the 'error' threshold widget
                     var response_threshold_input = new TextInput({
                         "id": "response-threshold-input",
                         "searchWhenChanged": false,
@@ -342,6 +356,17 @@ define([
                     }, {tokens: false}).render();
 
                     response_threshold_input.on("change", function(newValue) {
+                        this.validate();
+                    }.bind(this));
+                    
+                    // Make the 'warning' threshold widget
+                    var response_threshold_input_warning = new TextInput({
+                        "id": "response-threshold-input-warning",
+                        "searchWhenChanged": false,
+                        "el": $('#response-threshold-input-warning', this.$el)
+                    }, {tokens: false}).render();
+
+                    response_threshold_input_warning.on("change", function(newValue) {
                         this.validate();
                     }.bind(this));
                     
@@ -373,6 +398,7 @@ define([
                     // This prevents a JS error in Core Splunk
                     response_code_input.onInputReady = function(){}
                     response_threshold_input.onInputReady = function(){}
+                    response_threshold_input_warning.onInputReady = function(){}
 
                     // Koad the macro values into the widgets
                     this.loadMacrosIntoForm();
@@ -435,6 +461,7 @@ define([
         	this.showSaving();
 
             $.when(this.saveMacroModel(this.response_time_macro, mvc.Components.getInstance("response-threshold-input").val()))
+            .then(this.saveMacroModel(this.response_time_warning_macro, mvc.Components.getInstance("response-threshold-input-warning").val()))
             .then(this.saveMacroModel(this.response_code_macro, mvc.Components.getInstance("response-code-input").val()))
             .done(function(){
                 this.showSaving(false);

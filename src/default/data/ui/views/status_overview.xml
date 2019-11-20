@@ -21,19 +21,15 @@
 		<table>
 			<search>
     			<query> sourcetype="web_ping" `website_monitoring_search_index`
-| fillnull response_code value="Connection failed"
-| eval response_code=if(response_code="", "Connection failed", response_code)
-| eval response_code=if(timed_out == "True", "Connection timed out", response_code)
-| fillnull has_expected_string value=""
-| eval response_code=response_code." ".has_expected_string
-| stats sparkline(avg(total_time)) as sparkline_response_time avg(total_time) as avg_response_time max(total_time) as max_response_time latest(response_code) as response_code latest(_time) as last_checked latest(title) as title latest(url) as url latest(total_time) as response_time range(total_time) as range min(total_time) as min by source
+    			| `set_response_code` | `set_status`
+| stats sparkline(avg(total_time)) as sparkline_response_time avg(total_time) as avg_response_time max(total_time) as max_response_time latest(response_code) as response_code latest(_time) as last_checked latest(title) as title latest(url) as url latest(total_time) as response_time range(total_time) as range min(total_time) as min latest(status) as status by source
 | search $only_enabled$
 | eval response_time=round(response_time, 0)." ms"
 | eval average=round(avg_response_time, 0)." ms"
 | eval maximum=round(max_response_time, 0)." ms"
 | eval range=round(min, 0)." - ".round(min+range, 0)." ms"
 | eval response=response_code
-| table title url response last_checked response_time average range sparkline_response_time 
+| table title url response last_checked response_time status average range sparkline_response_time
 | `timesince(last_checked,last_checked)`
 | sort -response_time
     			</query>

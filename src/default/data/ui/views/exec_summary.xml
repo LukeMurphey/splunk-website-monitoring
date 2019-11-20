@@ -16,25 +16,15 @@
   <search id="baseSearch">
     <query>
 sourcetype="web_ping" `website_monitoring_search_index` title="$title$"
-| fillnull response_code value="Connection failed"
-| eval response_code=if(response_code="", "Connection failed", response_code)
-| eval response_code=if(timed_out == "True", "Connection timed out", response_code)
-| fillnull has_expected_string value=""
-| eval response_code=response_code." ".has_expected_string
-| stats avg(total_time) as avg_response_time latest(response_code) as response_code latest(url) as url latest(total_time) as response_time by source
-| eval response_time=round(response_time, 0)
-| eval response=response_code
-| table title url response response_code last_checked response_time average range sparkline_response_time 
-| `timesince(last_checked,last_checked)`
-| sort -response_time
+| `set_response_code` | `set_status` 
+| stats latest(status) as status by source
     </query>
   </search>
   <row>
     <panel>
       <single>
         <search base="baseSearch">
-          <query><![CDATA[| search `filter_response_codes_and_response_times`
-| stats count as count]]></query>
+          <query><![CDATA[| search status="Failure" | stats count]]></query>
         </search>
         <option name="colorBy">value</option>
         <option name="colorMode">block</option>
@@ -58,11 +48,7 @@ sourcetype="web_ping" `website_monitoring_search_index` title="$title$"
     <panel>
       <single>
         <search base="baseSearch">
-          <query><![CDATA[
-| eval warning_limit=`response_time_threshold`/2
-| search NOT `filter_response_codes_and_response_times`
-| search response_time >= warning_limit
-| stats count as count]]></query>
+          <query><![CDATA[| search status="Warning" | stats count]]></query>
         </search>
         <option name="colorBy">value</option>
         <option name="colorMode">block</option>
@@ -86,9 +72,7 @@ sourcetype="web_ping" `website_monitoring_search_index` title="$title$"
     <panel>
       <single>
         <search base="baseSearch">
-          <query><![CDATA[
-| search NOT (response="* false") AND response_time < 500
-| stats count as count]]></query>
+          <query><![CDATA[| search status="OK" | stats count]]></query>
         </search>
         <option name="colorBy">value</option>
         <option name="colorMode">block</option>
