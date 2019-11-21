@@ -42,7 +42,7 @@ import sys
 import logging
 from logging import handlers
 
-from splunk.appserver.mrsparkle.lib.util import make_splunkhome_path
+from splunk.clilib.bundle_paths import make_splunkhome_path
 
 class SearchCommand(object):
     """

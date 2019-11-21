@@ -1,9 +1,14 @@
 """
 This module provides a Splunk search command that performs a web-ping.
 """
+import os
+import sys
 
 from website_monitoring_app.search_command import SearchCommand
 from web_ping import WebPing
+
+path_to_mod_input_lib = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'modular_input.zip')
+sys.path.insert(0, path_to_mod_input_lib)
 from modular_input import URLField
 
 class WebPingSearchCommand(SearchCommand):
