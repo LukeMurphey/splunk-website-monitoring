@@ -219,6 +219,17 @@ class TestWebPing(WebsiteMonitoringAppTest, UnitTestWithWebServer):
 
         self.assertEqual(result.timed_out, True)
 
+    def test_ping_with_headers(self):
+
+        url_field = URLField("test_ping", "title", "this is a test")
+
+        result = WebPing.ping(url_field.to_python("http://127.0.0.1:" + str(self.web_server_port) + "/test_page"), timeout=3, return_headers=True)
+
+        self.assertEqual(result.response_code, 200)
+        self.assertGreater(result.request_time, 0)
+        self.assertGreater(len(result.headers), 0)
+        self.assertEqual(result.headers['Content-type'], 'text/html')
+
     def test_is_exception_for_timeout(self):
         try:
             r = requests.get('https://192.168.30.23/')

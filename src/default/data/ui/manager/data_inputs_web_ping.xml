@@ -45,6 +45,12 @@
 	          <view name="create"/>
 	          <key name="exampleText">Save the response body</key>
 	        </element>
+
+	        <element name="return_headers" type="checkbox" label="Include Response HTTP Headers">
+	          <view name="edit"/>
+	          <view name="create"/>
+	          <key name="exampleText">Save the response headers</key>
+	        </element>
 		  	
 	      </elements>
 	  	</element>

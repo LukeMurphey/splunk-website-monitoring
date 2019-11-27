@@ -89,7 +89,8 @@ class WebPing(ModularInput):
         def __init__(self, request_time, response_code, timed_out, url, response_size=None,
                      response_md5=None, response_sha224=None, has_expected_string=None, 
                      response_body=None, exceeded_redirects=None, return_body=False,
-                     timeout=0, max_redirects=-1, warning_threshold=None, error_threshold=None):
+                     timeout=0, max_redirects=-1, warning_threshold=None, error_threshold=None,
+                     headers=None):
 
             self.request_time = request_time
             self.response_code = response_code
@@ -106,6 +107,7 @@ class WebPing(ModularInput):
             self.max_redirects = max_redirects
             self.warning_threshold = warning_threshold
             self.error_threshold = error_threshold
+            self.headers = headers
 
     def __init__(self, timeout=30, thread_limit=None):
 
@@ -129,6 +131,7 @@ class WebPing(ModularInput):
                 IntegerField("max_redirects", "Maximum Redirects", "The maximum number of redirects to follow (-1 or blank for unlimited, 0 to not follow any redirects)", none_allowed=True, empty_allowed=True, required_on_create=False, required_on_edit=False),
                 IntegerField("timeout", "Timeout", "The maximum number of seconds to wait for a response", none_allowed=True, empty_allowed=True, required_on_create=False, required_on_edit=False),
                 BooleanField("return_body", "Return response body", "If checked, will return the response body", none_allowed=True, empty_allowed=True, required_on_create=False, required_on_edit=False),
+                BooleanField("return_headers", "Return headers", "If checked, will return the response headers", none_allowed=True, empty_allowed=True, required_on_create=False, required_on_edit=False),
                 IntegerField("warning_threshold", "Warning Threshold", "The number of milliseconds above which a response time is considered a 'Warning'", none_allowed=True, empty_allowed=True, required_on_create=False, required_on_edit=False),
                 IntegerField("error_threshold", "Error Threshold", "The number of milliseconds above which a response time is considered 'Failed'", none_allowed=True, empty_allowed=True, required_on_create=False, required_on_edit=False)
         ]
@@ -321,7 +324,7 @@ class WebPing(ModularInput):
              proxy_server=None, proxy_port=None, proxy_user=None, proxy_password=None, proxy_ignore=None,
              client_certificate=None, client_certificate_key=None, user_agent=None, max_redirects=None,
              logger=None, should_contain_string=None, response_body_length=0, raise_all=False,
-             warning_threshold=None, error_threshold=None):
+             warning_threshold=None, error_threshold=None, return_headers=False):
         """
         Perform a ping to a website. Returns a WebPing.Result instance.
 
@@ -346,6 +349,7 @@ class WebPing(ModularInput):
         raise_all -- Raise all exceptions even if it is for possibly recoverable issues.
         warning_threshold -- If the response time is above this number (in ms), it is considered a 'Warning'
         error_threshold -- If the response time is above this number (in ms), it is concidered an 'Error' (Failed)
+        return_headers -- If true, include the response headers in the output
         """
 
         if logger:
@@ -431,6 +435,7 @@ class WebPing(ModularInput):
         has_expected_string = None
         response_body = None
         exceeded_redirects = None
+        response_headers = None
 
         # Setup the headers as necessary
         headers = {}
@@ -520,6 +525,10 @@ class WebPing(ModularInput):
             response_code = http.status_code
             request_time = timer.msecs
 
+            # Get the headers
+            if return_headers:
+                response_headers = http.headers
+
         # Handle time outs
         except requests.exceptions.Timeout:
 
@@ -553,7 +562,7 @@ class WebPing(ModularInput):
                 logger.exception("A general exception was thrown when executing a web request for url=%s", url.geturl())
 
         # Finally, return the result
-        return cls.Result(request_time, response_code, timed_out, url.geturl(), response_size, response_md5, response_sha224, has_expected_string, response_body, exceeded_redirects, timeout=timeout, max_redirects=max_redirects, warning_threshold=warning_threshold, error_threshold=error_threshold)
+        return cls.Result(request_time, response_code, timed_out, url.geturl(), response_size, response_md5, response_sha224, has_expected_string, response_body, exceeded_redirects, timeout=timeout, max_redirects=max_redirects, warning_threshold=warning_threshold, error_threshold=error_threshold, headers=response_headers)
 
     def output_result(self, result, stanza, title, index=None, source=None, sourcetype=None,
                       host=None,unbroken=True, close=True, proxy_server=None, proxy_port=None,
@@ -581,6 +590,11 @@ class WebPing(ModularInput):
             'url': result.url,
             'timeout': result.timeout
         }
+
+        # Add the response headers if necessary
+        if result.headers is not None:
+            for header in result.headers:
+                data['header_' + header] = result.headers[header]
 
         # Log proxy server information
         if proxy_server is not None:
@@ -824,6 +838,7 @@ class WebPing(ModularInput):
         should_contain_string = cleaned_params.get("should_contain_string", None)
         max_redirects = cleaned_params.get("max_redirects", -1)
         return_body = cleaned_params.get("return_body", False)
+        return_headers = cleaned_params.get("return_headers", False)
         warning_threshold = cleaned_params.get("warning_threshold", None)
         error_threshold = cleaned_params.get("error_threshold", None)
         source = stanza
@@ -930,6 +945,7 @@ class WebPing(ModularInput):
 
                 # Set the max response body length for this request
                 response_body_length = self.default_app_config['max_response_body_length']
+
                 if return_body is False:
                     response_body_length = 0
 
@@ -940,7 +956,7 @@ class WebPing(ModularInput):
                                           proxy_ignore, client_certificate, client_certificate_key, user_agent, max_redirects, 
                                           logger=self.logger, should_contain_string=should_contain_string,
                                           response_body_length=response_body_length, warning_threshold=warning_threshold,
-                                          error_threshold=error_threshold)
+                                          error_threshold=error_threshold, return_headers=return_headers)
                 except NTLMAuthenticationValueException as e:
                     self.logger.warn('NTLM authentication failed due to configuration issue stanza=%s, message="%s"', stanza, str(e))
 
