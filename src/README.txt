@@ -247,5 +247,7 @@ Change History
 |         | Added REST handler logs to health monitoring dashboard                                                           |
 |         | Added support for Splunk 8.0                                                                                     |
 |         | Added support for Python 3                                                                                       |
+|---------|------------------------------------------------------------------------------------------------------------------|
+| 2.9.0   | Added ability to output the HTTP response headers                                                                |
 +---------+------------------------------------------------------------------------------------------------------------------+
 
