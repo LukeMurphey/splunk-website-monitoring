@@ -144,30 +144,4 @@
       </table>
     </panel>
   </row>
-  <row>
-    <panel>
-      <viz type="status_indicator_app.status_indicator">
-        <search>
-          <query>sourcetype="web_ping" `website_monitoring_search_index` title="amazon.com" | `set_response_code` 
-|  `set_status` 
-| stats avg(total_time) as response_time, latest(status) as status 
-| eval color=case(status="Failed", "red", status="Warning", "yellow", true(), "green"), icon = case(status="Failed", "exclamation-triangle", status="Warning", "exclamation-circle", true(), "thumbs-up")
-| table response_time, icon, color</query>
-          <earliest>-24h@h</earliest>
-          <latest>now</latest>
-        </search>
-        <option name="drilldown">none</option>
-        <option name="refresh.display">progressbar</option>
-        <option name="status_indicator_app.status_indicator.colorBy">field_value</option>
-        <option name="status_indicator_app.status_indicator.fillTarget">background</option>
-        <option name="status_indicator_app.status_indicator.fixIcon">warning</option>
-        <option name="status_indicator_app.status_indicator.icon">field_value</option>
-        <option name="status_indicator_app.status_indicator.precision">0</option>
-        <option name="status_indicator_app.status_indicator.showOption">1</option>
-        <option name="status_indicator_app.status_indicator.staticColor">#555</option>
-        <option name="status_indicator_app.status_indicator.useColors">true</option>
-        <option name="status_indicator_app.status_indicator.useThousandSeparator">true</option>
-      </viz>
-    </panel>
-  </row>
 </form>
