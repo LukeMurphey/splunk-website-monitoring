@@ -179,6 +179,47 @@ class TestWebPing(WebsiteMonitoringAppTest, UnitTestWithWebServer):
     def tearDown(self):
         shutil.rmtree(self.tmp_dir)
 
+    def test_cleanup_threads(self):
+        threads_running = [1, 2]
+        max_runs = 10
+
+        def thread_function(n):
+            total_time = 0
+            while n in threads_running and total_time < max_runs:
+                time.sleep(1)
+                total_time += 1
+
+        thread_1 = threading.Thread(target=thread_function, args=(1,))
+        thread_2 = threading.Thread(target=thread_function, args=(2,))
+        threads = {
+            '1': thread_1,
+            '2': thread_2
+        }
+
+        thread_1.start()
+        thread_2.start()
+
+        web_ping = WebPing()
+
+        self.assertEqual(len(threads), 2)
+        self.assertEqual(web_ping.cleanup_threads(threads), 0)
+        self.assertEqual(len(threads), 2)
+
+        # Stop the first thread and wait for it to complete
+        threads_running = [2]
+        thread_1.join()
+
+        self.assertEqual(web_ping.cleanup_threads(threads), 1)
+        self.assertEqual(len(threads), 1)
+
+        # Stop the second thread and wait for it to complete
+        threads_running = []
+        thread_2.join()
+
+        self.assertEqual(web_ping.cleanup_threads(threads), 1)
+        self.assertEqual(len(threads), 0)
+
+
     def test_get_file_path(self):
         self.assertEqual(WebPing.get_file_path("/Users/lmurphey/Applications/splunk/var/lib/splunk/modinputs/web_ping", "web_ping://TextCritical.com"), "/Users/lmurphey/Applications/splunk/var/lib/splunk/modinputs/web_ping" + os.sep + "35163af7282b92013f810b2b4822d7df.json")
 

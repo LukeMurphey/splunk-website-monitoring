@@ -249,5 +249,6 @@ Change History
 |         | Added support for Python 3                                                                                       |
 |---------|------------------------------------------------------------------------------------------------------------------|
 | 2.9.0   | Added ability to output the HTTP response headers                                                                |
+|         | Fixed "dictionary changed size during iteration" error on Python 3                                               |
 +---------+------------------------------------------------------------------------------------------------------------------+
 

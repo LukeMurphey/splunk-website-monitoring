@@ -818,6 +818,26 @@ class WebPing(ModularInput):
         else:
             return 'http', '', '', '', proxy_password, None
 
+    def cleanup_threads(self, threads):
+        # Keep track of the number of removed threads so that we can make sure to emit a log
+        # message noting the number of threads
+        removed_threads = 0
+
+        # Clean up old threads
+        for thread_stanza in list(threads):
+
+            # If the thread isn't alive, prune it
+            if not threads[thread_stanza].isAlive():
+                removed_threads = removed_threads + 1
+                self.logger.debug("Removing inactive thread for stanza=%s, thread_count=%i", thread_stanza, len(threads))
+                del threads[thread_stanza]
+
+        # If we removed threads, note the updated count in the logs so that it can be tracked
+        if removed_threads > 0:
+            self.logger.info("Removed inactive threads, thread_count=%i, removed_thread_count=%i", len(threads), removed_threads)
+
+        return removed_threads
+
     def run(self, stanza, cleaned_params, input_config):
 
         # Make the parameters
@@ -896,21 +916,7 @@ class WebPing(ModularInput):
                     self.thread_limit = 25
 
         # Clean up old threads
-        for thread_stanza in self.threads.keys():
-
-            # Keep track of the number of removed threads so that we can make sure to emit a log
-            # message noting the number of threads
-            removed_threads = 0
-
-            # IF the thread isn't alive, prune it
-            if not self.threads[thread_stanza].isAlive():
-                removed_threads = removed_threads + 1
-                self.logger.debug("Removing inactive thread for stanza=%s, thread_count=%i", thread_stanza, len(self.threads))
-                del self.threads[thread_stanza]
-
-            # If we removed threads, note the updated count in the logs so that it can be tracked
-            if removed_threads > 0:
-                self.logger.info("Removed inactive threads, thread_count=%i, removed_thread_count=%i", len(self.threads), removed_threads)
+        self.cleanup_threads(self.threads)
 
         # Stop if we have a running thread
         if stanza in self.threads:
