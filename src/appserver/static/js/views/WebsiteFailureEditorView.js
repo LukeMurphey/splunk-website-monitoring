@@ -111,7 +111,7 @@ define([
 	        macro = new Macro();
 	        	
             macro.fetch({
-                url: splunkd_utils.fullpath('/servicesNS/nobody/' + this.app_name + '/admin/macros/' + macro_name),
+                url: splunkd_utils.fullpath('/servicesNS/nobody/' + this.app_name + '/data/macros/' + macro_name),
                 success: function (model, response, options) {
                     console.info("Successfully retrieved the macro");
 
