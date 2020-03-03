@@ -24,7 +24,7 @@ sourcetype="web_ping" `website_monitoring_search_index` title="$title$"
     <panel>
       <single>
         <search base="baseSearch">
-          <query><![CDATA[| search status="Failure" | stats count]]></query>
+          <query><![CDATA[| search status="Failed" | stats count]]></query>
         </search>
         <option name="colorBy">value</option>
         <option name="colorMode">block</option>

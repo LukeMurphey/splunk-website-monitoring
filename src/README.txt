@@ -252,5 +252,7 @@ Change History
 |         | Fixed "dictionary changed size during iteration" error on Python 3                                               |
 |---------|------------------------------------------------------------------------------------------------------------------|
 | 2.9.1   | Fixing exception when input checks for SHC support                                                               |
+|---------|------------------------------------------------------------------------------------------------------------------|
+| 2.9.2   | Fixing issue where executive summary reported incorrect number of sites with failures                            |
 +---------+------------------------------------------------------------------------------------------------------------------+
 
