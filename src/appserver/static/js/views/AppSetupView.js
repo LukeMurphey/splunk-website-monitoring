@@ -50,7 +50,8 @@ define([
             'threadLimit' : '.thread-limit input',
             'proxyPassword' : '.proxy-password input',
             'proxyPasswordConfirmation' : '.proxy-password-confirm input',
-            'proxyType' : '.proxy-type select'
+            'proxyType' : '.proxy-type select',
+            'responseLength': '.response-length input'
         },
 
         initialize: function() {
@@ -80,7 +81,9 @@ define([
                     proxy_user: 'user',
                     proxy_password: '',
 
-                    thread_limit: this.getThreadLimit()
+                    thread_limit: this.getThreadLimit(),
+
+                    max_response_body_length: this.getResponseLength()
                 }, {
                     silent: true
                 });
@@ -97,7 +100,9 @@ define([
                     proxy_user: this.getProxyUser(),
                     proxy_password: '', //This will be stored in secure storage
 
-                    thread_limit: this.getThreadLimit()
+                    thread_limit: this.getThreadLimit(),
+
+                    max_response_body_length: this.getResponseLength()
                 }, {
                     silent: true
                 });
@@ -213,6 +218,7 @@ define([
                     this.setProxyIgnore(model.entry.content.attributes.proxy_ignore);
 
                     this.setThreadLimit(model.entry.content.attributes.thread_limit);
+                    this.setResponseLength(model.entry.content.attributes.max_response_body_length);
 
                     this.setProxyUser(model.entry.content.attributes.proxy_user);
                     this.setProxyPassword(model.entry.content.attributes.proxy_password);
@@ -235,6 +241,7 @@ define([
                         this.setProxyIgnore("");
     
                         this.setThreadLimit("200");
+                        this.setResponseLength("1000");
     
                         this.setProxyUser("");
                         this.setProxyPassword("");
@@ -338,6 +345,20 @@ define([
             }
         },
 
+        isValidResponseLength: function(value){
+            var lengths = parseInt(value,10);
+
+            if(isNaN(lengths)) {
+                return false;
+            }
+            else if(lengths < -1 || lengths > 1048576){
+                return false;
+            }
+            else{
+                return true;
+            }
+        },
+
         matchesPassword: function(value){
             var originalPassword = this.getProxyPassword();
 
@@ -373,6 +394,7 @@ define([
             this.addValidator('.proxy-address', this.getProxyServer.bind(this), this.isValidServer, "Must be a valid domain name or IP address");
             this.addValidator('.proxy-port', this.getProxyServerPort.bind(this), this.isValidPort, "Must be a valid port number");
             this.addValidator('.thread-limit', this.getThreadLimit.bind(this), this.isValidThreadLimit, "Must be an integer greater than 0");
+            this.addValidator('.response-length', this.getResponseLength.bind(this), this.isValidResponseLength, "Must be an integer greather than -1 and less than 104876");
             this.addValidator('.proxy-password-confirm', this.getProxyPasswordConfirmation.bind(this), this.matchesPassword.bind(this), "Must match the password");
         },
     });

@@ -44,4 +44,4 @@ max_response_body_length = <int>
 	* The maximum length of the response body to return, if enabled.
 	* Use 0 to disable returning response bodies (even if the setting is enabled in an input stanza). Use -1 for unlimited.
 	* Example: 500
-	* Default: -1 (unlimited)
+	* Default: 1000
