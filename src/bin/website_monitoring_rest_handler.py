@@ -53,9 +53,10 @@ class WebsiteMonitoringRestHandler(RestHandler):
     PARAM_PROXY_IGNORE = 'proxy_ignore'
     PARAM_THREAD_LIMIT = 'thread_limit'
     PARAM_MAX_RESPONSE_TIME = 'max_response_time'
+    PARAM_MAX_RESPONSE_BODY_LENGTH = 'max_response_body_length'
 
     # Below are the list of valid and required parameters
-    valid_params = [PARAM_DEBUG, PARAM_PROXY_SERVER, PARAM_PROXY_PORT, PARAM_PROXY_USER, PARAM_PROXY_PASSWORD, PARAM_PROXY_TYPE, PARAM_PROXY_IGNORE, PARAM_THREAD_LIMIT, PARAM_MAX_RESPONSE_TIME]
+    valid_params = [PARAM_DEBUG, PARAM_PROXY_SERVER, PARAM_PROXY_PORT, PARAM_PROXY_USER, PARAM_PROXY_PASSWORD, PARAM_PROXY_TYPE, PARAM_PROXY_IGNORE, PARAM_THREAD_LIMIT, PARAM_MAX_RESPONSE_TIME, PARAM_MAX_RESPONSE_BODY_LENGTH]
 
     # List of fields and how they will be validated
     field_validators = {
@@ -65,6 +66,7 @@ class WebsiteMonitoringRestHandler(RestHandler):
         PARAM_PROXY_TYPE : ProxyTypeFieldValidator(),
         PARAM_PROXY_IGNORE : StandardFieldValidator(),
         PARAM_MAX_RESPONSE_TIME : IntegerFieldValidator(0, 65535),
+        PARAM_MAX_RESPONSE_BODY_LENGTH : IntegerFieldValidator(-1,1048576)
     }
 
     # General variables
