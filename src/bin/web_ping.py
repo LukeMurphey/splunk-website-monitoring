@@ -27,6 +27,7 @@ from six import text_type, binary_type
 from website_monitoring_app import socks
 from website_monitoring_app import requests
 from website_monitoring_app.requests_ntlm import HttpNtlmAuth
+from website_monitoring_app.expiring_dict import ExpiringDict
 
 # Disable the SSL certificate warning
 # http://lukemurphey.net/issues/1390
@@ -136,7 +137,7 @@ class WebPing(ModularInput):
                 IntegerField("error_threshold", "Error Threshold", "The number of milliseconds above which a response time is considered 'Failed'", none_allowed=True, empty_allowed=True, required_on_create=False, required_on_edit=False)
         ]
 
-        ModularInput.__init__(self, scheme_args, args, logger_name='web_availability_modular_input', logger_level=logging.INFO)
+        ModularInput.__init__(self, scheme_args, args, logger_name='web_availability_modular_input', logger_level=logging.DEBUG)
 
         if timeout > 0:
             self.timeout = timeout
@@ -149,6 +150,9 @@ class WebPing(ModularInput):
             self.thread_limit = thread_limit
 
         self.threads = {}
+
+        # This will store a cache for proxy configs for 5 minutes
+        self.app_configs = ExpiringDict(300)
 
     @classmethod
     def resolve_proxy_type(cls, proxy_type, logger=None):
@@ -711,6 +715,17 @@ class WebPing(ModularInput):
         stanza -- The stanza to get the proxy information from (defaults to "default")
         """
 
+        # See if it is in the cache
+        try:
+            website_monitoring_config = self.app_configs[stanza]
+
+            if website_monitoring_config is not None:
+                return website_monitoring_config
+
+        except KeyError:
+            # entry was not found, continue
+            pass
+
         # If the stanza is empty, then just use the default
         if stanza is None or stanza.strip() == "":
             stanza = "default"
@@ -764,6 +779,9 @@ class WebPing(ModularInput):
         except splunk.SplunkdConnectionException:
             self.logger.error('Unable to find the app configuration for the specified configuration stanza=%s error="splunkd connection error", see url=http://lukemurphey.net/projects/splunk-website-monitoring/wiki/Troubleshooting', stanza)
             raise
+
+        # Add the entry to the cache
+        self.app_configs[stanza] = website_monitoring_config
 
         return website_monitoring_config
 
