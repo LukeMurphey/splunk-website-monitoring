@@ -151,8 +151,8 @@ class WebPing(ModularInput):
 
         self.threads = {}
 
-        # This will store a cache for proxy configs for 5 minutes
-        self.app_configs = ExpiringDict(300)
+        # This will store a cache for proxy configs for 10 minutes
+        self.app_configs = ExpiringDict(600)
 
     @classmethod
     def resolve_proxy_type(cls, proxy_type, logger=None):
