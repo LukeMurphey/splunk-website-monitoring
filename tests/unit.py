@@ -232,6 +232,16 @@ class TestWebPing(WebsiteMonitoringAppTest, UnitTestWithWebServer):
         self.assertEqual(result.response_code, 200)
         self.assertGreater(result.request_time, 0)
 
+    """
+    def test_ping_include_ip(self):
+
+        url_field = URLField("test_ping_include_ip", "title", "this is a test")
+
+        result = WebPing.ping(url_field.to_python("http://127.0.0.1:" + str(self.web_server_port) + "/test_page"), timeout=3)
+
+        self.assertGreater(result.response_ip, '127.0.0.1')
+    """
+
     def test_ping_super_long_url(self):
         # https://answers.splunk.com/answers/488784/why-my-website-monitoring-only-check-1-time.html
 
