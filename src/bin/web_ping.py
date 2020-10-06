@@ -10,6 +10,7 @@ sys.path.insert(0, path_to_mod_input_lib)
 from modular_input import Field, ModularInput, URLField, DurationField, IntegerField, BooleanField, RangeField
 from modular_input.shortcuts import forgive_splunkd_outages
 from modular_input.secure_password import get_secure_password
+from modular_input.server_info import is_fips_mode
 from splunk.models.field import Field as ModelField
 from splunk.models.field import IntField as ModelIntField
 import splunk
@@ -31,7 +32,7 @@ from website_monitoring_app.expiring_dict import ExpiringDict
 
 # Disable the SSL certificate warning
 # http://lukemurphey.net/issues/1390
-# We don't support SSL certicate checking at this point because I haven't found a good way to
+# We don't support SSL certificate checking at this point because I haven't found a good way to
 # include the SSL cert libraries into a Splunk app.
 from website_monitoring_app.requests.packages.urllib3.exceptions import InsecureRequestWarning
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
@@ -271,21 +272,6 @@ class WebPing(ModularInput):
             return (username, password)
 
     @classmethod
-    def is_fips_mode(cls):
-        """
-        Determine if the app is running in FIPS mode. This means that weaker hash algorithms need to
-        be disabled. Attempting to use these weaker hash algorithms will cause OpenSSL to to crash,
-        taking down the entire Python process.
-        """
-
-        is_fips = os.environ.get('SPLUNK_FIPS', None)
-
-        if is_fips is not None and is_fips.strip().lower() in ['1', 'true']:
-            return True
-        else:
-            return False
-
-    @classmethod
     def isExceptionForTimeout(cls, exception):
         """
         Determines if the given exception is due to a timeout
@@ -468,7 +454,7 @@ class WebPing(ModularInput):
 
             # Don't allow the use of NTLM on a host in FIPS mode since NTLM uses MD4 which is a
             # weak algorithm
-            if auth_type == cls.HTTP_AUTH_NTLM and cls.is_fips_mode():
+            if auth_type == cls.HTTP_AUTH_NTLM and is_fips_mode(input_config.session_key):
 
                 if logger:
                     logger.warn("Authentication type was automatically identified but will not be used since it uses a weak hash algorithm which is not allowed on this host since it is running in FIPS mode; auth_type=%s", auth_type)
@@ -509,7 +495,7 @@ class WebPing(ModularInput):
                     http_text = http.text.encode('utf-8')
 
                 # Get the hash of the content
-                if not cls.is_fips_mode():
+                if not is_fips_mode(input_config.session_key):
                     response_md5 = hashlib.md5(http_text).hexdigest()
 
                 response_sha224 = hashlib.sha224(http_text).hexdigest()
@@ -671,27 +657,6 @@ class WebPing(ModularInput):
         # Output event with fields
         return self.output_event(data, stanza, index=index, host=host, source=source,
                                  sourcetype=sourcetype, unbroken=unbroken, close=close, out=out)
-
-    @classmethod
-    def get_file_path(cls, checkpoint_dir, stanza):
-        """
-        Get the path to the checkpoint file. Note that the checkpoint directory is using MD5 for
-        legacy purposes (since old versions of the app used MD5). This isn't a significant issue
-        since MD5 isn't be used for security purposes here but merely to make sure that file has no
-        special characters.
-
-        Arguments:
-        checkpoint_dir -- The directory where checkpoints ought to be saved
-        stanza -- The stanza of the input being used
-        """
-
-        if isinstance(stanza, text_type):
-            stanza = stanza.encode('utf-8')
-
-        if cls.is_fips_mode():
-            return os.path.join(checkpoint_dir, hashlib.sha224(stanza).hexdigest() + ".json")
-        else:
-            return os.path.join(checkpoint_dir, hashlib.md5(stanza).hexdigest() + ".json")
 
     def save_checkpoint(self, checkpoint_dir, stanza, last_run):
         """
