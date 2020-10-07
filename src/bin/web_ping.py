@@ -10,7 +10,7 @@ sys.path.insert(0, path_to_mod_input_lib)
 from modular_input import Field, ModularInput, URLField, DurationField, IntegerField, BooleanField, RangeField
 from modular_input.shortcuts import forgive_splunkd_outages
 from modular_input.secure_password import get_secure_password
-from modular_input.server_info import is_fips_mode
+from modular_input.server_info import ServerInfo
 from splunk.models.field import Field as ModelField
 from splunk.models.field import IntField as ModelIntField
 import splunk
@@ -314,7 +314,7 @@ class WebPing(ModularInput):
              proxy_server=None, proxy_port=None, proxy_user=None, proxy_password=None, proxy_ignore=None,
              client_certificate=None, client_certificate_key=None, user_agent=None, max_redirects=None,
              logger=None, should_contain_string=None, response_body_length=0, raise_all=False,
-             warning_threshold=None, error_threshold=None, return_headers=False):
+             warning_threshold=None, error_threshold=None, return_headers=False, fips_mode=False):
         """
         Perform a ping to a website. Returns a WebPing.Result instance.
 
@@ -340,6 +340,7 @@ class WebPing(ModularInput):
         warning_threshold -- If the response time is above this number (in ms), it is considered a 'Warning'
         error_threshold -- If the response time is above this number (in ms), it is concidered an 'Error' (Failed)
         return_headers -- If true, include the response headers in the output
+        fips_mode -- If true, has functions will be skipped that are not allowed on FIPS hosts
         """
 
         if logger:
@@ -454,7 +455,7 @@ class WebPing(ModularInput):
 
             # Don't allow the use of NTLM on a host in FIPS mode since NTLM uses MD4 which is a
             # weak algorithm
-            if auth_type == cls.HTTP_AUTH_NTLM and is_fips_mode(input_config.session_key):
+            if auth_type == cls.HTTP_AUTH_NTLM and fips_mode:
 
                 if logger:
                     logger.warn("Authentication type was automatically identified but will not be used since it uses a weak hash algorithm which is not allowed on this host since it is running in FIPS mode; auth_type=%s", auth_type)
@@ -495,7 +496,7 @@ class WebPing(ModularInput):
                     http_text = http.text.encode('utf-8')
 
                 # Get the hash of the content
-                if not is_fips_mode(input_config.session_key):
+                if not fips_mode:
                     response_md5 = hashlib.md5(http_text).hexdigest()
 
                 response_sha224 = hashlib.sha224(http_text).hexdigest()
@@ -945,7 +946,7 @@ class WebPing(ModularInput):
                                           proxy_ignore, client_certificate, client_certificate_key, user_agent, max_redirects, 
                                           logger=self.logger, should_contain_string=should_contain_string,
                                           response_body_length=response_body_length, warning_threshold=warning_threshold,
-                                          error_threshold=error_threshold, return_headers=return_headers)
+                                          error_threshold=error_threshold, return_headers=return_headers, fips_mode=ServerInfo.is_fips_mode(input_config.session_key))
                 except NTLMAuthenticationValueException as e:
                     self.logger.warn('NTLM authentication failed due to configuration issue stanza=%s, message="%s"', stanza, str(e))
 

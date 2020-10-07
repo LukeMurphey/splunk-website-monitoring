@@ -219,10 +219,6 @@ class TestWebPing(WebsiteMonitoringAppTest, UnitTestWithWebServer):
         self.assertEqual(web_ping.cleanup_threads(threads), 1)
         self.assertEqual(len(threads), 0)
 
-
-    def test_get_file_path(self):
-        self.assertEqual(WebPing.get_file_path("/Users/lmurphey/Applications/splunk/var/lib/splunk/modinputs/web_ping", "web_ping://TextCritical.com"), "/Users/lmurphey/Applications/splunk/var/lib/splunk/modinputs/web_ping" + os.sep + "35163af7282b92013f810b2b4822d7df.json")
-
     def test_ping(self):
 
         url_field = URLField("test_ping", "title", "this is a test")
@@ -302,20 +298,6 @@ class TestWebPing(WebsiteMonitoringAppTest, UnitTestWithWebServer):
     def get_test_dir(self):
         return os.path.dirname(os.path.abspath(__file__))
 
-    def test_needs_another_run(self):
-
-        # Test case where file does not exist
-        self.assertTrue(WebPing.needs_another_run("/Users/lmurphey/Applications/splunk/var/lib/splunk/modinputs/web_ping", "web_ping://DoesNotExist", 60))
-
-        # Test an interval right at the earlier edge
-        self.assertFalse(WebPing.needs_another_run(os.path.join(self.get_test_dir(), "configs"), "web_ping://TextCritical.com", 60, 1365486765))
-
-        # Test an interval at the later edge
-        self.assertFalse(WebPing.needs_another_run(os.path.join(self.get_test_dir(), "configs"), "web_ping://TextCritical.com", 10, 1365486775))
-
-        # Test interval beyond later edge
-        self.assertTrue(WebPing.needs_another_run(os.path.join(self.get_test_dir(), "configs"), "web_ping://TextCritical.com", 10, 1365486776))
-        
     def test_output_result(self):
         web_ping = WebPing(timeout=3)
 
@@ -340,19 +322,6 @@ class TestWebPing(WebsiteMonitoringAppTest, UnitTestWithWebServer):
 
         self.assertTrue(out.getvalue().find("timed_out=True") >= 0)
 
-    def test_bad_checkpoint(self):
-
-        web_ping = WebPing()
-
-        # Make sure the call does return the expected error (is attempting to load the data data)
-        with self.assertRaises(ValueError):
-            web_ping.get_checkpoint_data(os.path.join(self.get_test_dir(), "configs"), throw_errors=True)
-        
-        # Make sure the test returns None
-        data = web_ping.get_checkpoint_data(os.path.join(self.get_test_dir(), "configs", "web_ping://TextCritical.net"))
-
-        self.assertEqual(data, None)
-
     @skipIfNoServer
     def test_hash(self):
 
@@ -363,6 +332,18 @@ class TestWebPing(WebsiteMonitoringAppTest, UnitTestWithWebServer):
         self.assertEqual(result.response_code, 200)
 
         self.assertEqual(result.response_md5, '1f6c14189070f50c4c06ada640c14850') # This is 1f6c14189070f50c4c06ada640c14850 on disk
+        self.assertEqual(result.response_sha224, 'deaf4c0062539c98b4e957712efcee6d42832fed2d803c2bbf984b23')
+
+    @skipIfNoServer
+    def test_hash_fips(self):
+
+        url_field = URLField("test_ping", "title", "this is a test")
+
+        result = WebPing.ping(url_field.to_python("http://127.0.0.1:" + str(self.web_server_port) + "/test_page"), timeout=3, fips_mode=True)
+
+        self.assertEqual(result.response_code, 200)
+
+        self.assertNotEqual(result.response_md5, '1f6c14189070f50c4c06ada640c14850') # This is 1f6c14189070f50c4c06ada640c14850 on disk
         self.assertEqual(result.response_sha224, 'deaf4c0062539c98b4e957712efcee6d42832fed2d803c2bbf984b23')
 
     def test_missing_servername(self):
