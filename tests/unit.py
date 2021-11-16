@@ -280,7 +280,8 @@ class TestWebPing(WebsiteMonitoringAppTest, UnitTestWithWebServer):
     def test_is_exception_for_timeout(self):
         try:
             r = requests.get('https://192.168.30.23/')
-        except requests.exceptions.ConnectionError as e:
+            # website_monitoring_app.requests.packages.urllib3.exceptions.NewConnectionError
+        except Exception as e:
 
             if not WebPing.isExceptionForTimeout(e):
                 print(e)
@@ -431,6 +432,19 @@ class TestWebPing(WebsiteMonitoringAppTest, UnitTestWithWebServer):
         result = WebPing.ping( url_field.to_python("http://127.0.0.1:" + str(self.web_server_port) + "/optional_auth"), timeout=3)
 
         self.assertEqual(result.response_code, 202)
+        self.assertGreater(result.request_time, 0)
+
+    def test_https_with_basic_authentication(self):
+        # Try with valid authentication
+        url_field = URLField("test_ping", "title", "this is a test")
+        result = WebPing.ping(url_field.to_python("https://httpbin.org/basic-auth/foo/bar"), timeout=3, username="foo", password="bar")
+
+        self.assertEqual(result.response_code, 200)
+
+        # Verify that no authentication still works
+        result = WebPing.ping(url_field.to_python("https://httpbin.org/basic-auth/foo/bar"), timeout=3, username="foo", password="WRONG_PASSWORD")
+
+        self.assertEqual(result.response_code, 401)
         self.assertGreater(result.request_time, 0)
 
     @skipIfNoServer

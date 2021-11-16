@@ -3,7 +3,10 @@ import sys
 import os
 import time
 import threading
-from six.moves.socketserver import TCPServer
+# from six.moves.socketserver import TCPServer
+import ssl
+from six.moves.BaseHTTPServer import HTTPServer
+# from http.server import HTTPServer, BaseHTTPRequestHandler
 
 # There needs to be a file named test_web_server next to this file with a class named TestWebServerHandler that inherits from BaseHTTPServer.BaseHTTPRequestHandler
 from test_web_server import TestWebServerHandler
@@ -21,6 +24,8 @@ class UnitTestWithWebServer(unittest.TestCase):
     def setUpClass(cls):
         
         cls.web_server_port = int(os.environ.get("TEST_WEB_SERVER_PORT", cls.DEFAULT_TEST_WEB_SERVER_PORT))
+        cls.keyfile = None #"host.key"
+        cls.certfile = None #"host.crt"
         
         # Stop if the web-server was already started
         if UnitTestWithWebServer.httpd is not None:
@@ -33,7 +38,7 @@ class UnitTestWithWebServer(unittest.TestCase):
         
         while UnitTestWithWebServer.httpd is None and attempts < 75:
             try:
-                UnitTestWithWebServer.httpd = cls.get_server(cls.web_server_port)
+                UnitTestWithWebServer.httpd = cls.get_server(cls.web_server_port, cls.keyfile, cls.certfile)
                 
                 print(" Done")
                     
@@ -68,12 +73,19 @@ class UnitTestWithWebServer(unittest.TestCase):
             self.fail("The test web-server is not running; tests that rely on the built-in web-server will fail or be skipped")
         
     @classmethod
-    def get_server(cls, port):
+    def get_server(cls, port, keyfile=None, certfile=None):
         """
         Call httpd.shutdown() to stop the server
         """
-        
-        httpd = TCPServer(("", port), TestWebServerHandler)
+        # httpd = TCPServer(("", port), TestWebServerHandler)
+        httpd = HTTPServer(('', port), TestWebServerHandler)
+
+        if certfile and keyfile:
+            httpd.socket = ssl.wrap_socket(httpd.socket, 
+                    keyfile=keyfile, # "path/to/key.pem"
+                    certfile=certfile, # path/to/cert.pem
+                    server_side=False)
+
         return httpd
         
 def skipIfNoServer(func):
