@@ -258,5 +258,6 @@ Change History
 | 2.9.3   | Calls to get the app config are now cached for 10 minutes in order to reduce Splunkd call frequency              |
 |---------|------------------------------------------------------------------------------------------------------------------|
 | 2.9.4   | Fixing an issue where FIPS would only be detected if set in splunk-launch.conf                                   |
+|         | Updating NTLM libraries                                                                                          |
 +---------+------------------------------------------------------------------------------------------------------------------+
 
