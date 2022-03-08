@@ -84,7 +84,7 @@ Below are the main build targets you should consider using:
 ║ splunk.stop                ║ Stops Splunk                                                                ║ value.deploy.splunk_home ║
 ║ splunk.restart             ║ Restarts Splunk                                                             ║ value.deploy.splunk_home ║
 ║ splunk.restart_web         ║ Restarts SplunkWeb                                                          ║ value.deploy.splunk_home ║
-║ test                       ║ Runs tests and btool for the given app                                      ║ value.deploy.splunk_home ║
+║ test                       ║ Runs tests abd btool for the given app                                      ║ value.deploy.splunk_home ║
 ║ test.deploy_and_test       ║ Same as above but deploys to Splunk first so that it has the latest changes ║ value.deploy.splunk_home ║
 ╚════════════════════════════╩═════════════════════════════════════════════════════════════════════════════╩══════════════════════════╝
 
@@ -443,16 +443,18 @@ You can customize the build process by placing properties in the default.propert
     </target>
     
 	<patternset id="substituted_files">
-    	<include name="**/*.conf" />
-        <include name="**/*.txt" />
-        <include name="**/*.xml" />
-    </patternset>
+		<include name="**/*.conf" />
+		<include name="**/*.txt" />
+		<include name="**/*.xml" />
+		<include name="**/app.manifest" />
+	</patternset>
 
 	<patternset id="exclude_substituted_files">
-    	<exclude name="**/*.conf" />
-        <exclude name="**/*.txt" />
-        <exclude name="**/*.xml" />
-    </patternset>
+		<exclude name="**/*.conf" />
+		<exclude name="**/*.txt" />
+		<exclude name="**/*.xml" />
+		<exclude name="**/app.manifest" />
+	</patternset>
 
 	<patternset id="minified_files">
     	<include name="**/*.js" />
@@ -467,7 +469,7 @@ You can customize the build process by placing properties in the default.propert
     <!-- ================================= 
           target: populate_export_dir
          ================================= -->
-    <target name="populate_export_dir" depends="initialize,get_build_number,compile">
+    <target name="populate_export_dir" depends="initialize,get_build_number">
     	
     	<!-- Make sure that the source directory exists -->
     	<fail message="The directory where the source-code is supposed to be doesn't exist ('${absolute_src_path}')">
@@ -560,11 +562,6 @@ You can customize the build process by placing properties in the default.propert
 	<target name="set_minimize_for_package" depends="initialize_properties">
 		<property name="minimize" value="${value.build.minimize}"/>
 	</target>
-
-    <!-- ================================= 
-          target: compile target for any custom compilation things needed
-         ================================= -->
-	<target name="compile" depends="initialize_properties" />
 	
     <!-- ================================= 
           target: package
@@ -1067,7 +1064,7 @@ Below is an example of the entry in the file:
     <!-- ================================= 
           target: test.run_unit
          ================================= -->
-    <target name="test.run_unit" depends="test.setup">
+    <target name="test.run_unit">
 
 		<!-- Define a default value for the tests to run. Otherwise, arguments passed from the CLI will be used (e.g. ant test.run_unit -Dtest=TestPingParser) -->
 		<property name="test" value="" />
@@ -1122,16 +1119,13 @@ Below is an example of the entry in the file:
              filepath="${env.PATH}"  
              property="appinspect.present" />
 
-		<!-- Change to an absolute path since app inspect requires this -->
-		<property name="value.build.package.absolute_file" location="${value.build.package.file}"/>
-
  		<if>
 			<isset property="appinspect.present"/>
  			<!-- Run appinspect on the package -->
 			<then>
-				<exec failonerror="true" executable="${value.test.appinspect_path}" dir="${value.build.packageoutput.directory}">
+				<exec failonerror="true" executable="${value.test.appinspect_path}" dir="${basedir}">
 					<arg line="inspect" />
-					<arg line="${value.build.package.absolute_file}" />
+					<arg line="${value.build.package.file}" />
 				</exec>
 			</then>
 
