@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='utf-8'?>
 
-<dashboard refresh="30" >
+<dashboard refresh="30" version='1.1'>
   <label>Executive Summary</label>
 
     <fieldset submitButton="true" autoRun="true">

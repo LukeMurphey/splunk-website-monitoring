@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='utf-8'?>
 
-<form script="status_overview.js" stylesheet="status_overview.css">
+<form version='1.1' script="status_overview.js" stylesheet="status_overview.css">
 	<label>Status Overview</label>
 	
 	<fieldset autoRun="true">
