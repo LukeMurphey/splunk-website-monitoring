@@ -5,7 +5,6 @@ define([
     "jquery",
     "splunkjs/mvc/simplesplunkview",
     "models/SplunkDBase",
-    "collections/SplunkDsBase",
     "splunkjs/mvc/simpleform/input/text",
     "splunkjs/mvc/simpleform/input/dropdown",
     "splunkjs/mvc/utils",
@@ -17,7 +16,6 @@ define([
     $,
     SimpleSplunkView,
     SplunkDBaseModel,
-    SplunkDsBaseCollection,
     TextInput,
     DropdownInput,
     mvc_utils,
@@ -25,13 +23,6 @@ define([
 ) { 
     
     var Macro = SplunkDBaseModel.extend({
-	    initialize: function() {
-	    	SplunkDBaseModel.prototype.initialize.apply(this, arguments);
-	    }
-	});
-
-    var Macros = SplunkDsBaseCollection.extend({
-        url: "/admin/macros?count=-1",
 	    initialize: function() {
 	    	SplunkDBaseModel.prototype.initialize.apply(this, arguments);
 	    }
