@@ -4,7 +4,6 @@ define([
     "splunkjs/mvc",
     "jquery",
     "splunkjs/mvc/simplesplunkview",
-    "models/SplunkDBase",
     "splunkjs/mvc/simpleform/input/text",
     "splunkjs/mvc/simpleform/input/dropdown",
     "splunkjs/mvc/utils",
@@ -15,22 +14,18 @@ define([
     mvc,
     $,
     SimpleSplunkView,
-    SplunkDBaseModel,
     TextInput,
     DropdownInput,
     mvc_utils,
     splunkd_utils
-) { 
-    
-    var Macro = SplunkDBaseModel.extend({
-	    initialize: function() {
-	    	SplunkDBaseModel.prototype.initialize.apply(this, arguments);
-	    }
-	});
+) {
 
     return SimpleSplunkView.extend({
         className: "WebsiteFailureEditorView",
         apps: null,
+        RESPONSE_TIME_THRESHOLD: "response_time_threshold",
+        RESPONSE_TIME_THRESHOLD_WARNING: "response_time_threshold_warning",
+        RESPONSE_RESPONSE_CODES_TO_ALERT_ON: "response_codes_to_alert_on",
         
         /**
          * Setup the defaults
@@ -62,19 +57,19 @@ define([
 
             // Get the 'error' threshold macro
             if(mvc.Components.getInstance("response-threshold-input") !== null){
-                mvc.Components.getInstance("response-threshold-input").val(this.response_time_macro.entry.content.attributes.definition);
+                mvc.Components.getInstance("response-threshold-input").val(this.response_time_macro.content.definition);
             }
 
             /*
             // Get the 'warning' threshold macro
             if(mvc.Components.getInstance("response-threshold-input-warning") !== null){
-                mvc.Components.getInstance("response-threshold-input-warning").val(this.response_time_warning_macro.entry.content.attributes.definition);
+                mvc.Components.getInstance("response-threshold-input-warning").val(this.response_time_warning_macro.content.definition);
             }
             */
 
             // Get the response code macro
             if(mvc.Components.getInstance("response-code-input") !== null){
-                mvc.Components.getInstance("response-code-input").val(this.response_code_macro.entry.content.attributes.definition);
+                mvc.Components.getInstance("response-code-input").val(this.response_code_macro.content.definition);
             }
         },
         
@@ -92,32 +87,21 @@ define([
         getMacro: function(macro_name){
 
             // Get a promise ready
-            var promise = jQuery.Deferred();
+            var promise = jQuery.Deferred(); // Remove??
 
             // Use the current app if the app name is not defined
             if(this.app_name === null || this.app_name === undefined){
                 this.app_name = mvc_utils.getCurrentApp();
             }
 
-	        macro = new Macro();
-	        	
-            macro.fetch({
-                url: splunkd_utils.fullpath('/servicesNS/nobody/' + this.app_name + '/data/macros/' + macro_name),
-                success: function (model, response, options) {
-                    console.info("Successfully retrieved the macro");
-
-                    // Resolve with the macro we found
-                    promise.resolve(model);
-
-                }.bind(this),
-                error: function () {
-
-                    // Reject the promise
-                    promise.reject();
-
-                    console.warn("Unable to retrieve the macro");
-                }.bind(this)
-            });
+            fetch(splunkd_utils.fullpath('/servicesNS/nobody/' + this.app_name + '/data/macros/' + macro_name + '?output_mode=json'))
+                .then(function(response) {
+                    return response.json();
+                })
+                .then(function(data) {
+                    promise.resolve(data.entry[0]);
+                });
+        
 
             return promise;
         },
@@ -127,20 +111,48 @@ define([
          */
         setMacroDefinition: function(macro_name, definition){
 
+            // https://community.splunk.com/t5/Getting-Data-In/get-session-key-for-included-javascript-app-with-logged-in-user/m-p/328448
+            // https://community.splunk.com/t5/Monitoring-Splunk/POST-to-splunkd-raw-endpoint-returns-CSRF-validation-failed/m-p/418415
+            var sessionKey = document.cookie.match(/splunkweb_csrf_token_8000=(\d+)/)[1];
+
+            var formData = new FormData();
+
+            formData.append("__ns", "website_monitoring");
+            formData.append("__action", "edit");
+            formData.append("__f_ns", "website_monitoring");
+            formData.append("__f_pwnr", "-");
+            formData.append("__f_search", "");
+            formData.append("__f_count", "25");
+            formData.append("__redirect", "1");
+            formData.append("args", "");
+            formData.append("validation", "");
+            formData.append("errormsg", "");
+            formData.append("splunk_form_key", sessionKey);
+            formData.append("__uri", "/servicesNS/nobody/website_monitoring/admin/macros/" + macro_name);
+            formData.append("iseval", "0");
+
+            formData.append("definition", definition);
+
             // Get the macro
-            $.when(this.getMacro(macro_name)).then(function(macro_model){
-
-                // Modify the macro
-                macro_model.entry.content.set({
-                    definition: definition
-                }, {
-                    silent: true
+            fetch(
+                splunkd_utils.fullpath('/servicesNS/nobody/' + this.app_name + '/data/macros/' + macro_name), // + '?output_mode=json'
+                {
+                    method: 'POST',
+                    headers: {
+                        // 'Content-Type': 'application/json',
+                        // 'Content-Type:': 'multipart/form-data; boundary=------WebKitFormBoundaryPtb1viWqBSW1DWhg',
+                        'X-Splunk-Form-Key': sessionKey,
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: formData // JSON.stringify({definition: definition})
+                }
+                )
+                .then(function(response) {
+                    return response.json();
+                })
+                .then(function(data) {
+                    promise.resolve(data.entry[0]);
                 });
-
-                return macro_model.save();
-            }).done(function(){
-                debugger;
-            });
         },
 
         /**
@@ -305,7 +317,7 @@ define([
          */
         startRendering: function(){
 
-            var deferreds = [this.getMacro("response_time_threshold"), this.getMacro("response_time_threshold_warning"), this.getMacro("response_codes_to_alert_on")];
+            var deferreds = [this.getMacro(this.RESPONSE_TIME_THRESHOLD), this.getMacro(this.RESPONSE_TIME_THRESHOLD_WARNING), this.getMacro(this.RESPONSE_RESPONSE_CODES_TO_ALERT_ON)];
 
             $.when.apply($, deferreds).done(function(response_time_macro, response_time_warning_macro, response_code_macro) {
                 this.response_code_macro = response_code_macro;
@@ -330,7 +342,7 @@ define([
         	// Stop if the view was already rendered
         	if(!this.already_rendered){
 	        	
-                if(this.response_time_macro.entry.acl.attributes.can_write && this.response_time_warning_macro.entry.acl.attributes.can_write && this.response_code_macro.entry.acl.attributes.can_write){
+                if(this.response_time_macro.acl.can_write && this.response_time_warning_macro.acl.can_write && this.response_code_macro.acl.can_write){
 
                     var html = '<a id="open-settings-modal" href="#">Modify the definition of a failure</a>';
                     
@@ -394,7 +406,7 @@ define([
                     response_threshold_input.onInputReady = function(){}
                     // response_threshold_input_warning.onInputReady = function(){}
 
-                    // Koad the macro values into the widgets
+                    // Load the macro values into the widgets
                     this.loadMacrosIntoForm();
                 }
 
@@ -454,9 +466,9 @@ define([
         	
         	this.showSaving();
 
-            // .then(this.saveMacroModel(this.response_time_warning_macro, mvc.Components.getInstance("response-threshold-input-warning").val()))
-            $.when(this.saveMacroModel(this.response_time_macro, mvc.Components.getInstance("response-threshold-input").val()))
-            .then(this.saveMacroModel(this.response_code_macro, mvc.Components.getInstance("response-code-input").val()))
+            // .then(this.saveMacroModel(this.RESPONSE_TIME_THRESHOLD_WARNING, mvc.Components.getInstance("response-threshold-input-warning").val()))
+            $.when(this.setMacroDefinition(this.RESPONSE_TIME_THRESHOLD, mvc.Components.getInstance("response-threshold-input").val()))
+            .then(this.setMacroDefinition(this.RESPONSE_RESPONSE_CODES_TO_ALERT_ON, mvc.Components.getInstance("response-code-input").val()))
             .done(function(){
                 this.showSaving(false);
                 $("#threshold-modal", this.$el).modal('hide');
