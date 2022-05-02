@@ -260,5 +260,6 @@ Change History
 | 2.9.4   | Fixing an issue where FIPS would only be detected if set in splunk-launch.conf                                   |
 |---------|------------------------------------------------------------------------------------------------------------------|
 | 2.9.5   | Updating the modular input library to 2.1.14                                                                     |
+|         | Improving compatibility with appinspect                                                                          |
 +---------+------------------------------------------------------------------------------------------------------------------+
 
