@@ -115,36 +115,20 @@ define([
             // https://community.splunk.com/t5/Monitoring-Splunk/POST-to-splunkd-raw-endpoint-returns-CSRF-validation-failed/m-p/418415
             var sessionKey = document.cookie.match(/splunkweb_csrf_token_8000=(\d+)/)[1];
 
-            var formData = new FormData();
+            var searchParams = new URLSearchParams();
+            searchParams.append("definition", definition);
 
-            formData.append("__ns", "website_monitoring");
-            formData.append("__action", "edit");
-            formData.append("__f_ns", "website_monitoring");
-            formData.append("__f_pwnr", "-");
-            formData.append("__f_search", "");
-            formData.append("__f_count", "25");
-            formData.append("__redirect", "1");
-            formData.append("args", "");
-            formData.append("validation", "");
-            formData.append("errormsg", "");
-            formData.append("splunk_form_key", sessionKey);
-            formData.append("__uri", "/servicesNS/nobody/website_monitoring/admin/macros/" + macro_name);
-            formData.append("iseval", "0");
-
-            formData.append("definition", definition);
-
-            // Get the macro
+            // Modify the macro
             fetch(
-                splunkd_utils.fullpath('/servicesNS/nobody/' + this.app_name + '/data/macros/' + macro_name), // + '?output_mode=json'
+                splunkd_utils.fullpath('/servicesNS/nobody/' + this.app_name + '/data/macros/' + macro_name + '?output_mode=json'),
                 {
                     method: 'POST',
                     headers: {
-                        // 'Content-Type': 'application/json',
-                        // 'Content-Type:': 'multipart/form-data; boundary=------WebKitFormBoundaryPtb1viWqBSW1DWhg',
+                        'Content-Type': 'Content-Type: application/x-www-form-urlencoded; charset=UTF-8',
                         'X-Splunk-Form-Key': sessionKey,
                         'X-Requested-With': 'XMLHttpRequest'
                     },
-                    body: formData // JSON.stringify({definition: definition})
+                    body: searchParams.toString()
                 }
                 )
                 .then(function(response) {
