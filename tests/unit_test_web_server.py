@@ -44,13 +44,13 @@ class UnitTestWithWebServer(unittest.TestCase):
                     
             except IOError:
                 UnitTestWithWebServer.httpd = None
-                time.sleep(4)
+                time.sleep(10)
                 attempts = attempts + 1
                 sys.stdout.write(".")
                 sys.stdout.flush()
                         
         if UnitTestWithWebServer.httpd is None:
-            print("Web-server could not be started")
+            print("Web-server could not be started")    
             return
         
         def start_server(httpd):
