@@ -543,7 +543,7 @@ define([
         },
 
         /**
-         * Save the encrypted crendential.
+         * Save the encrypted credential.
          */
         postEncryptedCredential: function(credentialModel, username, password, realm){
 

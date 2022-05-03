@@ -10,8 +10,6 @@ define([
     "jquery",
     "models/SplunkDBase",
     "setup_view",
-    "util/splunkd_utils",
-	"models/services/server/ServerInfo",
     "text!../app/website_monitoring/js/templates/AppSetupView.html",
     "css!../app/website_monitoring/css/AppSetupView.css"
 ], function(
@@ -19,12 +17,13 @@ define([
     $,
     SplunkDBaseModel,
     SetupView,
-    splunkd_utils,
-	ServerInfo,
     Template
 ){
+    var WEBSITE_MONITORING_APP_CONFIG_URL = '/en-US/splunkd/__raw/servicesNS/nobody/website_monitoring/app_config/website_monitoring/';
+    var WEBSITE_MONITORING_APP_CONFIG_DEFAULT_STANZA_URL = WEBSITE_MONITORING_APP_CONFIG_URL + 'default';
+
     var WebsiteMonitoringConfiguration = SplunkDBaseModel.extend({
-        url: '/en-US/splunkd/__raw/servicesNS/nobody/website_monitoring/admin/website_monitoring/',
+        url: WEBSITE_MONITORING_APP_CONFIG_URL,
 	    initialize: function() {
 	    	SplunkDBaseModel.prototype.initialize.apply(this, arguments);
 	    }
@@ -135,7 +134,7 @@ define([
 
                 $.when(
                     this.website_monitoring_configuration.save({}, {
-                        'url' : '/en-US/splunkd/__raw/servicesNS/nobody/website_monitoring/admin/website_monitoring/default'
+                        'url' : WEBSITE_MONITORING_APP_CONFIG_DEFAULT_STANZA_URL
                     }),
                     this.savePassword()
                 )
@@ -208,7 +207,7 @@ define([
             var promise = jQuery.Deferred();
 
             this.website_monitoring_configuration.fetch({
-                url: '/en-US/splunkd/servicesNS/nobody/website_monitoring/admin/website_monitoring/default',
+                url: WEBSITE_MONITORING_APP_CONFIG_DEFAULT_STANZA_URL,
                 id: 'default',
                 success: function (model, response, options) {
                     console.info("Successfully retrieved the default website_monitoring configuration");
