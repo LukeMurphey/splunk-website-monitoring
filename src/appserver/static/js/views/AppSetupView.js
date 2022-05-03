@@ -279,7 +279,7 @@ define([
                         'is_on_cloud' : is_on_cloud
                     }));
 
-                    // Start the process of loading the app configurtion if necessary
+                    // Start the process of loading the app configuration if necessary
                     if(this.website_monitoring_configuration === null){
 
                         this.setControlsEnabled(false);
