@@ -17,8 +17,11 @@ class UnitTestWithWebServer(unittest.TestCase):
     """
     
     DEFAULT_TEST_WEB_SERVER_PORT = 8888
+    WAITING_FOR_PORT_SLEEP_TIME = 4
+    WAITING_FOR_PORT_ATTEMPT_LIMIT = 75
     warned_about_no_httpd = False
     httpd = None
+    server_thread = None
     
     @classmethod
     def setUpClass(cls):
@@ -36,7 +39,7 @@ class UnitTestWithWebServer(unittest.TestCase):
         sys.stdout.write("Waiting for web-server to start ...")
         sys.stdout.flush()
         
-        while UnitTestWithWebServer.httpd is None and attempts < 75:
+        while UnitTestWithWebServer.httpd is None and attempts < cls.WAITING_FOR_PORT_ATTEMPT_LIMIT:
             try:
                 UnitTestWithWebServer.httpd = cls.get_server(cls.web_server_port, cls.keyfile, cls.certfile)
                 
@@ -44,7 +47,7 @@ class UnitTestWithWebServer(unittest.TestCase):
                     
             except IOError:
                 UnitTestWithWebServer.httpd = None
-                time.sleep(10)
+                time.sleep(cls.WAITING_FOR_PORT_SLEEP_TIME)
                 attempts = attempts + 1
                 sys.stdout.write(".")
                 sys.stdout.flush()
@@ -60,10 +63,18 @@ class UnitTestWithWebServer(unittest.TestCase):
         t = threading.Thread(target=start_server, args = (UnitTestWithWebServer.httpd,))
         t.daemon = True
         t.start()
+        cls.server_thread = t
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.shutdownServer()
+        if cls.server_thread:
+            cls.server_thread.join()
     
     @classmethod
     def shutdownServer(cls):
         if UnitTestWithWebServer.httpd is not None:
+            print("Shutting down test web-server")
             UnitTestWithWebServer.httpd.shutdown()
             UnitTestWithWebServer.httpd = None
     
