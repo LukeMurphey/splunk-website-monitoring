@@ -10,6 +10,7 @@
 # These options must be set under an [default] entry to apply to all inputs
 # Otherwise, the stanza name must be associated with the individual input.
 #****************************************************************************** 
+[website_monitoring]
 proxy_server = <string>
     * Defines the proxy server that will be used.
     * Examples: "1.2.3.4", "proxy.acme.com"
