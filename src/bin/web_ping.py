@@ -811,7 +811,7 @@ class WebPing(ModularInput):
         for thread_stanza in list(threads):
 
             # If the thread isn't alive, prune it
-            if not threads[thread_stanza].isAlive():
+            if not threads[thread_stanza].is_alive():
                 removed_threads = removed_threads + 1
                 self.logger.debug("Removing inactive thread for stanza=%s, thread_count=%i", thread_stanza, len(threads))
                 del threads[thread_stanza]
